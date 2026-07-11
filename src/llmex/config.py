@@ -115,6 +115,18 @@ class ModelConfig(StrictModel):
         return self
 
 
+class TokenizerConfig(StrictModel):
+    """M2 byte-level BPE 학습, 평가와 shard 설정."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    vocab_size: Literal[16000, 32000]
+    corpus: YamlPath
+    output_dir: YamlPath
+    shard_tokens: int = Field(default=10_000_000, gt=1)
+    evaluation_samples: int = Field(default=10_000, gt=0)
+
+
 ConfigT = TypeVar("ConfigT", bound=StrictModel)
 
 

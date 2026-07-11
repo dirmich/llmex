@@ -1,12 +1,14 @@
 [project]
 name = "llmex"
-version = "0.2.0"
+version = "0.3.0"
 description = "한국어 Wikipedia 기반 소형 언어 모델 실험 도구"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "numpy>=2.0,<3",
   "pydantic>=2.11,<3",
   "PyYAML>=6.0.2,<7",
+  "tokenizers>=0.21,<1",
   "typer>=0.16,<1",
 ]
 
@@ -15,6 +17,7 @@ llmex = "llmex.cli:app"
 
 [dependency-groups]
 dev = [
+  "hypothesis>=6.135,<7",
   "pyright>=1.1.403,<2",
   "pytest>=8.4,<9",
   "pytest-cov>=6.2,<7",

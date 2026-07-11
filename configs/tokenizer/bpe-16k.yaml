@@ -1,0 +1,7 @@
+name: bpe-16k
+seed: 42
+vocab_size: 16000
+corpus: data/processed/corpus-v1.jsonl.zst
+output_dir: artifacts/tokenizers/bpe-16k
+shard_tokens: 10000000
+evaluation_samples: 10000

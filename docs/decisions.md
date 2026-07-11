@@ -67,6 +67,15 @@
 - 결과: 표와 참조는 제거하고, 수식·목록·내부 링크의 표시 텍스트는 보존한다. 템플릿은 확장하지 않고 제거한다. 이 parser는 MediaWiki 렌더러와 동등하지 않으므로 잔존 markup 비율 필터와 샘플 감사를 필수로 둔다.
 - 검증: 확장 XML fixture의 최신 revision, namespace/redirect, 표·참조 제거, 수식·목록 보존 golden test와 결정적 E2E hash test를 통과해야 한다.
 
+## ADR-011: 결정적 byte-level BPE와 문서 경계 shard
+
+- 상태: 승인
+- 배경: 한국어 완성형·자모·정규화 형식과 임의 Unicode를 손실 없이 처리하면서 토크나이저 학습 데이터 누출과 shard 경계 손실을 막아야 한다.
+- 결정: Hugging Face `tokenizers` BPE에 ByteLevel pre-tokenizer/decoder, 전체 initial byte alphabet과 byte fallback을 사용한다. `<pad>`, `<bos>`, `<eos>`, `<unk>`는 각각 0, 1, 2, 3으로 고정하고 학습 iterator는 train split만 노출한다. 각 source 문서 뒤에 EOS를 붙인 뒤 연속 token stream을 고정 크기 little-endian memmap shard로 나눈다.
+- 대안: 문자 토크나이저는 단순하지만 sequence가 길고, SentencePiece는 유효한 대안이나 M2의 Hugging Face artifact 계약과 맞지 않는다. 문서별 shard는 경계가 명확하지만 작은 파일이 지나치게 많아진다.
+- 결과: 16k/32k 설정을 모두 제공하고 실제 vocab 최대 ID에 따라 `uint16` 또는 `uint32`를 자동 선택한다. tokenizer/corpus fingerprint, source 경계, checksum, token 수, 최소/최대 ID를 manifest에 기록한다.
+- 검증: 특수 ID, UNK 0건, 임의 유효 Unicode round-trip, train-only fitting, split 누출 거부, EOS/next-token 정렬, 원자적 shard와 두 번 실행 checksum 동일성을 통과해야 한다.
+
 ## ADR 템플릿
 
 ```text

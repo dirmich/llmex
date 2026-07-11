@@ -52,19 +52,19 @@
 
 ## M2 토크나이저와 token shards
 
-- [ ] train split 전용 streaming iterator
-- [ ] byte-level BPE trainer
-- [ ] special token와 ID 고정
-- [ ] vocab 16k smoke config
-- [ ] tokenizer artifact/manifest/checksum
-- [ ] Unicode property-based round-trip test
-- [ ] 한국어 chars/token, bytes/token, tokens/word 평가
-- [ ] baseline tokenizer 비교 보고서
-- [ ] 문서 끝 EOS 삽입 packer
-- [ ] `uint16`/`uint32` 범위 validation
-- [ ] memmap shard writer와 atomic manifest
-- [ ] shard checksum과 token count 검증
-- [ ] split 간 문서·token source 누출 검사
+- [x] train split 전용 streaming iterator
+- [x] byte-level BPE trainer
+- [x] special token와 ID 고정
+- [x] vocab 16k/32k smoke config
+- [x] tokenizer artifact/manifest/checksum
+- [x] Unicode property-based round-trip test와 고정 10,000표본
+- [x] 한국어 chars/token, bytes/token, tokens/word 평가
+- [x] raw byte baseline 비교 보고서
+- [x] 문서 끝 EOS 삽입 packer와 source 경계 manifest
+- [x] `uint16`/`uint32` 범위 validation
+- [x] memmap shard writer와 atomic manifest
+- [x] shard checksum, token count, 최소/최대 ID 검증
+- [x] split 간 source 문서 누출 검사와 동일 tokenizer 검증
 
 ## M3 decoder-only 모델
 
@@ -155,6 +155,7 @@
 |---|---|---|---|---|---|
 | 2026-07-11 | M0 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff lint/format; Pyright; Pytest; CLI help; ref checksum; `docker compose config`; `git diff --check`; DGX Spark CUDA smoke | `14 passed`; GB10/CUDA 13.0/bf16 `finite=true`; NGC 25.10 digest 고정 | M1 Wikipedia 데이터 |
 | 2026-07-11 | M1 fixture smoke | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright; Pytest; `llmex data sample-e2e --max-documents 1000`; `git diff --check` | 외부 네트워크 없는 확장 fixture, local HTTP resume, checksum/filter/attribution/split/E2E hash 검증; 실제 dump canary 미실행 | 실제 dump canary 후 M2 토크나이저 |
+| 2026-07-11 | M2 fixture tokenizer | 미커밋 작업 트리 | `uv sync`; Ruff format/check; Pyright; Pytest; fixture `tokenizer train/evaluate/pack` 2회; manifest 비교; `git diff --check` | 16k byte-level BPE, Unicode 10,000표본/속성, train-only, EOS/memmap/checksum 재현성 검증 | 실제 corpus 16k/32k 비교 후 M3 |
 
 ## 즉시 중단 조건
 

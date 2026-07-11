@@ -9,7 +9,7 @@ from typing import Annotated, Never
 import typer
 
 from llmex import __version__
-from llmex.config import DataConfig, ModelConfig, StrictModel, load_yaml
+from llmex.config import DataConfig, ModelConfig, StrictModel, TokenizerConfig, load_yaml
 from llmex.data.download import download, fetch_metadata
 from llmex.data.io import prepare_output, read_jsonl_zst, write_json, write_jsonl_zst
 from llmex.data.pipeline import (
@@ -27,6 +27,9 @@ from llmex.fingerprint import fingerprint, sha256_file
 from llmex.logging import configure_logging
 from llmex.paths import project_root
 from llmex.run import create_run
+from llmex.tokenizer.core import train as train_tokenizer
+from llmex.tokenizer.evaluate import evaluate as evaluate_tokenizer
+from llmex.tokenizer.pack import pack as pack_tokenizer
 
 app = typer.Typer(
     name="llmex",
@@ -38,10 +41,12 @@ config_app = typer.Typer(help="YAML 설정을 검증합니다.", no_args_is_help
 fingerprint_app = typer.Typer(help="입력 fingerprint를 계산합니다.", no_args_is_help=True)
 run_app = typer.Typer(help="재현 가능한 실행 디렉터리를 관리합니다.", no_args_is_help=True)
 data_app = typer.Typer(help="Wikimedia M1 데이터 파이프라인을 실행합니다.", no_args_is_help=True)
+tokenizer_app = typer.Typer(help="M2 토크나이저와 token shard를 생성합니다.", no_args_is_help=True)
 app.add_typer(config_app, name="config")
 app.add_typer(fingerprint_app, name="fingerprint")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
+app.add_typer(tokenizer_app, name="tokenizer")
 
 
 class ConfigKind(StrEnum):
@@ -49,10 +54,15 @@ class ConfigKind(StrEnum):
 
     DATA = "data"
     MODEL = "model"
+    TOKENIZER = "tokenizer"
 
 
 def _model(kind: ConfigKind) -> type[StrictModel]:
-    return DataConfig if kind is ConfigKind.DATA else ModelConfig
+    if kind is ConfigKind.DATA:
+        return DataConfig
+    if kind is ConfigKind.TOKENIZER:
+        return TokenizerConfig
+    return ModelConfig
 
 
 def _emit_error(error: LlmexError) -> Never:
@@ -137,6 +147,64 @@ def _data_config(path: Path) -> DataConfig:
 
 def _operation(command: str, config: DataConfig, inputs: dict[str, object]) -> dict[str, object]:
     return {"command": command, "config": config.model_dump(mode="json"), "inputs": inputs}
+
+
+def _tokenizer_command(command: str, config_path: Path, dry_run: bool, force: bool) -> None:
+    try:
+        config = load_yaml(config_path, TokenizerConfig)
+        operation = {"command": f"tokenizer {command}", "config": config.model_dump(mode="json")}
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {
+                        "dry_run": True,
+                        "output": str(config.output_dir),
+                        "fingerprint": fingerprint(operation),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        functions = {
+            "train": train_tokenizer,
+            "evaluate": evaluate_tokenizer,
+            "pack": pack_tokenizer,
+        }
+        result = functions[command](config, force=force)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@tokenizer_app.command("train")
+def tokenizer_train(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """train split만 읽어 byte-level BPE를 학습합니다."""
+    _tokenizer_command("train", config_path, dry_run, force)
+
+
+@tokenizer_app.command("evaluate")
+def tokenizer_evaluate(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """압축률과 Unicode round-trip을 평가합니다."""
+    _tokenizer_command("evaluate", config_path, dry_run, force)
+
+
+@tokenizer_app.command("pack")
+def tokenizer_pack(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """모든 split을 동일 tokenizer의 memmap shard로 패킹합니다."""
+    _tokenizer_command("pack", config_path, dry_run, force)
 
 
 @data_app.command("download")
