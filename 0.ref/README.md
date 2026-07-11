@@ -40,6 +40,5 @@
 
 ```bash
 rg -n "class .*Attention|class .*GPT|RMSNorm|RoPE|SwiGLU|get_batch|CrossEntropy" 0.ref/llm_math_book
-shasum -a 256 -c 0.ref/SHA256SUMS
+(cd 0.ref && shasum -a 256 -c SHA256SUMS)
 ```
-
