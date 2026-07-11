@@ -1,5 +1,10 @@
 # 변경 기록
 
+## 1.5.0 - 2026-07-11
+
+- provenance/license/hash JSONL loader, assistant-only SFT, 원자 재개, heldout gate와 chat 생성을 추가했다.
+- `llmex sft train/resume/eval/generate`와 한국어 실행 가이드, 합성 CPU 검증을 제공한다.
+
 ## 1.4.0 - 2026-07-11
 
 - external stage별 실행 직전 nonce와 사후 발급시각을 서명 telemetry에 결속해 과거 재생을 차단했다.

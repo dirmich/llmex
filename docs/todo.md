@@ -1,5 +1,12 @@
 # LLMEX 개발 TODO
 
+## G003 한국어 대화 학습 경로 (1.5.0)
+
+- [x] JSONL provenance/license/행·파일 hash 검증
+- [x] assistant-only SFT masking, base checkpoint 재사용과 원자 재개
+- [x] SFT CLI, heldout safety/repetition/EOS 평가, chat 생성, 합성 CPU 테스트
+- [ ] 전체 Wikipedia baseline, 외부 장기 학습, 독립 안전·법무·공개 승인(별도 gate)
+
 ## 1.4.0 차단 해제
 
 - [x] external stage별 암호학적 nonce/challenge 실행 직전 생성과 환경 계약 전달

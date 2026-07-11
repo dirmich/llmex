@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-11 · G003 한국어 대화 학습 경로 (1.5.0)
+
+- 승인 license allowlist, dataset/source/date provenance, canonical 행 SHA-256와 파일 SHA-256를 검증하고 train/heldout 중복을 거부한다.
+- system/user/역할 prefix/padding을 `-100`으로 마스킹해 assistant 본문과 EOS만 학습한다.
+- 기존 checkpoint 가중치 재사용과 SFT model/optimizer/scheduler/RNG/data cursor의 fsync·atomic checkpoint 재개를 구현했다.
+- `sft train/resume/eval/generate`, heldout assistant NLL/perplexity와 safety/repetition/EOS gate를 합성 CPU 실제 학습·추론으로 검증했다.
+- 전체 Wikipedia baseline, 외부 장기 학습, 독립 안전·법무·공개 승인은 완료로 간주하지 않는다.
+
 ## 2026-07-11 · 1.4.0 external telemetry freshness와 최종 권위 재검증
 
 - external command 실행 직전에 예측 불가능한 nonce를 만들고 `LLMEX_STAGE_NONCE`를 포함한 환경 계약으로 run-id, stage, 예산, Git commit, 설정 fingerprint 및 출력 경로를 전달한다.

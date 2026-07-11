@@ -15,6 +15,7 @@ from llmex.config import (
     EvaluationConfig,
     ModelConfig,
     PipelineConfig,
+    SFTConfig,
     StrictModel,
     TokenizerConfig,
     TrainingConfig,
@@ -54,6 +55,9 @@ data_app = typer.Typer(help="Wikimedia M1 데이터 파이프라인을 실행합
 tokenizer_app = typer.Typer(help="M2 토크나이저와 token shard를 생성합니다.", no_args_is_help=True)
 model_app = typer.Typer(help="M3 decoder-only 모델을 검사합니다.", no_args_is_help=True)
 train_app = typer.Typer(help="M4 결정적 학습과 checkpoint 재개를 실행합니다.", no_args_is_help=True)
+sft_app = typer.Typer(
+    help="허가된 대화 데이터로 assistant-only SFT를 실행합니다.", no_args_is_help=True
+)
 pipeline_app = typer.Typer(
     help="M6 전체 파이프라인과 외부 게이트를 관리합니다.", no_args_is_help=True
 )
@@ -67,6 +71,7 @@ app.add_typer(data_app, name="data")
 app.add_typer(tokenizer_app, name="tokenizer")
 app.add_typer(model_app, name="model")
 app.add_typer(train_app, name="train")
+app.add_typer(sft_app, name="sft")
 app.add_typer(pipeline_app, name="pipeline")
 app.add_typer(release_app, name="release")
 
@@ -125,6 +130,7 @@ class ConfigKind(StrEnum):
     TRAINING = "training"
     EVALUATION = "evaluation"
     PIPELINE = "pipeline"
+    SFT = "sft"
 
 
 def _model(kind: ConfigKind) -> type[StrictModel]:
@@ -138,7 +144,91 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return EvaluationConfig
     if kind is ConfigKind.PIPELINE:
         return PipelineConfig
+    if kind is ConfigKind.SFT:
+        return SFTConfig
     return ModelConfig
+
+
+def _sft_config(path: Path) -> SFTConfig:
+    return load_yaml(path, SFTConfig)
+
+
+def _sft_train(config_path: Path, resume: Path | None, dry_run: bool) -> None:
+    try:
+        config = _sft_config(config_path)
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {
+                        "dry_run": True,
+                        "run_dir": str(config.run_dir),
+                        "fingerprint": fingerprint(config.model_dump(mode="json")),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        from llmex.chat import train_sft
+
+        result = train_sft(config, resume=resume)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@sft_app.command("train")
+def sft_train(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """새 assistant-only SFT run을 시작합니다."""
+    _sft_train(config_path, None, dry_run)
+
+
+@sft_app.command("resume")
+def sft_resume(
+    config_path: Annotated[Path, typer.Option("--config")],
+    checkpoint: Annotated[Path | None, typer.Option("--checkpoint")] = None,
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """원자 checkpoint에서 optimizer/RNG/data cursor를 완전 재개합니다."""
+    try:
+        config = _sft_config(config_path)
+    except LlmexError as error:
+        _emit_error(error)
+    _sft_train(config_path, checkpoint or config.run_dir / "checkpoints/latest.pt", dry_run)
+
+
+@sft_app.command("eval")
+def sft_eval(
+    config_path: Annotated[Path, typer.Option("--config")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+) -> None:
+    """heldout assistant NLL과 safety/repetition/EOS gate를 평가합니다."""
+    try:
+        from llmex.chat import evaluate_chat
+
+        result = evaluate_chat(_sft_config(config_path), checkpoint)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@sft_app.command("generate")
+def sft_generate(
+    config_path: Annotated[Path, typer.Option("--config")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    prompt: Annotated[str, typer.Option("--prompt")],
+) -> None:
+    """고정 chat template으로 assistant 응답을 생성합니다."""
+    try:
+        from llmex.chat import generate_chat
+
+        result = generate_chat(_sft_config(config_path), checkpoint, prompt)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 def _emit_error(error: LlmexError) -> Never:

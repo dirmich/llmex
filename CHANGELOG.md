@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.5.0 - 2026-07-11
+
+- provenance/license/행 hash/파일 SHA-256 검증 JSONL chat loader와 assistant-only SFT template를 추가했다.
+- 사전학습 checkpoint 재사용, 원자적 SFT 재개, heldout safety/repetition/EOS 평가와 chat 생성 CLI를 구현했다.
+- Wikipedia 장기 baseline·외부 공개 gate와 대화 SFT 로컬 기능 검증을 분리했다.
+
 ## 1.4.0 - 2026-07-11
 
 - external stage마다 실행 직전 암호학적 난수를 생성해 환경 계약으로 전달하고, 사후 서명 telemetry의 nonce·run-id·stage·예산·Git commit·설정 fingerprint에 결속한다.

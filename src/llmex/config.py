@@ -214,6 +214,43 @@ class EvaluationConfig(StrictModel):
     canary_max_rank: int = Field(default=10, gt=0)
 
 
+class SFTConfig(StrictModel):
+    """허가된 JSONL 대화 데이터의 assistant-only SFT 설정."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    model: ModelConfig
+    tokenizer_dir: YamlPath
+    train_data: YamlPath
+    heldout_data: YamlPath
+    run_dir: YamlPath
+    allowed_licenses: list[str] = Field(min_length=1)
+    base_checkpoint: YamlPath | None = None
+    device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    sequence_length: int = Field(gt=2)
+    micro_batch_size: int = Field(gt=0)
+    max_steps: int = Field(gt=0)
+    checkpoint_interval: int = Field(default=10, gt=0)
+    log_interval: int = Field(default=1, gt=0)
+    gradient_clip_norm: float = Field(default=1.0, gt=0.0)
+    optimizer: OptimizerConfig
+    max_eval_examples: int | None = Field(default=None, gt=0)
+    max_new_tokens: int = Field(default=32, ge=1)
+    repetition_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    unsafe_patterns: list[str] = ["자살 방법", "폭탄 제조", "주민등록번호"]
+    deterministic: bool = True
+
+    @model_validator(mode="after")
+    def validate_sft(self) -> "SFTConfig":
+        if self.sequence_length > self.model.max_seq_len:
+            raise ValueError("sequence_length는 model.max_seq_len 이하여야 합니다")
+        if self.optimizer.warmup_steps > self.max_steps:
+            raise ValueError("warmup_steps는 max_steps 이하여야 합니다")
+        if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
+            raise ValueError("allowed_licenses는 중복될 수 없습니다")
+        return self
+
+
 class BudgetConfig(StrictModel):
     """M6 실행을 중단시키는 자원 상한과 최소 여유."""
 
