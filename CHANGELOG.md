@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.1.1 - 2026-07-11
+
+- `acf2841..45bd4ff` 변경 파일을 52개 회귀 테스트로 잠근 뒤 smell별 정리를 수행했다.
+- 호출되지 않는 artifact sidecar 검증 helper와 전용 import를 삭제했다.
+- 평가 Markdown의 중복 원자적 쓰기를 공통 `atomic_write_bytes` 경로로 통합하고 preflight 이름을 명확히 했다.
+- fallback-like 코드는 masking 경로 없이 OS 호환·resume·recovery·checkpoint 보안 경계의 fail-safe임을 재확인했다.
+
 ## 1.0.1 - 2026-07-11
 
 - M0–M7 변경 범위의 최종 AI slop 정리를 수행했다.

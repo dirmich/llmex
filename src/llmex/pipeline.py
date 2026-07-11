@@ -35,7 +35,9 @@ def _memory() -> dict[str, int]:
 
 
 def preflight(config: PipelineConfig) -> dict[str, Any]:
-    disk, memory, gib = shutil.disk_usage(config.run_dir.parent), _memory(), 1024**3
+    disk = shutil.disk_usage(config.run_dir.parent)
+    memory = _memory()
+    gib = 1024**3
     checks = {
         "disk": disk.free >= config.budget.minimum_free_disk_gib * gib,
         "memory": memory["available_bytes"] >= config.budget.minimum_available_memory_gib * gib,

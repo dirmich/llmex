@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from llmex.errors import ConflictError, InputError, IntegrityError
-from llmex.fingerprint import fingerprint, sha256_file
+from llmex.fingerprint import fingerprint
 
 
 def atomic_write_bytes(path: Path, content: bytes) -> None:
@@ -66,17 +66,6 @@ def write_json(path: Path, value: Mapping[str, Any]) -> None:
         path,
         (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
     )
-
-
-def verify_artifact_contract(path: Path, sidecar: Path) -> None:
-    """artifact/sidecar의 schema, fingerprint, checksum 결속을 검증한다."""
-
-    try:
-        value = json.loads(sidecar.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise IntegrityError(f"artifact sidecar를 검증할 수 없습니다: {sidecar}") from exc
-    if value.get("schema_version") != 1 or value.get("sha256") != sha256_file(path):
-        raise IntegrityError(f"artifact sidecar 계약 불일치: {path}")
 
 
 def write_jsonl_zst(path: Path, rows: Iterable[Mapping[str, Any]]) -> int:

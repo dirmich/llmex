@@ -3,16 +3,14 @@
 
 import json
 import math
-import os
 import time
-from pathlib import Path
 from typing import Any
 
 import torch
 from torch.nn import functional as F
 
 from llmex.config import EvaluationConfig
-from llmex.data.io import write_json
+from llmex.data.io import atomic_write_bytes, write_json
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.inference import load_runtime
@@ -56,15 +54,6 @@ def _generator(device: torch.device, seed: int) -> torch.Generator:
     return generator
 
 
-def _atomic_markdown(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(text, encoding="utf-8")
-    with temporary.open("rb") as stream:
-        os.fsync(stream.fileno())
-    os.replace(temporary, path)
-
-
 def _finalize(
     config: EvaluationConfig, stem: str, payload: dict[str, Any], markdown: str
 ) -> dict[str, Any]:
@@ -73,7 +62,7 @@ def _finalize(
     json_path = config.output_dir / f"{stem}.json"
     md_path = config.output_dir / f"{stem}.md"
     write_json(json_path, payload)
-    _atomic_markdown(md_path, markdown)
+    atomic_write_bytes(md_path, markdown.encode("utf-8"))
     checksums = {
         json_path.name: sha256_file(json_path),
         md_path.name: sha256_file(md_path),

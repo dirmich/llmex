@@ -2,6 +2,14 @@
 
 > 다음 세션은 위에서 아래로 진행한다. `[ ]`를 구현 전에 `[~]`, 검증 후 `[x]`로 바꾼다. 각 milestone 종료 시 명령과 artifact 경로를 아래 실행 기록에 남긴다.
 
+## 1.1.1 정리
+
+- [x] `acf2841..45bd4ff` 변경 코드·테스트의 52개 regression 동작 잠금
+- [x] fallback inventory/classification 및 masking fallback 부재 확인
+- [x] dead code, duplication, naming/error handling, tests 순서의 smell별 검토
+- [x] 미사용 helper 삭제와 원자적 Markdown 쓰기 중복 제거
+- [x] 전체 pytest/Ruff/format/Pyright/release audit 검증
+
 ## M0 저장소와 개발 환경
 
 - [x] Git 저장소 초기화 및 `AGENTS.md` 작성

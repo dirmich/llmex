@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-11 · 1.1.1 AI slop 정리
+
+- `acf2841..45bd4ff`의 변경 코드·테스트만 대상으로 52개 targeted regression을 먼저 통과시켰다.
+- fallback inventory를 작성하고 OS 자원 탐지, pipeline 재개·복구, checkpoint 로드 경계가 실패-안전형임을 확인했다.
+- 미사용 artifact sidecar 검증 함수를 삭제하고 평가 Markdown의 원자적 쓰기를 공통 구현으로 통합했다.
+- 압축된 preflight 지역 변수 대입을 명시적으로 풀고 버전·lock·릴리스 이력을 `1.1.1`로 동기화했다.
+
 ## 2026-07-11 · M0 저장소 기반
 
 - Python 3.11+ `src` layout과 패키지 버전 `0.1.0`을 구성했다.
