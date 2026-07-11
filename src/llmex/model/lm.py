@@ -1,4 +1,5 @@
 """Decoder-only causal language model, loss와 생성."""
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 
 from dataclasses import dataclass
 from typing import cast
@@ -25,8 +26,10 @@ class GenerationConfig:
     max_new_tokens: int = 20
     temperature: float = 1.0
     top_k: int | None = None
+    top_p: float = 1.0
     eos_id: int | None = None
     use_cache: bool = True
+    repetition_penalty: float = 1.0
 
 
 class CausalLM(nn.Module):
@@ -105,11 +108,18 @@ class CausalLM(nn.Module):
             raise ValueError("생성 길이와 temperature는 음수일 수 없습니다")
         if generation.top_k is not None and generation.top_k < 1:
             raise ValueError("top_k는 1 이상이어야 합니다")
+        if not 0.0 < generation.top_p <= 1.0:
+            raise ValueError("top_p는 0 초과 1 이하여야 합니다")
+        if generation.repetition_penalty <= 0.0:
+            raise ValueError("repetition_penalty는 0보다 커야 합니다")
         if generation.eos_id is not None and not 0 <= generation.eos_id < self.config.vocab_size:
             raise ValueError("eos_id가 vocab 범위를 벗어났습니다")
+        if input_ids.ndim != 2 or input_ids.dtype != torch.long or input_ids.size(1) < 1:
+            raise ValueError("prompt는 비어 있지 않은 int64[B,T]여야 합니다")
         result = input_ids
         cache: tuple[KVCache, ...] | None = None
         current = input_ids
+        finished = torch.zeros(input_ids.size(0), dtype=torch.bool, device=input_ids.device)
         was_training = self.training
         self.eval()
         try:
@@ -119,6 +129,15 @@ class CausalLM(nn.Module):
                 output = self(current, cache=cache, use_cache=generation.use_cache)
                 cache = output.cache
                 scores = output.logits[:, -1]
+                if generation.repetition_penalty != 1.0:
+                    seen = torch.zeros_like(scores, dtype=torch.bool)
+                    seen.scatter_(1, result, True)
+                    adjusted = torch.where(
+                        scores < 0,
+                        scores * generation.repetition_penalty,
+                        scores / generation.repetition_penalty,
+                    )
+                    scores = torch.where(seen, adjusted, scores)
                 if generation.temperature == 0:
                     next_token = scores.argmax(dim=-1, keepdim=True)
                 else:
@@ -127,15 +146,31 @@ class CausalLM(nn.Module):
                         k = min(generation.top_k, scores.size(-1))
                         threshold = torch.topk(scores, k).values[:, -1, None]
                         scores = scores.masked_fill(scores < threshold, -torch.inf)
+                    if generation.top_p < 1.0:
+                        sorted_scores, sorted_indices = torch.sort(scores, descending=True)
+                        cumulative = torch.softmax(sorted_scores, dim=-1).cumsum(dim=-1)
+                        remove = (
+                            cumulative - torch.softmax(sorted_scores, dim=-1) > generation.top_p
+                        )
+                        sorted_scores = sorted_scores.masked_fill(remove, -torch.inf)
+                        scores = torch.full_like(scores, -torch.inf).scatter(
+                            1, sorted_indices, sorted_scores
+                        )
                     next_token = torch.multinomial(
                         torch.softmax(scores, dim=-1), 1, generator=generator
                     )
+                if generation.eos_id is not None:
+                    next_token = torch.where(
+                        finished[:, None],
+                        torch.full_like(next_token, generation.eos_id),
+                        next_token,
+                    )
                 result = torch.cat((result, next_token), dim=1)
                 current = next_token if generation.use_cache else result
-                if generation.eos_id is not None and bool(
-                    torch.all(next_token == generation.eos_id)
-                ):
-                    break
+                if generation.eos_id is not None:
+                    finished |= next_token.squeeze(1) == generation.eos_id
+                    if bool(torch.all(finished)):
+                        break
         finally:
             self.train(was_training)
         return result

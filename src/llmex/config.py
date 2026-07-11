@@ -181,6 +181,37 @@ class TrainingConfig(StrictModel):
         return self
 
 
+class EvaluationConfig(StrictModel):
+    """M5 checkpoint 평가·생성·benchmark 설정."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    checkpoint: YamlPath
+    training_config: YamlPath
+    tokenizer_dir: YamlPath
+    shards_manifest: YamlPath
+    corpus: YamlPath | None = None
+    output_dir: YamlPath
+    device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    splits: list[Literal["validation", "test"]] = ["validation", "test"]
+    batch_size: int = Field(default=4, gt=0)
+    max_batches: int | None = Field(default=None, gt=0)
+    prompts: list[str] = [
+        "대한민국의 수도는",
+        "한국어에서 조사는",
+        "세종대왕은",
+        "2026년 7월 11일은",
+    ]
+    max_new_tokens: int = Field(default=32, ge=0)
+    temperature: float = Field(default=0.0, ge=0.0)
+    top_k: int | None = Field(default=None, gt=0)
+    top_p: float = Field(default=1.0, gt=0.0, le=1.0)
+    repetition_penalty: float = Field(default=1.0, gt=0.0)
+    use_cache: bool = True
+    benchmark_warmup: int = Field(default=2, ge=0)
+    benchmark_iterations: int = Field(default=5, gt=0)
+
+
 ConfigT = TypeVar("ConfigT", bound=StrictModel)
 
 

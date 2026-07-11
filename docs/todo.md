@@ -104,17 +104,27 @@
 
 ## M5 평가와 추론
 
-- [ ] NLL/perplexity evaluator
-- [ ] Korean Wikipedia cloze schema와 provenance
-- [ ] generation prompt suite 동결
-- [ ] temperature/top-k/top-p generation CLI
-- [ ] repetition, distinct-n, Unicode validity
-- [ ] exact contamination 검사
-- [ ] MinHash contamination 검사
-- [ ] canary exposure test
-- [ ] 긴 문자열 train match/암기 검사
-- [ ] 평가 JSON 및 Markdown renderer
-- [ ] KV cache 설계 ADR(v1.1)
+- [x] NLL/perplexity evaluator
+- [x] Korean Wikipedia cloze schema와 provenance
+- [x] generation prompt suite 동결
+- [x] temperature/top-k/top-p generation CLI
+- [x] repetition, distinct-n, Unicode validity
+- [x] exact contamination 검사
+- [x] MinHash contamination 검사
+- [x] canary exposure test
+- [x] 긴 문자열 train match/암기 검사
+- [x] 평가 JSON 및 Markdown renderer
+- [x] KV cache 설계 ADR(v1.1)
+- [x] validation/test checkpoint loss, token NLL/perplexity
+- [x] byte 정규화 NLL, bits/byte, byte perplexity
+- [x] 고정 prompt suite와 greedy/top-k/top-p/temperature/seed
+- [x] sign-aware repetition penalty, distinct-n, Unicode 유효성
+- [x] cache/no-cache logits 수치 동등성과 greedy 생성 완전 동등성
+- [x] 배치별 EOS, max-new-token, 문맥 제한 종료
+- [x] checkpoint/model/tokenizer/shard 엄격 호환성 및 checksum 검증
+- [x] 평가·생성·benchmark JSON/Markdown/fingerprint/checksum artifact
+- [x] 한국어 eval/generate/benchmark CLI, 오류 코드와 dry-run
+- [x] CPU CLI E2E와 GB10 CUDA smoke/latency-memory benchmark
 
 ## M6 전체 데이터와 baseline
 
@@ -158,6 +168,7 @@
 | 2026-07-11 | M2 fixture tokenizer | 미커밋 작업 트리 | `uv sync`; Ruff format/check; Pyright; Pytest; fixture `tokenizer train/evaluate/pack` 2회; manifest 비교; `git diff --check` | 16k byte-level BPE, Unicode 10,000표본/속성, train-only, EOS/memmap/checksum 재현성 검증 | 실제 corpus 16k/32k 비교 후 M3 |
 | 2026-07-11 | M3 decoder-only 모델 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; `llmex model inspect`; GB10 CUDA forward/backward; ref checksum; `git diff --check` | `36 passed`; strict 오류 0건; 2,835,584 parameters; CUDA finite loss; RMSNorm/RoPE/GQA/SDPA/SwiGLU/tied LM/loss/generation/KV cache와 128문서 overfit 검증 | M4 학습 시스템 |
 | 2026-07-11 | M4 학습 엔진 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; train CLI E2E; CPU 50-step; CUDA bf16 smoke; `git diff --check` | `42 passed`; strict 오류 0건; CPU 50-step/bitwise resume/오류주입 및 GB10 CUDA bf16 2-step 통과 | M5 평가·추론 |
+| 2026-07-11 | M5 평가·추론 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; eval/generate/benchmark CLI E2E; cache parity; 가능한 CUDA benchmark; `git diff --check` | checkpoint 호환성, token/byte 지표, sampling/EOS/context, contamination/암기, JSON/Markdown/checksum artifact 검증 | M6 전체 데이터·baseline |
 
 ## 즉시 중단 조건
 

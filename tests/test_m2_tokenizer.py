@@ -105,7 +105,7 @@ def test_unicode_property_round_trip(corpus: Path, tmp_path: Path, text: str) ->
     tokenizer = load_tokenizer(output)
     encoded = tokenizer.encode(text)
     assert SPECIAL_IDS["<unk>"] not in encoded.ids
-    assert tokenizer.decode(encoded.ids) == text
+    assert tokenizer.decode(encoded.ids, skip_special_tokens=False) == text
 
 
 def test_eos_dtype_boundaries_alignment_and_deterministic_shards(

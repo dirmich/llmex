@@ -1,0 +1,25 @@
+name: smoke
+seed: 42
+checkpoint: runs/smoke/checkpoints/best.pt
+training_config: configs/training/smoke.yaml
+tokenizer_dir: artifacts/tokenizer/kowiki-bpe-16k
+shards_manifest: artifacts/tokenizer/kowiki-bpe-16k/shards/manifest.json
+corpus: data/processed/corpus-v1.jsonl.zst
+output_dir: runs/smoke/evaluation
+device: auto
+splits: [validation, test]
+batch_size: 4
+max_batches: 16
+prompts:
+  - 대한민국의 수도는
+  - 한국어에서 조사는
+  - 세종대왕은
+  - 2026년 7월 11일은
+max_new_tokens: 32
+temperature: 0.0
+top_k: null
+top_p: 1.0
+repetition_penalty: 1.0
+use_cache: true
+benchmark_warmup: 2
+benchmark_iterations: 5

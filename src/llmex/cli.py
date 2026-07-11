@@ -11,6 +11,7 @@ import typer
 from llmex import __version__
 from llmex.config import (
     DataConfig,
+    EvaluationConfig,
     ModelConfig,
     StrictModel,
     TokenizerConfig,
@@ -67,6 +68,7 @@ class ConfigKind(StrEnum):
     MODEL = "model"
     TOKENIZER = "tokenizer"
     TRAINING = "training"
+    EVALUATION = "evaluation"
 
 
 def _model(kind: ConfigKind) -> type[StrictModel]:
@@ -76,6 +78,8 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return TokenizerConfig
     if kind is ConfigKind.TRAINING:
         return TrainingConfig
+    if kind is ConfigKind.EVALUATION:
+        return EvaluationConfig
     return ModelConfig
 
 
@@ -255,6 +259,67 @@ def _training_command(config_path: Path, resume: Path | None, dry_run: bool) -> 
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+def _m5_command(command: str, config_path: Path, dry_run: bool, prompt: str | None = None) -> None:
+    try:
+        config = load_yaml(config_path, EvaluationConfig)
+        operation = {"command": command, "config": config.model_dump(mode="json"), "prompt": prompt}
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {
+                        "dry_run": True,
+                        "command": command,
+                        "output_dir": str(config.output_dir),
+                        "fingerprint": fingerprint(operation),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        from llmex.evaluation import benchmark, evaluate, generate
+
+        if command == "generate":
+            result = generate(config, prompt)
+        elif command == "benchmark":
+            result = benchmark(config)
+        else:
+            result = evaluate(config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@app.command("eval")
+def evaluation_run(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """checkpoint의 validation/test 손실·perplexity와 품질 평가를 실행합니다."""
+    _m5_command("eval", config_path, dry_run)
+
+
+@app.command("generate")
+def generation_run(
+    config_path: Annotated[Path, typer.Option("--config")],
+    prompt: Annotated[
+        str | None, typer.Option("--prompt", help="설정의 고정 prompt 대신 사용할 입력")
+    ] = None,
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """greedy 또는 확률 sampling으로 checkpoint에서 텍스트를 생성합니다."""
+    _m5_command("generate", config_path, dry_run, prompt)
+
+
+@app.command("benchmark")
+def benchmark_run(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """cache 추론 latency, 처리량과 CUDA peak memory를 측정합니다."""
+    _m5_command("benchmark", config_path, dry_run)
 
 
 @train_app.command("run")

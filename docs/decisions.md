@@ -105,3 +105,12 @@
 - 대안: PyTorch DataLoader의 일반 shuffle은 worker prefetch 상태까지 재현하기 어렵다. 문서별 무작위 표본화는 짧은 문서 편향과 shard 경계 계약을 복잡하게 한다. 외부 실험 추적기는 오프라인·로컬 재현 요구에 맞지 않는다.
 - 결과: 기본 경로는 worker 0인 단일 프로세스이며 checkpoint 직후 재개가 CPU에서 bitwise 동일하다. bf16은 scaler를 사용하지 않고 fp16 CUDA만 GradScaler를 사용한다. config/corpus/tokenizer/model/shard fingerprint가 하나라도 다르면 재개를 거부한다.
 - 검증: shard 경계 window, sampler 복구, accumulation 동등성, LR 경계, CPU 50-step overfit, bitwise 중단·재개, 손상 checkpoint/shard와 NaN 오류주입, CLI train/resume/smoke를 자동 검사한다.
+
+## ADR-014: 검증 가능한 KV cache와 fingerprint 봉인 평가 artifact
+
+- 상태: 승인
+- 배경: 추론 최적화가 cache 없는 모델의 수치 의미를 바꾸거나, 서로 다른 checkpoint·tokenizer·shard를 섞은 평가가 정상 결과처럼 저장되면 비교 실험을 신뢰할 수 없다.
+- 결정: prompt 전체 prefill 뒤 layer별 RoPE 적용 K/V를 저장하고 이후 token의 절대 position offset을 누적한다. 명시적 causal mask를 cache/no-cache 양쪽에 공유한다. 평가 runtime은 학습 config, model, corpus, tokenizer, shard fingerprint와 checkpoint checksum을 모두 확인한다. JSON/Markdown은 payload fingerprint와 별도 checksum manifest로 봉인한다.
+- 대안: `is_causal=True`와 동적 cache 구현은 간단하지만 offset query mask 의미를 backend에 맡긴다. checkpoint만 읽고 모델 YAML을 사용하면 tokenizer·데이터 혼합을 탐지하지 못한다. 외부 평가 framework는 범위가 크고 현재 오프라인·한국어 artifact 계약을 직접 충족하지 않는다.
+- 결과: cache/no-cache logits와 greedy 생성이 동등하며 sampling seed, EOS, 문맥 제한이 명시적으로 재현된다. artifact 비교 시 입력과 파일 무결성을 함께 확인할 수 있다.
+- 검증: CPU logits/생성 parity, top-k/top-p/temperature/seed/repetition, EOS/max token/context, checksum 변조·fingerprint 불일치, CLI E2E와 가능한 CUDA latency-memory smoke를 통과해야 한다.

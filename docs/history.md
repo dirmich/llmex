@@ -97,3 +97,34 @@
 - CPU: 50 optimizer step loss 감소, 연속/중단·재개 state bitwise 동일, NaN·손상·fingerprint 오류주입 통과
 - NVIDIA GB10 CUDA: bf16 autocast 실제 2-step train/validation, JSONL CUDA peak memory, latest/best checkpoint 통과
 - `git diff --check`: whitespace 오류 없음
+
+## 2026-07-11 · M5 평가와 추론
+
+- 패키지와 프로젝트 버전을 `0.6.0`으로 올리고 lockfile을 동기화했다.
+- checkpoint, 학습 설정, 모델, tokenizer, corpus와 shard fingerprint 및 tokenizer artifact checksum/special ID/vocab 형상을 묶은 엄격한 추론 runtime을 구현했다.
+- validation/test의 합산 NLL, token loss/perplexity, UTF-8 byte 정규화 NLL·bits/byte·byte perplexity를 구현했다.
+- provenance를 가진 고정 Korean Wikipedia 형식 cloze schema와 띄어쓰기·조사/어미·고유명사·숫자/날짜 고정 prompt suite를 추가했다.
+- greedy, temperature, top-k, top-p, seed, sign-aware repetition penalty와 배치별 EOS, max-new-token, 모델 문맥 제한 처리를 구현했다.
+- KV cache prefill/decode offset 계약을 유지하고 cache/no-cache 다음-token logits 수치 동등성과 greedy 생성 완전 동등성을 자동 검증했다.
+- 생성 반복률, distinct-1/2, UTF-8 유효성, EOS/문맥 종료, exact substring 및 문자 5-gram near contamination, canary/긴 생성 train match 결과를 보고한다.
+- JSON/Markdown 평가·생성·benchmark artifact와 SHA-256 checksum manifest, payload fingerprint를 원자적으로 생성한다.
+- 한국어 도움말, 구조화 오류 코드와 side-effect 없는 dry-run을 갖춘 root `eval`, `generate`, `benchmark` CLI를 추가했다.
+- CPU CLI E2E에서 실제 checkpoint를 생성해 세 명령과 artifact를 검증했다. CUDA가 보이는 환경에서는 synchronize 기반 latency/token-s 및 peak allocated memory를 기록한다.
+
+### M5 마감 검증 기록
+
+- `uv sync --frozen`: lockfile 변경 없이 동기화 통과
+- `uv run ruff format --check .`; `uv run ruff check .`: 통과
+- `uv run pyright`: strict 오류 0건
+- `uv run pytest -q`: 전체 테스트 통과
+- `uv run llmex eval|generate|benchmark --dry-run`: side effect 없이 통과
+- CPU checkpoint CLI E2E와 cache/no-cache logits·생성 동등성: 통과
+- CUDA smoke/latency-memory: 실행 환경의 CUDA 가용성에 따라 결과 기록
+- `git diff --check`: whitespace 오류 없음
+
+### M5 GB10 CUDA smoke/benchmark 실측
+
+- PyTorch `2.13.0+cu130`이 NVIDIA GB10을 인식했다.
+- 2-layer, `d_model=64`, context 64 임시 모델에서 KV cache greedy 16-token 생성을 수행했다.
+- latency `0.377293초`, 처리량 `42.407 token/s`, PyTorch peak allocation `34,166,272 byte`였다.
+- cache decode logits는 모두 유한값이었다. 이 수치는 기능 smoke이며 baseline 모델 성능 수치가 아니다.

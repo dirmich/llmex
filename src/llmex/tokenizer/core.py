@@ -149,7 +149,7 @@ def verify_round_trip(tokenizer: Tokenizer, samples: Iterator[str]) -> int:
         encoded = tokenizer.encode(text)
         if SPECIAL_IDS["<unk>"] in encoded.ids:
             raise IntegrityError(f"UNK가 생성되었습니다: sample={count}")
-        if tokenizer.decode(encoded.ids) != text:
+        if tokenizer.decode(encoded.ids, skip_special_tokens=False) != text:
             raise IntegrityError(f"Unicode round-trip 실패: sample={count}")
         count += 1
     return count
