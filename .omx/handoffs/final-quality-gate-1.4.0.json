@@ -1,0 +1,9 @@
+{
+  "version": "1.4.0",
+  "commit": "269d369",
+  "aiSlopCleaner": {"status": "PASSED", "report": ".omx/handoffs/final-cleaner-1.3.0.md"},
+  "verification": {"pytest": "62 passed", "ruff": "passed", "pyright": "0 errors", "releaseAudit": "passed", "build": "wheel and sdist passed", "diffCheck": "passed"},
+  "codeReview": {"status": "APPROVE", "report": ".omx/handoffs/final-code-reviewer-1.4.0.md"},
+  "architectReview": {"status": "CLEAR", "report": ".omx/handoffs/final-architect-1.4.0.md"},
+  "architectureInvariantGate": {"status": "PASSED", "evidence": ["stage nonce binding", "issued_at stage-start boundary", "replay rejection", "final telemetry digest revalidation", "Ed25519 pinned trust chain"]}
+}
