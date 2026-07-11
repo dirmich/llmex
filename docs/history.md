@@ -128,3 +128,15 @@
 - 2-layer, `d_model=64`, context 64 임시 모델에서 KV cache greedy 16-token 생성을 수행했다.
 - latency `0.377293초`, 처리량 `42.407 token/s`, PyTorch peak allocation `34,166,272 byte`였다.
 - cache decode logits는 모두 유한값이었다. 이 수치는 기능 smoke이며 baseline 모델 성능 수치가 아니다.
+## 2026-07-11 · M6 전체 pipeline 계약과 외부 baseline gate (0.7.0)
+
+- `PipelineConfig`에 저장공간·available memory·시간·에너지·파라미터·token 예산, 단계 명령, 출력, timeout과 필수 증거를 엄격히 모델링했다.
+- `llmex pipeline preflight/run/status/drill/export`를 추가했다. 명령은 shell을 거치지 않고 실행되며 단계별 stdout/stderr tail, 종료 코드, 경과 시간, 출력 존재, config/evidence SHA-256과 재개 상태를 보존한다.
+- 외부 단계는 필수 증거가 모두 존재하고 `--allow-external`을 명시하지 않으면 실행하지 않는다. 전체 dump나 장기 학습이 없을 때 완료로 보이는 fall-through를 차단했다.
+- baseline을 정확히 87,804,672 parameters, 16k vocab, context 1024로 고정하고 120M 상한, 최대 6.5536B token, 168시간, 35kWh 예산을 설정했다.
+- aarch64 DGX Spark에서 preflight와 model inspect를 실제 실행했다. available memory 약 27.6GiB, NVMe free 약 1.90TiB로 통과했고 모델/AdamW 정적 추정은 약 335MiB/1.31GiB였다.
+- Wikimedia 20260701 dump 1,398,909,939 bytes를 실제 다운로드했다. 공식 SHA-1 `291b50…e1f98`과 일치했고 로컬 SHA-256 `991b26…5582`를 계산했다. 실제 선두 1,000문서 canary에서 997문서가 통과하고 exact 중복은 0건이었다.
+- 같은 실제 canary로 16k/32k tokenizer를 모두 학습·평가했다. 32k가 token 수를 8.46% 줄였지만 artifact/embedding 비용 때문에 전체 corpus 처리량 승인 전 16k를 조건부 선택했다.
+- GB10에서 87.8M 모델을 context 256, micro batch 1로 실제 100 step 학습해 41.12초, 마지막 2,479.94 token/s, PyTorch peak 1.67GiB를 기록했고 고정 NGC container bf16 smoke도 재통과했다.
+- fixture pipeline test가 외부 대기→증거 공급→재개 완료, 출력 검증, 상태 fingerprint 복구 drill, dashboard export와 CLI status를 검증한다.
+- `docs/baseline-report.md`, `docs/baseline-runbook.md`, ADR-015/016과 M6 검증표를 추가하고 모든 사용자 노출 설명을 한국어로 작성했다.

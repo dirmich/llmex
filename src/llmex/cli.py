@@ -13,6 +13,7 @@ from llmex.config import (
     DataConfig,
     EvaluationConfig,
     ModelConfig,
+    PipelineConfig,
     StrictModel,
     TokenizerConfig,
     TrainingConfig,
@@ -52,6 +53,9 @@ data_app = typer.Typer(help="Wikimedia M1 데이터 파이프라인을 실행합
 tokenizer_app = typer.Typer(help="M2 토크나이저와 token shard를 생성합니다.", no_args_is_help=True)
 model_app = typer.Typer(help="M3 decoder-only 모델을 검사합니다.", no_args_is_help=True)
 train_app = typer.Typer(help="M4 결정적 학습과 checkpoint 재개를 실행합니다.", no_args_is_help=True)
+pipeline_app = typer.Typer(
+    help="M6 전체 파이프라인과 외부 게이트를 관리합니다.", no_args_is_help=True
+)
 app.add_typer(config_app, name="config")
 app.add_typer(fingerprint_app, name="fingerprint")
 app.add_typer(run_app, name="run")
@@ -59,6 +63,7 @@ app.add_typer(data_app, name="data")
 app.add_typer(tokenizer_app, name="tokenizer")
 app.add_typer(model_app, name="model")
 app.add_typer(train_app, name="train")
+app.add_typer(pipeline_app, name="pipeline")
 
 
 class ConfigKind(StrEnum):
@@ -69,6 +74,7 @@ class ConfigKind(StrEnum):
     TOKENIZER = "tokenizer"
     TRAINING = "training"
     EVALUATION = "evaluation"
+    PIPELINE = "pipeline"
 
 
 def _model(kind: ConfigKind) -> type[StrictModel]:
@@ -80,12 +86,75 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return TrainingConfig
     if kind is ConfigKind.EVALUATION:
         return EvaluationConfig
+    if kind is ConfigKind.PIPELINE:
+        return PipelineConfig
     return ModelConfig
 
 
 def _emit_error(error: LlmexError) -> Never:
     logging.getLogger("llmex").error(str(error), extra={"fields": {"error_code": error.code.name}})
     raise typer.Exit(code=int(error.code))
+
+
+def _pipeline_call(config_path: Path, action: str, allow_external: bool = False) -> None:
+    try:
+        config = load_yaml(config_path, PipelineConfig)
+        from llmex.pipeline import export, preflight, recovery_drill, run
+
+        if action == "preflight":
+            result = preflight(config)
+        elif action == "export":
+            result = export(config)
+        elif action == "drill":
+            result = recovery_drill(config)
+        elif action == "status":
+            result = json.loads(
+                (config.run_dir / "pipeline-status.json").read_text(encoding="utf-8")
+            )
+        else:
+            result = run(config, allow_external=allow_external)
+    except (LlmexError, OSError, json.JSONDecodeError) as error:
+        if isinstance(error, LlmexError):
+            _emit_error(error)
+        from llmex.errors import InputError
+
+        _emit_error(InputError(f"pipeline artifact를 읽을 수 없습니다: {error}"))
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@pipeline_app.command("preflight")
+def pipeline_preflight(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """저장공간·메모리·모델 크기 예산을 실행 전에 검사합니다."""
+    _pipeline_call(config_path, "preflight")
+
+
+@pipeline_app.command("run")
+def pipeline_run(
+    config_path: Annotated[Path, typer.Option("--config")],
+    allow_external: Annotated[
+        bool, typer.Option(help="외부 증거가 갖춰진 단계를 실행합니다.")
+    ] = False,
+) -> None:
+    """완료 단계는 건너뛰며 전체 단계를 재개 실행합니다."""
+    _pipeline_call(config_path, "run", allow_external)
+
+
+@pipeline_app.command("status")
+def pipeline_status(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """현재 단계별 상태와 재개 가능 여부를 출력합니다."""
+    _pipeline_call(config_path, "status")
+
+
+@pipeline_app.command("drill")
+def pipeline_drill(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """중간 파일 제거 뒤 상태 불변성과 복구 경로를 검증합니다."""
+    _pipeline_call(config_path, "drill")
+
+
+@pipeline_app.command("export")
+def pipeline_export(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """JSON/Markdown 대시보드와 메트릭 묶음을 내보냅니다."""
+    _pipeline_call(config_path, "export")
 
 
 @app.callback()

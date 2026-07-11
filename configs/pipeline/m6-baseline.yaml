@@ -1,0 +1,43 @@
+name: m6-baseline
+seed: 42
+run_dir: runs/m6-baseline
+budget:
+  minimum_free_disk_gib: 40.0
+  minimum_available_memory_gib: 16.0
+  maximum_hours: 168.0
+  maximum_energy_kwh: 35.0
+  maximum_parameters: 120000000
+  token_budget: 6553600000
+tokenizer_candidates: [16000, 32000]
+selected_tokenizer: 16000
+baseline_parameters: 87804672
+required_evidence:
+  - runs/m6-baseline/evidence/wikimedia-metadata.json
+  - runs/m6-baseline/evidence/human-audit-approved.json
+  - runs/m6-baseline/evidence/dgx-100-step-benchmark.json
+  - runs/m6-baseline/evidence/tokenizer-comparison.json
+  - runs/m6-baseline/evidence/pilot-approved.json
+stages:
+  - name: local-contracts
+    command: [uv, run, llmex, config, validate, configs/training/baseline-100m.yaml, --kind, training]
+    outputs: []
+    timeout_seconds: 120
+  - name: model-inspect
+    command: [uv, run, llmex, model, inspect, --config, configs/model/baseline-100m.yaml, --output, runs/m6-baseline/model-inspect.json, --force]
+    outputs: [runs/m6-baseline/model-inspect.json]
+    timeout_seconds: 300
+  - name: full-data
+    command: [uv, run, llmex, data, sample-e2e, --config, configs/data/sample.yaml, --input, data/raw/kowiki-20260701-pages-articles-multistream.xml.bz2, --output-dir, data/processed/canary-1000, --max-documents, "1000"]
+    outputs: [data/processed/canary-1000/data-manifest.json, data/processed/canary-1000/audit-sample.json]
+    external: true
+    timeout_seconds: 86400
+  - name: tokenizer-comparison
+    command: [uv, run, llmex, tokenizer, evaluate, --config, configs/tokenizer/bpe-16k.yaml]
+    outputs: [artifacts/tokenizers/bpe-16k/evaluation.json]
+    external: true
+    timeout_seconds: 86400
+  - name: baseline-training
+    command: [uv, run, llmex, train, resume, --config, configs/training/baseline-100m.yaml]
+    outputs: [runs/baseline-100m/checkpoints/latest.pt]
+    external: true
+    timeout_seconds: 604800

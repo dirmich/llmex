@@ -212,6 +212,52 @@ class EvaluationConfig(StrictModel):
     benchmark_iterations: int = Field(default=5, gt=0)
 
 
+class BudgetConfig(StrictModel):
+    """M6 실행을 중단시키는 자원 상한과 최소 여유."""
+
+    minimum_free_disk_gib: float = Field(gt=0.0)
+    minimum_available_memory_gib: float = Field(gt=0.0)
+    maximum_hours: float = Field(gt=0.0)
+    maximum_energy_kwh: float = Field(gt=0.0)
+    maximum_parameters: int = Field(gt=0, le=120_000_000)
+    token_budget: int = Field(gt=0)
+
+
+class PipelineStageConfig(StrictModel):
+    """shell 해석 없이 실행하는 재개 가능한 한 단계."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    command: list[str] = Field(min_length=1)
+    outputs: list[YamlPath] = []
+    external: bool = False
+    timeout_seconds: int = Field(default=3600, gt=0)
+
+
+class PipelineConfig(StrictModel):
+    """M6 전체 파이프라인과 외부 승인 게이트."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    run_dir: YamlPath
+    budget: BudgetConfig
+    stages: list[PipelineStageConfig] = Field(min_length=1)
+    required_evidence: list[YamlPath] = []
+    tokenizer_candidates: list[Literal[16000, 32000]] = [16000, 32000]
+    selected_tokenizer: Literal[16000, 32000]
+    baseline_parameters: int = Field(gt=0, le=120_000_000)
+
+    @model_validator(mode="after")
+    def validate_pipeline(self) -> "PipelineConfig":
+        names = [stage.name for stage in self.stages]
+        if len(names) != len(set(names)):
+            raise ValueError("pipeline 단계 이름은 중복될 수 없습니다")
+        if self.selected_tokenizer not in self.tokenizer_candidates:
+            raise ValueError("선택 tokenizer는 비교 후보에 포함되어야 합니다")
+        if self.baseline_parameters > self.budget.maximum_parameters:
+            raise ValueError("baseline 파라미터가 승인 예산을 초과합니다")
+        return self
+
+
 ConfigT = TypeVar("ConfigT", bound=StrictModel)
 
 

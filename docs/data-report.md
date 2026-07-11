@@ -45,4 +45,5 @@ uv run llmex data sample-e2e --config configs/data/sample.yaml \
 ## 현재 검증 범위
 
 - 완료: 외부 네트워크 없는 확장 fixture smoke, 손상 checksum, local HTTP Range resume, namespace/redirect/latest revision, markup golden, 품질 필터, attribution, exact/near dedup, split 상호 배타성, schema v1 ZST round-trip, deterministic E2E corpus hash.
-- 미실행: 실제 Korean Wikipedia 전체 dump 다운로드와 실제 입력 1,000문서 canary/100건 사람 검토. 기능과 자동 감사 산출물 생성은 구현했지만 실제 canary 통과로 간주하지 않는다.
+- 실제 실행: 2026-07-11에 `20260701` dump 1,398,909,939 bytes를 다운로드했다. 공식 SHA-1과 일치했고 로컬 SHA-256은 `991b26eb4588d2eddafd472a3b7dd2a8503740fb3e6c46d14baeef60d83e5582`다. 1,000문서 canary에서 997문서가 통과했고 exact 중복 0, train/validation/test 978/10/9였다. 자동 감사 100건 artifact는 생성했으나 사람 판정은 미완료다.
+- 미실행: 전체 dump의 모든 문서 정제와 100건 사람 검토.

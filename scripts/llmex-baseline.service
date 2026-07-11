@@ -1,0 +1,15 @@
+[Unit]
+Description=LLMEX M6 한국어 Wikipedia baseline 학습
+After=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/workspace/llmex
+ExecStart=/usr/bin/docker compose run --rm --gpus all dev uv run llmex pipeline run --config configs/pipeline/m6-baseline.yaml --allow-external
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=300
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

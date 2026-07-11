@@ -114,3 +114,18 @@
 - 대안: `is_causal=True`와 동적 cache 구현은 간단하지만 offset query mask 의미를 backend에 맡긴다. checkpoint만 읽고 모델 YAML을 사용하면 tokenizer·데이터 혼합을 탐지하지 못한다. 외부 평가 framework는 범위가 크고 현재 오프라인·한국어 artifact 계약을 직접 충족하지 않는다.
 - 결과: cache/no-cache logits와 greedy 생성이 동등하며 sampling seed, EOS, 문맥 제한이 명시적으로 재현된다. artifact 비교 시 입력과 파일 무결성을 함께 확인할 수 있다.
 - 검증: CPU logits/생성 parity, top-k/top-p/temperature/seed/repetition, EOS/max token/context, checksum 변조·fingerprint 불일치, CLI E2E와 가능한 CUDA latency-memory smoke를 통과해야 한다.
+
+## ADR-015: M6 로컬 완료와 외부 baseline 완료의 분리
+
+- 상태: 승인
+- 배경: 전체 dump 처리, 100건 사람 판정, 100-step DGX benchmark와 장기 학습은 코드 구현 완료 여부와 달리 네트워크·장비·시간 승인이 필요하다.
+- 결정: `llmex pipeline`이 로컬 단계, 자원 예산, 외부 증거 목록, 단계 상태와 재개 명령을 fingerprint로 봉인한다. 외부 단계는 `required_evidence`가 모두 존재하고 `--allow-external`을 명시한 경우에만 실행한다.
+- 결과: 외부 작업을 실행하지 않고 완료로 표시할 수 없다. 120M 초과 모델은 100M baseline 완료 전 설정 검증에서 거부한다.
+- 검증: fixture E2E에서 외부 증거 누락 대기, 승인 후 재개, 출력 확인, 실패 복구 drill과 JSON/Markdown export를 검사한다.
+
+## ADR-016: 87.8M·16k baseline 선택
+
+- 상태: 승인
+- 결정: 12층, 폭 768, GQA 12/4, context 1024, SwiGLU 2048, vocab 16k의 정확히 87,804,672 파라미터 프로파일을 첫 baseline으로 고정한다. token budget은 최대 6,553,600,000개다.
+- 이유: 16k는 embedding 비용을 낮추고 기존 byte fallback/UNK 0 계약을 유지한다. 32k가 실제 전체 corpus에서 유의미한 sequence 감소를 증명하면 별도 ADR로 변경한다.
+- 검증: 두 tokenizer의 동일 10,000문서 효율 JSON이 없으면 선택 gate는 대기 상태다. 현재 선택은 예산상 기본값이지 실제 비교 승인이 아니다.

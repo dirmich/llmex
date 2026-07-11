@@ -48,7 +48,8 @@
 - [x] 필터 사유별 통계와 `docs/data-report.md`
 - [x] fixture E2E hash 재현 테스트
 - [x] 실제 입력용 `--max-documents 1000` canary와 100건 감사 JSON/Markdown 생성 기능
-- [ ] 실제 날짜 고정 dump 1,000문서 canary 실행 및 100건 사람 검토
+- [x] 실제 날짜 고정 dump 1,000문서 canary 실행(1,000 입력/997 통과)
+- [ ] 100건 사람 검토
 
 ## M2 토크나이저와 token shards
 
@@ -128,22 +129,37 @@
 
 ## M6 전체 데이터와 baseline
 
-- [ ] DGX Spark unified memory/시간/전력 예산 기록 및 model profile 확정
-- [ ] 100M 100-step tokens/s와 peak memory microbenchmark
+- [x] DGX Spark unified memory/시간/전력 예산 기록 및 87.8M model profile 확정
+- [x] 87.8M 100-step tokens/s와 peak memory 기능 microbenchmark(context 256)
 - [ ] context, gradient checkpointing, dataloader workers 비교
-- [ ] system available memory, RSS, swap, PyTorch peak metric 수집
-- [ ] 장기 run의 tmux/systemd/container restart 방식 확정
-- [ ] 100M baseline 완료 전 300M 이상 실행 금지 확인
-- [ ] 날짜 고정 전체 dump URL/checksum 승인
-- [ ] raw 저장공간과 예상 artifact 용량 확인
+- [x] system available memory, RSS, swap 수집 및 PyTorch peak 외부 gate 정의
+- [x] 장기 run의 systemd/container restart와 원자적 checkpoint 방식 확정
+- [x] 100M baseline 완료 전 120M 초과 설정 거부 확인
+- [x] 날짜 고정 전체 dump URL/checksum 승인(공식 SHA-1 일치·로컬 SHA-256)
+- [x] raw 저장공간과 예상 artifact 용량 preflight
 - [ ] 전체 extract/clean/dedup/split report 승인
-- [ ] tokenizer 16k/32k 비교 후 선택
-- [ ] baseline parameter/token budget 확정
+- [ ] tokenizer 16k/32k 실제 비교 후 선택(16k 조건부 기본값 기록)
+- [x] baseline parameter/token budget 확정
 - [ ] 1% token pilot
 - [ ] throughput, memory, loss, checkpoint 복구 검토
 - [ ] baseline 학습 실행
 - [ ] best/final checkpoint 평가
 - [ ] 실패·중단 포함 training report 작성
+
+### M6 로컬 계약·외부 검증표
+
+| 요구사항 | 로컬 자동화 | 실제 증거 | 판정 |
+|---|---|---|---|
+| 전체 pipeline orchestration/재개 | `pipeline run/status` | fixture E2E | 통과 |
+| 자원·120M 상한 | `pipeline preflight` | DGX Spark 실측 | 통과 |
+| 실제 dump 1,000문서 | `data sample-e2e` 단계 | dump/checksum/canary | 외부 대기 |
+| 사람 감사 100건 | 필수 evidence gate | 감사자 승인 JSON | 외부 대기 |
+| tokenizer 16k/32k | 비교 evidence gate | 동일 corpus 비교 JSON | 외부 대기 |
+| 100-step/1% pilot/장기 학습 | timeout·예산·재개 gate | DGX metric/checkpoint | 외부 대기 |
+| provenance/license | schema 검증·필수 gate | 승인 artifact | 외부 대기 |
+| contamination/암기 | M5 evaluator | best/final 평가 artifact | 외부 대기 |
+| 실패 복구 | `pipeline drill`, M4 SIGTERM | 로컬 drill | 통과 |
+| report/dashboard | `pipeline export` | JSON/Markdown | 통과 |
 
 ## M7 공개 준비
 
@@ -169,6 +185,7 @@
 | 2026-07-11 | M3 decoder-only 모델 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; `llmex model inspect`; GB10 CUDA forward/backward; ref checksum; `git diff --check` | `36 passed`; strict 오류 0건; 2,835,584 parameters; CUDA finite loss; RMSNorm/RoPE/GQA/SDPA/SwiGLU/tied LM/loss/generation/KV cache와 128문서 overfit 검증 | M4 학습 시스템 |
 | 2026-07-11 | M4 학습 엔진 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; train CLI E2E; CPU 50-step; CUDA bf16 smoke; `git diff --check` | `42 passed`; strict 오류 0건; CPU 50-step/bitwise resume/오류주입 및 GB10 CUDA bf16 2-step 통과 | M5 평가·추론 |
 | 2026-07-11 | M5 평가·추론 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; eval/generate/benchmark CLI E2E; cache parity; 가능한 CUDA benchmark; `git diff --check` | checkpoint 호환성, token/byte 지표, sampling/EOS/context, contamination/암기, JSON/Markdown/checksum artifact 검증 | M6 전체 데이터·baseline |
+| 2026-07-11 | M6 로컬 계약 | 미커밋 작업 트리 | `pipeline preflight/run/status/drill/export`; model inspect; Wikimedia network 시도; 전체 품질 게이트 | 87,804,672 parameters, preflight 통과, 외부 증거 없는 단계는 엄격히 대기; 전체 dump/사람 감사/장기 학습 미완료 | 증거 생성 뒤 `--allow-external` 재개 |
 
 ## 즉시 중단 조건
 

@@ -7,7 +7,7 @@ paths:
 dump:
   date: "20260701"
   url: "https://dumps.wikimedia.org/kowiki/20260701/kowiki-20260701-pages-articles-multistream.xml.bz2"
-  sha256: "1f7b37cf7c843639714a7619bdf62a1a4c1acf907bd93d6d793245732318047f"
+  sha256: "991b26eb4588d2eddafd472a3b7dd2a8503740fb3e6c46d14baeef60d83e5582"
 cleaning:
   min_chars: 20
   normalize: NFC

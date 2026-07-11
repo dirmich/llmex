@@ -19,4 +19,6 @@
 
 ## 검증 범위와 한계
 
-오프라인 M1 형식 fixture에서 한글 완성형, 호환 자모, NFD 자모, emoji ZWJ, 한자, ASCII, combining marks를 검증한다. Hypothesis Unicode property test와 seed가 고정된 10,000표본도 round-trip과 UNK 0건을 확인한다. validation/test 문장을 바꿔도 학습 tokenizer checksum이 같아야 하며 source SHA-256이 split 사이에 겹치면 즉시 실패한다. M2 완료는 fixture 재현성에 대한 결론이며, 실제 전체 Wikipedia의 16k/32k 품질 선택은 M6에서 수행한다.
+오프라인 M1 형식 fixture에서 한글 완성형, 호환 자모, NFD 자모, emoji ZWJ, 한자, ASCII, combining marks를 검증한다. Hypothesis Unicode property test와 seed가 고정된 10,000표본도 round-trip과 UNK 0건을 확인한다. validation/test 문장을 바꿔도 학습 tokenizer checksum이 같아야 하며 source SHA-256이 split 사이에 겹치면 즉시 실패한다.
+
+M6에서 실제 dump 선두 1,000문서 canary의 정제 997문서로 비교했다. 16k는 2,887,717 token·2.1666 chars/token, 32k는 2,643,299 token·2.3669 chars/token이었다. 32k가 token 수를 8.46% 줄였지만 vocab artifact와 embedding 비용이 커서 전체 corpus/DGX throughput 승인 전 16k를 조건부 선택했다. 두 결과의 checksum은 M6 evidence에 보존한다.
