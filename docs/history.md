@@ -227,3 +227,11 @@
 - 비밀키는 저장소, 로그 또는 명령 인자에 저장하지 않는다.
 - 새 production policy는 fail-closed provisioning anchor로 교체했다. 실제 issuer private key는
   보호된 CI KMS/HSM에서 별도로 provisioning해야 한다.
+
+## 2026-07-11 — 한국어 실행 가이드 추가
+
+- `docs/run-guide.md`에 공식 Wikimedia dump URL·SHA-1과 프로젝트 고정 SHA-256을 구분해 기록했다.
+- data download, 1,000문서 canary E2E, 전체 extract/clean/dedup/split/report, tokenizer
+  train/evaluate/pack, model inspect, smoke train/resume, eval/generate/benchmark의 실제 `uv run`
+  명령과 입력·출력 경로를 실행 순서대로 정리했다.
+- `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
