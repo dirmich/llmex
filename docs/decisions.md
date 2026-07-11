@@ -51,6 +51,13 @@
 - 이유: GPU와 CPU, OS, dataloader, page cache가 같은 메모리를 공유하며 과도한 swap은 학습을 사실상 정지시킬 수 있다.
 - 결과: RSS, available memory, swap, PyTorch peak memory를 동시에 관측한다.
 
+## ADR-009: 엄격한 YAML과 JSON 구조화 로그
+
+- 상태: 승인
+- 결정: YAML은 Pydantic strict 모델로 검증하고 알 수 없는 키와 암묵적 타입 변환을 거부한다. CLI 로그는 stderr JSON Lines, 결과는 stdout으로 분리한다.
+- 이유: 오타가 조용히 기본값으로 바뀌는 재현성 문제를 막고 자동화가 오류 코드를 안정적으로 판별하게 한다.
+- 검증: 잘못된 타입·알 수 없는 키·형상 불변조건·CLI 종료 코드 테스트를 통과해야 한다.
+
 ## ADR 템플릿
 
 ```text

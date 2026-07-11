@@ -4,29 +4,29 @@
 
 ## M0 저장소와 개발 환경
 
-- [ ] Git 저장소 초기화 및 `AGENTS.md` 작성
-- [ ] `0.ref/README.md`를 읽고 `SHA256SUMS` 무결성 검사
-- [ ] 구현 코드에서 `0.ref` import를 금지하는 경계 확인
-- [ ] DGX Spark의 DGX OS, ARM64, driver, CUDA, NVMe 용량 기록
-- [ ] `nvidia-smi`의 iGPU memory 표시 한계 확인
-- [ ] NVIDIA Container Runtime GPU smoke test
-- [ ] ARM64 호환 NGC PyTorch image 선택 및 digest 고정
-- [ ] Dockerfile과 `docker-compose.yml` 작성
-- [ ] source/data/artifacts/runs host bind mount 구성
-- [ ] container PyTorch CUDA bf16 matmul smoke test
-- [ ] `docs/environment.md`에 재현 환경 기록
-- [ ] `uv init --package`로 Python 3.11+ 패키지 생성
-- [ ] runtime/dev 의존성 그룹과 lockfile 생성
-- [ ] `.gitignore`, `.env.example`, `README.md`, `Makefile` 작성
-- [ ] `src/llmex` layout과 Typer root CLI 생성
-- [ ] YAML 로더와 Pydantic config 모델 작성
-- [ ] 공통 path/run/fingerprint 유틸리티 작성
-- [ ] 구조화 로그와 오류 코드 규칙 작성
-- [ ] `configs/data/sample.yaml`, `configs/model/smoke.yaml` 작성
-- [ ] 외부 네트워크 없는 XML fixture 추가
-- [ ] Ruff, Pyright, Pytest 설정
-- [ ] GitHub Actions 또는 로컬 CI 스크립트 작성
-- [ ] `uv run llmex --help`, lint, typecheck, test 통과
+- [x] Git 저장소 초기화 및 `AGENTS.md` 작성
+- [x] `0.ref/README.md`를 읽고 `SHA256SUMS` 무결성 검사
+- [x] 구현 코드에서 `0.ref` import를 금지하는 경계 확인
+- [x] DGX Spark의 DGX OS, ARM64, driver, CUDA, NVMe 용량 기록
+- [x] `nvidia-smi`의 iGPU memory 표시 한계 확인
+- [x] NVIDIA Container Runtime GPU smoke test
+- [x] ARM64 호환 NGC PyTorch image 선택 및 digest 고정
+- [x] Dockerfile과 `docker-compose.yml` 작성
+- [x] source/data/artifacts/runs host bind mount 구성
+- [x] container PyTorch CUDA bf16 matmul smoke test
+- [x] `docs/environment.md`에 재현 환경 기록
+- [x] `uv init --package`에 준하는 Python 3.11+ 패키지 생성
+- [x] runtime/dev 의존성 그룹과 lockfile 생성
+- [x] `.gitignore`, `.env.example`, `README.md`, `Makefile` 작성
+- [x] `src/llmex` layout과 Typer root CLI 생성
+- [x] YAML 로더와 Pydantic config 모델 작성
+- [x] 공통 path/run/fingerprint 유틸리티 작성
+- [x] 구조화 로그와 오류 코드 규칙 작성
+- [x] `configs/data/sample.yaml`, `configs/model/smoke.yaml` 작성
+- [x] 외부 네트워크 없는 XML fixture 추가
+- [x] Ruff, Pyright, Pytest 설정
+- [x] GitHub Actions 또는 로컬 CI 스크립트 작성
+- [x] `uv run llmex --help`, lint, typecheck, test 통과
 
 ## M1 Wikipedia 데이터
 
@@ -152,7 +152,7 @@
 
 | 날짜 | milestone | commit/run | 검증 명령 | 결과/artifact | 다음 작업 |
 |---|---|---|---|---|---|
-| - | - | - | - | - | M0 첫 항목 |
+| 2026-07-11 | M0 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff lint/format; Pyright; Pytest; CLI help; ref checksum; `docker compose config`; `git diff --check`; DGX Spark CUDA smoke | `14 passed`; GB10/CUDA 13.0/bf16 `finite=true`; NGC 25.10 digest 고정 | M1 Wikipedia 데이터 |
 
 ## 즉시 중단 조건
 

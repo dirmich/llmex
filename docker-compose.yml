@@ -1,0 +1,28 @@
+services:
+  dev:
+    build:
+      context: .
+      args:
+        LLMEX_BASE_IMAGE: ${LLMEX_BASE_IMAGE:-nvcr.io/nvidia/pytorch:25.10-py3@sha256:42263b2424fc237b34c4fc4a91c30d603c57eed36e37d31ff6d9a4f1f801edee}
+    working_dir: /workspace
+    ipc: host
+    environment:
+      LLMEX_ROOT: /workspace
+    volumes:
+      - type: bind
+        source: ${LLMEX_ROOT:-.}
+        target: /workspace
+      - type: bind
+        source: ${LLMEX_DATA_DIR:-./data}
+        target: /workspace/data
+      - type: bind
+        source: ${LLMEX_ARTIFACTS_DIR:-./artifacts}
+        target: /workspace/artifacts
+      - type: bind
+        source: ${LLMEX_RUNS_DIR:-./runs}
+        target: /workspace/runs
+    command: ["llmex", "--help"]
+
+  offline:
+    extends: dev
+    network_mode: none
