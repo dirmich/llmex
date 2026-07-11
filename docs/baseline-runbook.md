@@ -45,3 +45,7 @@ cat runs/m6-baseline/dashboard.md
 subject Git commit/config fingerprint, artifact path/SHA-256 및 보호 CI 서명을 포함한다. 같은 대상에
 결속된 `resource-usage.json`은 `resource-usage` kind, `final=true`, 누적 tokens/energy_kwh와 서명을
 가져야 한다. 하나라도 없거나 만료·변조되면 `--allow-external`이어도 단계는 실행되지 않고 대기한다.
+
+## 1.3.0 external stage 최종 telemetry 순서
+
+실행 전 존재하는 `resource-usage.json`은 최종 승인으로 재사용하지 않는다. live polling은 조기 중단을 위한 보조 장치다. external command 종료 뒤 새로 생성된 final 진술이 실행 전 digest와 달라야 하며, Ed25519 issuer 서명과 commit/config/stage/run-id, 승인 token·energy 예산 및 실제 최종 사용량 상한을 모두 통과해야 단계가 완료된다. unsigned, `final=false`, stale replay, 변조, NaN/음수, 예산 초과는 전체 pipeline을 실패로 기록한다.

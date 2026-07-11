@@ -157,3 +157,9 @@
 - **평가·원자 계약:** 평가 near contamination은 문자 5-gram Jaccard이며 MinHash가 아니다.
   canary provenance 부재는 미실행/실패다. JSONL.ZST와 dashboard Markdown도 file/directory
   fsync 뒤 atomic replace한다.
+
+## ADR-020 — 1.3.0 사후 telemetry와 Ed25519 신뢰 체인
+
+- 결정: external stage의 실행 전 telemetry는 live 중단 보조값일 뿐 승인 근거가 아니다. 종료 후 실행 전 digest와 다른 `final=true` 진술을 issuer 서명, Git commit, config fingerprint, stage, deterministic run-id, token/energy 예산과 최종 사용량에 결속해 검증한 뒤에만 통과한다.
+- 결정: repository policy의 `authority` 문자열과 verifier 비밀 환경변수는 신뢰 입력에서 제거한다. 패키지에 고정된 root Ed25519 공개키가 HEAD policy를 검증하고, 그 policy의 issuer 공개키가 개별 진술을 검증한다.
+- 결정: cloze/canary는 결합 문자열 tokenization의 offset mapping으로 candidate와 교차하는 token을 점수화한다. prefix/candidate 독립 token 수로 span을 추측하지 않는다.

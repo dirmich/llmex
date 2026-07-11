@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-11 · 1.3.0 사후 권위 gate와 공개키 신뢰 체인
+
+- external stage의 사전 final telemetry는 승인 근거로 사용하지 않으며, 실행 직전 digest와 다른 사후 final telemetry가 없으면 단계와 전체 상태를 실패로 고정한다.
+- 사후 telemetry를 issuer 서명, repository commit, config fingerprint, stage, deterministic run-id, token/energy 예산과 실제 최종 사용량에 결속했다.
+- verifier의 HMAC secret 환경변수 입력을 제거하고 패키지 pinned root Ed25519 공개키가 서명한 HEAD policy와 issuer Ed25519 서명을 순서대로 검증한다.
+- cloze/canary 후보를 prefix와 따로 tokenize하지 않고 결합 sequence offset으로 score span을 정해 경계 merge를 보존했다.
+
+
 ## 2026-07-11 · 1.2.0 외부 신뢰 경계 차단 해제
 
 - 승인 파일 위치가 아니라 명시 subject repository root와 canonical HEAD commit에 release/pipeline 진술을 결속했다.
@@ -205,3 +213,10 @@
 - cloze 조건부 평균 log-likelihood·rank·accuracy와 canary 실제 rank gate/미실행 실패-폐쇄, 단일-pass 유계 메모리 exact/near contamination을 구현했다.
 - 재개 세션 delta 처리량과 누적 wall-time 처리량을 분리하고 wheel/sdist digest, wheel METADATA 기반 SBOM, 배포 artifact subject provenance를 생성한다.
 - artifact/JSON/sidecar 원자 쓰기·fsync 계약을 통일하고 split ADR을 실제 normalized-content SHA-256 계약과 일치시켰다.
+
+## 2026-07-11 — 1.3.0 긴급 보안 키 회전
+
+- 기존 1.3.0 root/issuer 키는 private key 로그 노출로 즉시 폐기했으며 더 이상 신뢰할 수 없다.
+- 비밀키는 저장소, 로그 또는 명령 인자에 저장하지 않는다.
+- 새 production policy는 fail-closed provisioning anchor로 교체했다. 실제 issuer private key는
+  보호된 CI KMS/HSM에서 별도로 provisioning해야 한다.

@@ -124,17 +124,27 @@ def _contamination(config: EvaluationConfig, needles: list[str]) -> dict[str, An
 def _conditional_score(
     runtime: Any, prefix: str, candidate: str, suffix: str = ""
 ) -> dict[str, Any]:
-    prefix_ids = runtime.tokenizer.encode(prefix).ids
-    candidate_ids = runtime.tokenizer.encode(candidate).ids
-    full_ids = runtime.tokenizer.encode(prefix + candidate + suffix).ids
-    if not prefix_ids or not candidate_ids or len(full_ids) > runtime.model.config.max_seq_len:
+    combined = prefix + candidate + suffix
+    encoding = runtime.tokenizer.encode(combined)
+    full_ids = encoding.ids
+    candidate_start, candidate_end = len(prefix), len(prefix) + len(candidate)
+    target_indexes = [
+        index
+        for index, (start, end) in enumerate(encoding.offsets)
+        if start < candidate_end and end > candidate_start
+    ]
+    if (
+        not prefix
+        or not candidate
+        or not target_indexes
+        or target_indexes[0] == 0
+        or len(full_ids) > runtime.model.config.max_seq_len
+    ):
         raise IntegrityError("cloze/canary 문항을 유효한 문맥으로 인코딩할 수 없습니다")
     values = torch.tensor([full_ids], dtype=torch.long, device=runtime.device)
     with torch.no_grad():
         log_probs = F.log_softmax(runtime.model(values).logits[0, :-1], dim=-1)
-    start = max(0, len(prefix_ids) - 1)
-    target = full_ids[len(prefix_ids) : len(prefix_ids) + len(candidate_ids)]
-    scores = [float(log_probs[start + offset, token]) for offset, token in enumerate(target)]
+    scores = [float(log_probs[index - 1, full_ids[index]]) for index in target_indexes]
     total = sum(scores)
     return {
         "log_likelihood": total,

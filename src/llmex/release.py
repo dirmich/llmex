@@ -205,7 +205,9 @@ def audit(root: Path) -> dict[str, Any]:
     return {"판정": "통과", "검사": ["비밀", "로컬 경로", "필수 문서", "참조 import 경계"]}
 
 
-def external_gate(approvals: Path, repository: Path) -> dict[str, Any]:
+def external_gate(
+    approvals: Path, repository: Path, *, trust_root_public_key: str | None = None
+) -> dict[str, Any]:
     """보호 CI trust store와 evidence digest에 결속된 외부 승인을 검증한다."""
     try:
         payload = json.loads(approvals.read_text(encoding="utf-8"))
@@ -260,6 +262,7 @@ def external_gate(approvals: Path, repository: Path) -> dict[str, Any]:
             expected_role=expected_role,
             expected_kind=expected_kind,
             signed_payload=signed,
+            root_public_key=trust_root_public_key,
         )
     return {
         "판정": "승인",

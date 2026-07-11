@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.3.0 - 2026-07-11
+
+- external stage 실행 전 final telemetry 재사용을 금지하고, 실행 후 새로 생성된 final 진술을 commit/config/stage/run-id/token·energy 예산과 Ed25519 서명에 결속해 재검증한다.
+- 코드에 고정된 root Ed25519 공개키로 HEAD의 policy 서명을 먼저 검증한 뒤 issuer 공개키로 evidence/승인을 검증한다. verifier의 비밀 환경변수 의존을 제거했다.
+- cloze/canary를 결합 문자열 한 번의 tokenization과 offset mapping으로 점수화해 prefix/candidate/suffix BPE 경계 merge를 정확히 처리한다.
+
+
 ## 1.2.0 - 2026-07-11
 
 - release gate를 명시 repository root의 canonical Git commit과 HEAD에 봉인된 보호 CI trust policy에 결속했다. gate별 역할은 legal/baseline/release와 정확히 일치해야 한다.

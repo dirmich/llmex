@@ -1,5 +1,14 @@
 # LLMEX 개발 TODO
 
+## 1.3.0 architect 차단 해제
+
+- [x] external stage 실행 후 새 final telemetry의 freshness·서명·대상·예산 사후 gate
+- [x] pinned root가 서명한 policy와 issuer Ed25519 공개키의 2단계 검증
+- [x] verifier 비밀 환경변수 제거와 명시적 테스트 root 인자 경계
+- [x] 결합 tokenization offset 기반 cloze/canary BPE 경계 점수화
+- [ ] 실제 보호 environment에서 1.3.0 공개 승인 artifact 발급(외부 대기)
+
+
 > 다음 세션은 위에서 아래로 진행한다. `[ ]`를 구현 전에 `[~]`, 검증 후 `[x]`로 바꾼다. 각 milestone 종료 시 명령과 artifact 경로를 아래 실행 기록에 남긴다.
 
 ## 1.2.0 외부 신뢰 경계
@@ -9,7 +18,7 @@
 - [x] pipeline evidence 서명·role/kind·시각·commit/config/artifact 검증
 - [x] 외부 stage 최종 token/energy telemetry 부재·변조 실패-폐쇄
 - [x] canary/atomic/contamination 문서 계약 동기화
-- [ ] 실제 보호 environment에서 1.2.0 공개 승인 artifact 발급(외부 대기)
+- [ ] 실제 보호 environment 공개 승인 artifact 발급(1.3.0으로 이월)
 
 ## 1.1.1 정리
 

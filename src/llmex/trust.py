@@ -1,12 +1,10 @@
-"""Git에 봉인된 보호 CI 정책과 서명 진술 검증."""
+"""고정 root와 Ed25519 체인으로 Git에 봉인된 신뢰 정책·진술을 검증한다."""
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 
 from __future__ import annotations
 
-import hashlib
-import hmac
+import base64
 import json
-import os
 import re
 import stat
 import subprocess
@@ -14,11 +12,41 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 from llmex.errors import IntegrityError
 
 POLICY_PATH = Path(".llmex/trust-policy.json")
-CANONICAL_DIGEST = re.compile(r"[0-9a-f]{64}")
 CANONICAL_COMMIT = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})")
+# 이 키만 production trust anchor다. 저장소 policy가 자신의 권위를 선언할 수 없다.
+PINNED_ROOT_PUBLIC_KEY = "7Ye4+UNipKIjUGrNl/+Ri1EbNmAKuEd7QH+FE3TPcWM="
+
+
+def _canonical(value: dict[str, Any]) -> bytes:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+
+
+def _public_key(encoded: object, label: str) -> Ed25519PublicKey:
+    try:
+        if not isinstance(encoded, str):
+            raise ValueError
+        raw = base64.b64decode(encoded, validate=True)
+        if len(raw) != 32:
+            raise ValueError
+        return Ed25519PublicKey.from_public_bytes(raw)
+    except (ValueError, TypeError) as exc:
+        raise IntegrityError(f"{label}: Ed25519 공개키가 유효하지 않습니다") from exc
+
+
+def _verify(signature: object, payload: dict[str, Any], key: Ed25519PublicKey, label: str) -> None:
+    try:
+        if not isinstance(signature, str):
+            raise ValueError
+        raw = base64.b64decode(signature, validate=True)
+        key.verify(raw, _canonical(payload))
+    except (ValueError, TypeError, InvalidSignature) as exc:
+        raise IntegrityError(f"{label}: Ed25519 서명 검증 실패") from exc
 
 
 def repository_commit(repository: Path) -> tuple[Path, str]:
@@ -48,7 +76,7 @@ def repository_commit(repository: Path) -> tuple[Path, str]:
     return root, commit
 
 
-def _load_policy(repository: Path) -> tuple[dict[str, Any], dict[str, str]]:
+def _load_policy(repository: Path, root_public_key: str | None = None) -> dict[str, Any]:
     policy_path = repository / POLICY_PATH
     try:
         raw = policy_path.read_bytes()
@@ -60,37 +88,21 @@ def _load_policy(repository: Path) -> tuple[dict[str, Any], dict[str, str]]:
             capture_output=True,
         ).stdout
         policy = json.loads(raw)
-        secrets = cast(dict[str, str], json.loads(os.environ["LLMEX_PROTECTED_SIGNING_KEYS"]))
-    except (
-        OSError,
-        subprocess.CalledProcessError,
-        json.JSONDecodeError,
-        KeyError,
-        TypeError,
-    ) as exc:
-        raise IntegrityError("보호 CI trust policy/서명 key를 검증할 수 없습니다") from exc
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+        raise IntegrityError("서명된 trust policy를 검증할 수 없습니다") from exc
     if raw != committed or mode & 0o022:
         raise IntegrityError("trust policy가 HEAD와 다르거나 group/other 쓰기 가능합니다")
-    if not isinstance(policy, dict) or policy.get("schema_version") != 1:
-        raise IntegrityError("보호 CI trust policy schema가 유효하지 않습니다")
-    if policy.get("authority") != "protected-ci":
-        raise IntegrityError("로컬 self-signed policy는 권위 있는 판정이 아닙니다")
+    if not isinstance(policy, dict) or policy.get("schema_version") != 2:
+        raise IntegrityError("trust policy schema가 유효하지 않습니다")
+    signature = policy.get("signature")
+    payload = {key: value for key, value in policy.items() if key != "signature"}
+    _verify(
+        signature, payload, _public_key(root_public_key or PINNED_ROOT_PUBLIC_KEY, "root"), "policy"
+    )
     issuers = policy.get("issuers")
     if not isinstance(issuers, dict) or not issuers:
-        raise IntegrityError("보호 CI issuer policy가 비었습니다")
-    if set(secrets) != set(issuers):
-        raise IntegrityError("보호 CI signing key 집합이 policy issuer와 다릅니다")
-    for issuer, secret in secrets.items():
-        item = issuers.get(issuer)
-        if (
-            not secret
-            or not isinstance(item, dict)
-            or not hmac.compare_digest(
-                hashlib.sha256(secret.encode()).hexdigest(), str(item.get("key_sha256", ""))
-            )
-        ):
-            raise IntegrityError(f"{issuer}: 보호 CI signing key가 policy와 다릅니다")
-    return policy, secrets
+        raise IntegrityError("issuer policy가 비었습니다")
+    return policy
 
 
 def rfc3339(value: object) -> datetime:
@@ -109,9 +121,10 @@ def verify_statement(
     expected_role: str,
     expected_kind: str,
     signed_payload: dict[str, Any],
+    root_public_key: str | None = None,
 ) -> None:
-    """정책 role/kind, 유효 기간과 canonical HMAC 서명을 검증한다."""
-    policy, secrets = _load_policy(repository)
+    """고정 root가 승인한 issuer의 role/kind, 기간, Ed25519 서명을 검증한다."""
+    policy = _load_policy(repository, root_public_key)
     issuer, role = statement.get("issuer"), statement.get("role")
     issuers = cast(dict[str, Any], policy["issuers"])
     item = issuers.get(issuer) if isinstance(issuer, str) else None
@@ -124,19 +137,15 @@ def verify_statement(
     ):
         raise IntegrityError(f"{expected_kind}: issuer-role-kind policy 위반")
     try:
-        issued = rfc3339(statement.get("issued_at"))
-        expires = rfc3339(statement.get("expires_at"))
+        issued, expires = rfc3339(statement.get("issued_at")), rfc3339(statement.get("expires_at"))
     except (ValueError, TypeError) as exc:
         raise IntegrityError(f"{expected_kind}: RFC3339 시각이 유효하지 않습니다") from exc
     now = datetime.now(UTC)
     if not issued <= now < expires or expires <= issued:
         raise IntegrityError(f"{expected_kind}: 아직 유효하지 않거나 만료되었습니다")
-    canonical = json.dumps(
-        signed_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    _verify(
+        statement.get("signature"),
+        signed_payload,
+        _public_key(item.get("public_key"), str(issuer)),
+        expected_kind,
     )
-    expected = hmac.new(secrets[cast(str, issuer)].encode(), canonical.encode(), hashlib.sha256)
-    signature = statement.get("signature")
-    if not isinstance(signature, str) or not CANONICAL_DIGEST.fullmatch(signature):
-        raise IntegrityError(f"{expected_kind}: canonical 서명이 없습니다")
-    if not hmac.compare_digest(signature, expected.hexdigest()):
-        raise IntegrityError(f"{expected_kind}: 신뢰 가능한 서명 검증 실패")

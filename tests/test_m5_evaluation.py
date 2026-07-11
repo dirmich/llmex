@@ -1,21 +1,49 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportPrivateUsage=false
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import yaml
 from test_m4_training import _config, _manifest
 from tokenizers import Tokenizer
-from tokenizers.models import WordLevel
+from tokenizers.models import BPE, WordLevel
 from tokenizers.pre_tokenizers import Whitespace
 from typer.testing import CliRunner
 
 from llmex.cli import app
 from llmex.config import EvaluationConfig
+from llmex.evaluation.runner import _conditional_score
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.model import CausalLM, GenerationConfig
 from llmex.tokenizer.core import SPECIAL_IDS
 from llmex.train.engine import Trainer
+
+
+class _BoundaryModel:
+    config = SimpleNamespace(max_seq_len=16)
+
+    def __call__(self, values: torch.Tensor) -> SimpleNamespace:
+        logits = torch.zeros((1, values.size(1), 6))
+        logits[0, 0, 5] = 4.0  # x 다음 결합 token `ab`
+        return SimpleNamespace(logits=logits)
+
+
+def test_conditional_score_uses_combined_bpe_boundary_offsets() -> None:
+    tokenizer = Tokenizer(
+        BPE(
+            vocab={"<unk>": 0, "x": 1, "a": 2, "b": 3, " ": 4, "ab": 5},
+            merges=[("a", "b")],
+            unk_token="<unk>",
+        )
+    )
+    tokenizer.pre_tokenizer = Whitespace()
+    runtime = SimpleNamespace(tokenizer=tokenizer, model=_BoundaryModel(), device="cpu")
+    prefix_merge = _conditional_score(runtime, "x a", "b")
+    suffix_merge = _conditional_score(runtime, "x ", "a", "b")
+    assert prefix_merge["tokens"] == 1
+    assert suffix_merge["tokens"] == 1
+    assert prefix_merge["log_likelihood"] == suffix_merge["log_likelihood"]
 
 
 def _artifacts(tmp_path: Path) -> tuple[Path, EvaluationConfig]:

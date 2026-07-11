@@ -2,6 +2,7 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 
 import json
+import math
 import platform
 import resource
 import shutil
@@ -90,7 +91,9 @@ def _validate_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _validate_evidence(path: Path, config_fp: str, repository: Path, commit: str) -> dict[str, Any]:
+def _validate_evidence(
+    path: Path, config_fp: str, repository: Path, commit: str, root_public_key: str | None
+) -> dict[str, Any]:
     value = _validate_json(path)
     required = {
         "schema_version",
@@ -126,6 +129,7 @@ def _validate_evidence(path: Path, config_fp: str, repository: Path, commit: str
         expected_role="baseline",
         expected_kind="baseline-evidence",
         signed_payload={key: item for key, item in value.items() if key != "signature"},
+        root_public_key=root_public_key,
     )
     return {
         "path": str(path),
@@ -173,6 +177,9 @@ def _usage(
     repository: Path | None = None,
     commit: str | None = None,
     config_fp: str | None = None,
+    stage_name: str | None = None,
+    run_id: str | None = None,
+    root_public_key: str | None = None,
 ) -> dict[str, float]:
     path = config.run_dir / "resource-usage.json"
     if not path.is_file():
@@ -184,14 +191,23 @@ def _usage(
         usage = {"tokens": float(value["tokens"]), "energy_kwh": float(value["energy_kwh"])}
     except (KeyError, TypeError, ValueError) as exc:
         raise IntegrityError("resource usage telemetry가 유효하지 않습니다") from exc
+    if any(not math.isfinite(item) or item < 0 for item in usage.values()):
+        raise IntegrityError("resource usage telemetry는 유한한 음이 아닌 값이어야 합니다")
     if authoritative:
         subject = value.get("subject")
+        expected_budget = {
+            "token_budget": config.budget.token_budget,
+            "maximum_energy_kwh": config.budget.maximum_energy_kwh,
+        }
         if (
             value.get("schema_version") != 1
             or value.get("final") is not True
             or not isinstance(subject, dict)
             or subject.get("git_commit") != commit
             or subject.get("config_fingerprint") != config_fp
+            or subject.get("stage") != stage_name
+            or subject.get("run_id") != run_id
+            or subject.get("budget") != expected_budget
             or repository is None
         ):
             raise IntegrityError("외부 stage telemetry schema/최종성/대상 결속이 유효하지 않습니다")
@@ -201,7 +217,13 @@ def _usage(
             expected_role="baseline",
             expected_kind="resource-usage",
             signed_payload={key: item for key, item in value.items() if key != "signature"},
+            root_public_key=root_public_key,
         )
+        if (
+            usage["tokens"] > config.budget.token_budget
+            or usage["energy_kwh"] > config.budget.maximum_energy_kwh
+        ):
+            raise IntegrityError("외부 stage의 최종 token/energy 예산을 초과했습니다")
     return usage
 
 
@@ -235,7 +257,12 @@ def _execute(
     return process, time.monotonic() - started
 
 
-def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, Any]:
+def run(
+    config: PipelineConfig,
+    *,
+    allow_external: bool = False,
+    trust_root_public_key: str | None = None,
+) -> dict[str, Any]:
     config.run_dir.mkdir(parents=True, exist_ok=True)
     check = preflight(config)
     write_json(config.run_dir / "preflight.json", check)
@@ -244,11 +271,20 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
     state = _read_state(config)
     config_fp = cast(str, state["config_fingerprint"])
     repository, commit = repository_commit(config.subject_repository)
+    run_id = fingerprint(
+        {
+            "commit": commit,
+            "config_fingerprint": config_fp,
+            "run_dir": str(config.run_dir.resolve()),
+        }
+    )
     evidence: list[dict[str, Any]] = []
     evidence_errors: list[str] = []
     for path in config.required_evidence:
         try:
-            evidence.append(_validate_evidence(path, config_fp, repository, commit))
+            evidence.append(
+                _validate_evidence(path, config_fp, repository, commit, trust_root_public_key)
+            )
         except IntegrityError as exc:
             evidence_errors.append(str(exc))
     state.update({"상태": "실행 중", "외부_증거_오류": evidence_errors})
@@ -256,33 +292,49 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
     deadline = time.monotonic() + config.budget.maximum_hours * 3600
     for stage in config.stages:
         previous = cast(dict[str, Any], state["단계"].get(stage.name, {}))
-        telemetry_error: str | None = None
-        if stage.external:
+        if stage.external and (
+            not allow_external or evidence_errors or len(evidence) != len(config.required_evidence)
+        ):
+            state["단계"][stage.name] = {
+                "상태": "외부 게이트 대기",
+                "명령": stage.command,
+            }
+            continue
+        if previous.get("상태") == "통과" and _outputs_valid(stage, previous):
+            if not stage.external:
+                continue
             try:
-                _usage(
+                resumed_usage = _usage(
                     config,
                     authoritative=True,
                     repository=repository,
                     commit=commit,
                     config_fp=config_fp,
+                    stage_name=stage.name,
+                    run_id=run_id,
+                    root_public_key=trust_root_public_key,
                 )
-            except IntegrityError as exc:
-                telemetry_error = str(exc)
-        if stage.external and (
-            not allow_external
-            or evidence_errors
-            or len(evidence) != len(config.required_evidence)
-            or telemetry_error is not None
-        ):
+                if previous.get("resource_usage_sha256") != sha256_file(
+                    config.run_dir / "resource-usage.json"
+                ):
+                    raise IntegrityError("재개 시 최종 telemetry digest가 변경되었습니다")
+                previous["resource_usage"] = resumed_usage
+                continue
+            except IntegrityError:
+                pass
+        telemetry_path = config.run_dir / "resource-usage.json"
+        telemetry_before = sha256_file(telemetry_path) if telemetry_path.is_file() else None
+        try:
+            process, elapsed = _execute(stage, config, deadline)
+        except IntegrityError as exc:
             state["단계"][stage.name] = {
-                "상태": "외부 게이트 대기",
+                "상태": "실패",
                 "명령": stage.command,
-                "telemetry_error": telemetry_error,
+                "verification_error": str(exc),
             }
-            continue
-        if previous.get("상태") == "통과" and _outputs_valid(stage, previous):
-            continue
-        process, elapsed = _execute(stage, config, deadline)
+            state["상태"] = "실패"
+            write_json(_state_path(config), state)
+            raise IntegrityError(f"pipeline 단계가 실패했습니다: {stage.name}: {exc}") from exc
         stdout, stderr = process.communicate()
         record: dict[str, Any] = {
             "상태": "통과" if process.returncode == 0 else "실패",
@@ -294,9 +346,28 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
         }
         if process.returncode == 0:
             try:
+                if stage.external:
+                    if (
+                        not telemetry_path.is_file()
+                        or sha256_file(telemetry_path) == telemetry_before
+                    ):
+                        raise IntegrityError(
+                            "외부 stage가 실행 후 새로운 최종 telemetry를 생성하지 않았습니다"
+                        )
+                    record["resource_usage"] = _usage(
+                        config,
+                        authoritative=True,
+                        repository=repository,
+                        commit=commit,
+                        config_fp=config_fp,
+                        stage_name=stage.name,
+                        run_id=run_id,
+                        root_public_key=trust_root_public_key,
+                    )
+                    record["resource_usage_sha256"] = sha256_file(telemetry_path)
                 record["outputs"] = _output_records(stage)
             except IntegrityError as exc:
-                record.update({"상태": "실패", "output_error": str(exc)})
+                record.update({"상태": "실패", "verification_error": str(exc)})
         state["단계"][stage.name] = record
         write_json(_state_path(config), state)
         if record["상태"] == "실패":
@@ -309,6 +380,7 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
             "상태": "외부 게이트 대기" if waiting else "완료",
             "증거": evidence,
             "resource_usage": _usage(config),
+            "run_id": run_id,
             "재개_명령": "uv run llmex pipeline run --config <동일-config.yaml>",
         }
     )

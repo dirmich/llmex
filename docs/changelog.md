@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.3.0 - 2026-07-11
+
+- external stage 종료 뒤 새로 생성된 `final=true` telemetry만 권위 있게 승인하며 서명·commit/config/stage/run-id·예산 결속과 최종 사용량 상한을 재검증한다.
+- self-declared policy를 폐기하고 pinned root → 서명 policy → issuer Ed25519의 공개키 신뢰 체인으로 전환했다. verifier는 signing secret 환경변수를 읽지 않는다.
+- 결합 sequence offset을 기준으로 cloze/canary likelihood와 rank를 계산하고 BPE 경계 merge 회귀를 추가했다.
+
+
 ## 1.2.0 - 2026-07-11
 
 - release gate를 명시 repository root의 canonical Git commit과 HEAD에 봉인된 보호 CI trust policy에 결속했다. gate별 역할은 legal/baseline/release와 정확히 일치해야 한다.

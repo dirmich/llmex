@@ -1,21 +1,34 @@
 {
-  "authority": "protected-ci",
+  "schema_version": 2,
   "issuers": {
     "llmex-baseline-ci": {
-      "key_sha256": "9062492c141e10c7419374eab0f1269f479772ae54d91b4b88d4e0503b62f365",
-      "kinds": ["baseline-evidence", "resource-usage"],
-      "roles": ["baseline"]
+      "public_key": "6yBwgDlNqhk2++hlwXBkVGxmJc8w+7B3aWk7SgeU/q4=",
+      "kinds": [
+        "baseline-evidence",
+        "resource-usage"
+      ],
+      "roles": [
+        "baseline"
+      ]
     },
     "llmex-legal-ci": {
-      "key_sha256": "a9b5188830ab154a2c8efb9b43d448f5c890ff9f02ca2ec7c90e3e9e7e58ec96",
-      "kinds": ["legal-approval"],
-      "roles": ["legal"]
+      "public_key": "OqFyrGM32QRvaHh3WYAlulDDz4dYwEAVih5lqCHjm/o=",
+      "kinds": [
+        "legal-approval"
+      ],
+      "roles": [
+        "legal"
+      ]
     },
     "llmex-release-ci": {
-      "key_sha256": "413d6bd8ff3b5156aa185a154d0aa2d429b6b020e9e45db058693266f6084024",
-      "kinds": ["release-approval"],
-      "roles": ["release"]
+      "public_key": "CsqQ7+MeemuejKe1Ul0556pnTa/RRiG/6S2bNeh2p5k=",
+      "kinds": [
+        "release-approval"
+      ],
+      "roles": [
+        "release"
+      ]
     }
   },
-  "schema_version": 1
+  "signature": "vgJMCaT4CNMhh1KbME9HaFkpdeW8SxIvmumLBOdCFhyHZ7BTQzVM4jzo6D/JJ4vHwYPftcQBH7oSOT7u4q9zAw=="
 }
