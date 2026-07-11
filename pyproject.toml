@@ -1,6 +1,6 @@
 [project]
 name = "llmex"
-version = "0.7.0"
+version = "1.0.0"
 description = "한국어 Wikipedia 기반 소형 언어 모델 실험 도구"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -31,6 +31,22 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/llmex"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/configs",
+  "/docs",
+  "/scripts",
+  "/README.md",
+  "/NOTICE.md",
+  "/ATTRIBUTION.md",
+  "/LICENSE",
+  "/Makefile",
+  "/pyproject.toml",
+  "/uv.lock",
+]
 
 [tool.ruff]
 target-version = "py311"

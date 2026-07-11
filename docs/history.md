@@ -140,3 +140,27 @@
 - GB10에서 87.8M 모델을 context 256, micro batch 1로 실제 100 step 학습해 41.12초, 마지막 2,479.94 token/s, PyTorch peak 1.67GiB를 기록했고 고정 NGC container bf16 smoke도 재통과했다.
 - fixture pipeline test가 외부 대기→증거 공급→재개 완료, 출력 검증, 상태 fingerprint 복구 drill, dashboard export와 CLI status를 검증한다.
 - `docs/baseline-report.md`, `docs/baseline-runbook.md`, ADR-015/016과 M6 검증표를 추가하고 모든 사용자 노출 설명을 한국어로 작성했다.
+
+## 2026-07-11 · M7 공개 준비와 도구 안정 릴리스 (1.0.0)
+
+- 프로젝트와 패키지 버전을 1.0.0으로 올리고 frozen lock을 갱신했다.
+- data/model/tokenizer card, NOTICE, 보안·개인정보 정책, threat model, 운영 runbook, API/CLI, failure mode, migration, changelog, reproducibility와 acceptance matrix를 한국어로 추가했다.
+- `llmex release audit`이 비밀 의심 문자열, 배포 금지 절대 경로, 필수 릴리스 문서와 production의 `0.ref` import 경계를 검사하도록 구현했다.
+- `llmex release bundle`이 모든 배포 후보 파일의 SHA-256/byte manifest, CycloneDX 1.5 SBOM, in-toto statement와 SLSA provenance 형식 진술, 재현 명령을 생성하도록 구현했다.
+- `llmex release gate`는 법무 검토·장기 baseline·공개 배포 결정 각각의 `approved=true`, 승인자, 시각, 근거가 없으면 종료 코드 5로 실패한다. 이 gate는 외부 결정을 자동으로 만들거나 자기 승인하지 않는다.
+- MIT 소프트웨어 라이선스와 Wikipedia/참조/가중치 조건의 비법률적 경계를 분리했다. 원 데이터와 가중치는 패키지에 포함하지 않는다.
+- sdist/wheel build, 새 가상환경 wheel 설치와 version/help smoke, wheel `0.ref` 제외, CLI/pipeline E2E, release generator/gate 회귀 테스트를 CI에 추가했다.
+- ADR-017에서 1.0 도구 릴리스와 모델·데이터 공개 승인을 분리했다. 로컬 acceptance가 통과해도 외부 세 gate는 승인 증거 전까지 공개 금지 상태다.
+
+### M7 마감 검증 기록
+
+- `uv sync --frozen`: 1.0.0 lock 변경 없이 통과했다.
+- `uv run ruff format --check .`; `uv run ruff check .`: 49개 Python 파일 format, lint 통과했다.
+- `uv run pyright`: strict 오류·경고 0건이었다.
+- `uv run pytest -q`: 전체 `49 passed`; M6/M7 CLI·pipeline 표적 E2E `5 passed`였다.
+- `uv build`: `llmex-1.0.0.tar.gz`와 `llmex-1.0.0-py3-none-any.whl` 생성에 성공했다.
+- 새 Python 3.11 venv에 wheel과 55개 의존성을 설치하고 1.0.0 version 및 모든 명령군 help smoke를 통과했다.
+- sdist의 NOTICE·ATTRIBUTION·model card·examples 포함, sdist/wheel의 `0.ref` 제외와 wheel LICENSE 포함을 검사했다.
+- `llmex release audit`은 비밀·로컬 경로·필수 문서·참조 경계를 통과했다. bundle은 120개 파일, 65개 설치 구성요소의 checksum/SBOM/provenance를 생성했다.
+- 빈 외부 승인 파일은 의도대로 종료 코드 5로 실패했다. 참조 SHA-256과 `git diff --check`도 통과했다.
+- 외부 미실행 항목: 전체 corpus 장기 baseline, 독립 법무·데이터·안전 검토, 공개 채널 배포.

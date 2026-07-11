@@ -1,4 +1,4 @@
-.PHONY: sync lint format-check typecheck test check help ref-check fixture-check
+.PHONY: sync lint format-check typecheck test check help ref-check fixture-check release-audit release-bundle release-check
 
 sync:
 	uv sync
@@ -24,5 +24,12 @@ ref-check:
 fixture-check:
 	uv run llmex fingerprint file tests/fixtures/kowiki-sample.xml.bz2
 
-check: lint format-check typecheck test help ref-check
+release-audit:
+	uv run llmex release audit
 
+release-bundle:
+	uv run llmex release bundle --output dist/reproducibility
+
+release-check: check release-audit fixture-check
+
+check: lint format-check typecheck test help ref-check

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import subprocess
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Never
@@ -56,6 +57,9 @@ train_app = typer.Typer(help="M4 결정적 학습과 checkpoint 재개를 실행
 pipeline_app = typer.Typer(
     help="M6 전체 파이프라인과 외부 게이트를 관리합니다.", no_args_is_help=True
 )
+release_app = typer.Typer(
+    help="M7 릴리스 번들·감사·외부 승인 gate를 관리합니다.", no_args_is_help=True
+)
 app.add_typer(config_app, name="config")
 app.add_typer(fingerprint_app, name="fingerprint")
 app.add_typer(run_app, name="run")
@@ -64,6 +68,49 @@ app.add_typer(tokenizer_app, name="tokenizer")
 app.add_typer(model_app, name="model")
 app.add_typer(train_app, name="train")
 app.add_typer(pipeline_app, name="pipeline")
+app.add_typer(release_app, name="release")
+
+
+@release_app.command("bundle")
+def release_bundle(
+    output: Annotated[Path, typer.Option("--output")] = Path("dist/reproducibility"),
+) -> None:
+    """checksum·SBOM·provenance를 포함한 로컬 재현 bundle을 생성합니다."""
+    try:
+        from llmex.release import bundle
+
+        result = bundle(project_root(), output)
+    except (LlmexError, OSError, subprocess.SubprocessError) as error:
+        if isinstance(error, LlmexError):
+            _emit_error(error)
+        from llmex.errors import InputError
+
+        _emit_error(InputError(f"릴리스 bundle 생성 실패: {error}"))
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@release_app.command("audit")
+def release_audit() -> None:
+    """비밀·경로·라이선스 문서·clean-room 참조 경계를 검사합니다."""
+    try:
+        from llmex.release import audit
+
+        result = audit(project_root())
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@release_app.command("gate")
+def release_gate(approvals: Annotated[Path, typer.Option("--approvals")]) -> None:
+    """법무·장기 baseline·공개 배포의 외부 승인을 검증합니다."""
+    try:
+        from llmex.release import external_gate
+
+        result = external_gate(approvals)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
 class ConfigKind(StrEnum):

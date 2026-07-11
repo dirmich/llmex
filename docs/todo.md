@@ -163,17 +163,34 @@
 
 ## M7 공개 준비
 
-- [ ] `docs/data-card.md` 완성
-- [ ] `docs/model-card.md` 완성
-- [ ] Wikipedia attribution 파일 생성
-- [ ] page/revision/source 추적 검증
-- [ ] 라이선스와 가중치 배포 조건 검토
-- [ ] 개인정보·명예훼손·암기 위험 검토
-- [ ] artifact checksum manifest
-- [ ] clean-room 재현 테스트
-- [ ] 독립 코드 리뷰
-- [ ] 독립 데이터·안전 리뷰
-- [ ] 공개/비공개 결정 ADR
+- [x] data/model/tokenizer card와 한국어 사용자 문서 완성
+- [x] `NOTICE.md`의 Wikipedia 귀속·참조·가중치 법적 경계
+- [x] page/revision/source/dump/license 추적 계약과 자동 테스트
+- [x] 보안·개인정보·위협 모델·failure mode·운영 runbook
+- [x] artifact SHA-256 manifest, CycloneDX SBOM, SLSA provenance 생성기
+- [x] sdist/wheel build와 새 venv install/smoke 검증 계약
+- [x] CI release audit/bundle/build/install/reference-boundary 확대
+- [x] API/CLI, reproducibility, migration, changelog와 examples
+- [x] clean-room `0.ref` import·배포 경계 자동 감사
+- [x] ADR-017 공개/비공개 결정과 최종 acceptance matrix
+- [ ] 외부 법무 검토 승인(자동 gate, 명시 승인 없이는 실패)
+- [ ] 전체 장기 baseline·독립 데이터/안전 리뷰(자동 gate, 장기 증거 없이는 실패)
+- [ ] 공개 배포 책임자 결정(자동 gate, 명시 승인 없이는 실패)
+
+### M7 및 전체 검증표
+
+| 요구사항 | 명령/증거 | 현재 판정 |
+|---|---|---|
+| frozen 환경 | `uv sync --frozen` | 통과 |
+| format/lint/type/test | Ruff, Pyright strict, `49 passed` | 통과 |
+| source/wheel | `uv build`, 새 venv install/version/help | 통과 |
+| CLI/pipeline | 전체 help와 M6/M7 fixture E2E | 통과 |
+| 공급망 | release bundle checksum/SBOM/provenance | 통과 |
+| 보안·비밀·license | `release audit`, NOTICE/LICENSE | 통과 |
+| 참조 경계 | source import, sdist/wheel member 검사 | 통과 |
+| 법무 | 외부 승인 JSON | 대기·공개 금지 |
+| 장기 baseline | M6 전체 evidence | 대기·공개 금지 |
+| 공개 결정 | 책임자 승인 JSON | 대기·공개 금지 |
 
 ## 실행 기록
 
@@ -186,6 +203,7 @@
 | 2026-07-11 | M4 학습 엔진 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; train CLI E2E; CPU 50-step; CUDA bf16 smoke; `git diff --check` | `42 passed`; strict 오류 0건; CPU 50-step/bitwise resume/오류주입 및 GB10 CUDA bf16 2-step 통과 | M5 평가·추론 |
 | 2026-07-11 | M5 평가·추론 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; eval/generate/benchmark CLI E2E; cache parity; 가능한 CUDA benchmark; `git diff --check` | checkpoint 호환성, token/byte 지표, sampling/EOS/context, contamination/암기, JSON/Markdown/checksum artifact 검증 | M6 전체 데이터·baseline |
 | 2026-07-11 | M6 로컬 계약 | 미커밋 작업 트리 | `pipeline preflight/run/status/drill/export`; model inspect; Wikimedia network 시도; 전체 품질 게이트 | 87,804,672 parameters, preflight 통과, 외부 증거 없는 단계는 엄격히 대기; 전체 dump/사람 감사/장기 학습 미완료 | 증거 생성 뒤 `--allow-external` 재개 |
+| 2026-07-11 | M7/1.0.0 로컬 릴리스 | 미커밋 작업 트리 | frozen sync; Ruff; Pyright; pytest; build/install E2E; CLI/pipeline; release audit/bundle; ref checksum; diff check | 로컬 acceptance 완료 목표, 세 외부 gate는 실패 상태 유지 | 법무·장기 baseline·공개 결정 독립 승인 |
 
 ## 즉시 중단 조건
 

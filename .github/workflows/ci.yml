@@ -25,5 +25,20 @@ jobs:
       - run: uv run pyright
       - run: uv run pytest -q
       - run: uv run llmex --help
+      - run: uv run llmex release audit
+      - run: uv run llmex release bundle --output dist/reproducibility
+      - run: uv build
+      - name: 새 환경 wheel 설치 smoke
+        run: |
+          uv venv --python 3.11 .venv-clean
+          uv pip install --python .venv-clean/bin/python dist/*.whl
+          .venv-clean/bin/llmex --version
+          .venv-clean/bin/llmex --help >/dev/null
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          wheel = next(Path("dist").glob("*.whl"))
+          with zipfile.ZipFile(wheel) as archive:
+              assert not any(name.startswith("0.ref/") for name in archive.namelist())
+          PY
       - run: cd 0.ref && shasum -a 256 -c SHA256SUMS
-
