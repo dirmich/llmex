@@ -1,0 +1,91 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.netrc
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.Python
+.venv/
+venv/
+env/
+.uv/
+*.egg-info/
+dist/
+build/
+
+# Test, lint, and type-check caches
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local data pipeline outputs
+data/raw/
+data/interim/
+data/processed/
+data/cache/
+data/downloads/
+*.xml.bz2
+*.jsonl
+*.jsonl.zst
+*.parquet
+*.arrow
+*.bin
+*.idx
+*.mmap
+*.zst
+
+# Model and tokenizer artifacts
+artifacts/
+runs/
+checkpoints/
+outputs/
+wandb/
+lightning_logs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# Runtime files
+logs/
+*.log
+*.pid
+*.sock
+tmp/
+.cache/
+
+# Local Docker/NGC state and credentials
+.docker/
+.ngc/
+docker-compose.override.yml
+
+# Keep schemas, manifests, fixtures, and selected 0.ref sources tracked.
+!tests/fixtures/**
+!**/*.manifest.json
+!**/SHA256SUMS
+!0.ref/**
