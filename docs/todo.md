@@ -30,24 +30,25 @@
 
 ## M1 Wikipedia 데이터
 
-- [ ] 날짜 고정 dump config와 URL validation
-- [ ] Wikimedia status/checksum metadata 수집기
-- [ ] disk-space 검사, timeout, retry, resume downloader
-- [ ] 다운로드 후 checksum 검증과 raw manifest
-- [ ] `mwxml` streaming extractor
-- [ ] namespace 0, redirect 필터
-- [ ] page/revision/source/license metadata 보존
-- [ ] MediaWiki markup parser 후보 비교 및 ADR 작성
-- [ ] Unicode NFC, 제어문자, 공백 정규화
-- [ ] 표·수식·목록·참조 처리 정책과 golden tests
-- [ ] 최소 길이, 한글 비율, 반복, markup 잔존 필터
-- [ ] exact SHA-256 dedup
-- [ ] 선택적 MinHash near-dedup 설계
-- [ ] document hash 기반 train/val/test split
-- [ ] JSONL.ZST writer와 schema version
-- [ ] 필터 사유별 통계와 `data-report.md`
-- [ ] fixture E2E hash 재현 테스트
-- [ ] 1,000문서 canary run 및 수동 샘플 100건 검토
+- [x] 날짜 고정 dump config와 URL validation
+- [x] Wikimedia status/checksum metadata 수집기
+- [x] disk-space 검사, timeout, retry, resume downloader
+- [x] 다운로드 후 checksum 검증과 raw manifest
+- [x] 표준 라이브러리 bzip2/XML streaming extractor(ADR-010에서 `mwxml` 대안 비교)
+- [x] namespace 0, redirect 필터
+- [x] page/revision/source/dump/license metadata 보존
+- [x] MediaWiki markup parser 후보 비교 및 ADR 작성
+- [x] Unicode NFC, 제어문자, 공백 정규화
+- [x] 표·수식·목록·참조 처리 정책과 golden tests
+- [x] 최소 길이, 한글 비율, 반복, markup 잔존 필터
+- [x] exact SHA-256 dedup
+- [x] 선택적 결정적 MinHash near-dedup 설계/구현
+- [x] document hash 기반 train/validation/test split
+- [x] schema v1 JSONL.ZST writer/reader
+- [x] 필터 사유별 통계와 `docs/data-report.md`
+- [x] fixture E2E hash 재현 테스트
+- [x] 실제 입력용 `--max-documents 1000` canary와 100건 감사 JSON/Markdown 생성 기능
+- [ ] 실제 날짜 고정 dump 1,000문서 canary 실행 및 100건 사람 검토
 
 ## M2 토크나이저와 token shards
 
@@ -153,6 +154,7 @@
 | 날짜 | milestone | commit/run | 검증 명령 | 결과/artifact | 다음 작업 |
 |---|---|---|---|---|---|
 | 2026-07-11 | M0 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff lint/format; Pyright; Pytest; CLI help; ref checksum; `docker compose config`; `git diff --check`; DGX Spark CUDA smoke | `14 passed`; GB10/CUDA 13.0/bf16 `finite=true`; NGC 25.10 digest 고정 | M1 Wikipedia 데이터 |
+| 2026-07-11 | M1 fixture smoke | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright; Pytest; `llmex data sample-e2e --max-documents 1000`; `git diff --check` | 외부 네트워크 없는 확장 fixture, local HTTP resume, checksum/filter/attribution/split/E2E hash 검증; 실제 dump canary 미실행 | 실제 dump canary 후 M2 토크나이저 |
 
 ## 즉시 중단 조건
 

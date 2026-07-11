@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="ko">
+  <siteinfo><sitename>위키백과</sitename><dbname>kowiki</dbname></siteinfo>
+  <page><title>정책 문서</title><ns>0</ns><id>10</id>
+    <revision><id>100</id><text xml:space="preserve">이전 판이다.</text></revision>
+    <revision><id>101</id><text xml:space="preserve">== 개요 ==
+대한민국의 [[수도 (행정 구역)|수도]]는 서울이다. &lt;ref&gt;삭제할 출처&lt;/ref&gt;
+* 목록 첫째
+* 목록 둘째
+&lt;math&gt;x^2 + y^2&lt;/math&gt;
+{| class="wikitable"
+| 삭제할 표
+|}</text></revision>
+  </page>
+  <page><title>넘겨주기</title><ns>0</ns><id>11</id><redirect title="정책 문서"/><revision><id>102</id><text>#넘겨주기 [[정책 문서]]</text></revision></page>
+  <page><title>토론:제외</title><ns>1</ns><id>12</id><revision><id>103</id><text>이 문서는 제외한다.</text></revision></page>
+  <page><title>중복 문서</title><ns>0</ns><id>13</id><revision><id>104</id><text>대한민국의 수도는 서울이다. 목록 첫째 목록 둘째 x^2 + y^2</text></revision></page>
+  <page><title>반복 문서</title><ns>0</ns><id>14</id><revision><id>105</id><text>가가가가가가가가가가가가가가가가가가가가</text></revision></page>
+  <page><title>영문 문서</title><ns>0</ns><id>15</id><revision><id>106</id><text>This page contains only English text and should be filtered.</text></revision></page>
+</mediawiki>

@@ -41,3 +41,10 @@ class ConflictError(LlmexError):
 
     def __init__(self, message: str) -> None:
         super().__init__(message, ExitCode.CONFLICT)
+
+
+class IntegrityError(LlmexError):
+    """checksum, manifest 또는 압축 스트림 무결성 오류."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, ExitCode.INTEGRITY)

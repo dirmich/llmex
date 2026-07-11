@@ -11,3 +11,18 @@ dump:
 cleaning:
   min_chars: 20
   normalize: NFC
+  min_hangul_ratio: 0.2
+  max_repetition_ratio: 0.35
+  max_markup_ratio: 0.05
+  table_policy: drop
+  math_policy: text
+  list_policy: text
+  reference_policy: drop
+  near_dedup: false
+  near_dedup_threshold: 0.9
+  shingle_size: 5
+download:
+  timeout_seconds: 30.0
+  retries: 3
+  retry_backoff_seconds: 1.0
+  disk_overhead_ratio: 1.1

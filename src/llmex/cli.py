@@ -10,6 +10,18 @@ import typer
 
 from llmex import __version__
 from llmex.config import DataConfig, ModelConfig, StrictModel, load_yaml
+from llmex.data.download import download, fetch_metadata
+from llmex.data.io import prepare_output, read_jsonl_zst, write_json, write_jsonl_zst
+from llmex.data.pipeline import (
+    build_report,
+    clean_rows,
+    dedup_rows,
+    extract_rows,
+    raw_manifest,
+    report_markdown,
+    run_e2e,
+    split_rows,
+)
 from llmex.errors import ExitCode, LlmexError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.logging import configure_logging
@@ -25,9 +37,11 @@ app = typer.Typer(
 config_app = typer.Typer(help="YAML 설정을 검증합니다.", no_args_is_help=True)
 fingerprint_app = typer.Typer(help="입력 fingerprint를 계산합니다.", no_args_is_help=True)
 run_app = typer.Typer(help="재현 가능한 실행 디렉터리를 관리합니다.", no_args_is_help=True)
+data_app = typer.Typer(help="Wikimedia M1 데이터 파이프라인을 실행합니다.", no_args_is_help=True)
 app.add_typer(config_app, name="config")
 app.add_typer(fingerprint_app, name="fingerprint")
 app.add_typer(run_app, name="run")
+app.add_typer(data_app, name="data")
 
 
 class ConfigKind(StrEnum):
@@ -115,3 +129,250 @@ def create_run_command(
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps({"path": str(run.path), "fingerprint": run.fingerprint}))
+
+
+def _data_config(path: Path) -> DataConfig:
+    return load_yaml(path, DataConfig)
+
+
+def _operation(command: str, config: DataConfig, inputs: dict[str, object]) -> dict[str, object]:
+    return {"command": command, "config": config.model_dump(mode="json"), "inputs": inputs}
+
+
+@data_app.command("download")
+def data_download(
+    config_path: Annotated[Path, typer.Option("--config")],
+    output: Annotated[Path | None, typer.Option("--output")] = None,
+    metadata_only: Annotated[
+        bool, typer.Option(help="dumpstatus와 checksum만 수집합니다.")
+    ] = False,
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """날짜 고정 metadata를 수집하고 Range resume로 immutable raw를 받습니다."""
+
+    try:
+        config = _data_config(config_path)
+        target = output or config.paths.data / "raw" / Path(str(config.dump.url)).name
+        operation = _operation(
+            "download", config, {"url": str(config.dump.url), "metadata_only": metadata_only}
+        )
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {"dry_run": True, "output": str(target), "fingerprint": fingerprint(operation)},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        if metadata_only:
+            base = str(config.dump.url).rsplit("/", 1)[0]
+            result = fetch_metadata(
+                base, Path(str(config.dump.url)).name, timeout=config.download.timeout_seconds
+            )
+            metadata_path = target.with_name("wikimedia-metadata.json")
+            prepare_output(metadata_path, operation, force=force)
+            write_json(metadata_path, result)
+            typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+            return
+        prepare_output(target, operation, force=force)
+        result = download(
+            str(config.dump.url),
+            target,
+            expected_sha256=config.dump.sha256,
+            timeout=config.download.timeout_seconds,
+            retries=config.download.retries,
+            backoff=config.download.retry_backoff_seconds,
+            disk_overhead_ratio=config.download.disk_overhead_ratio,
+        )
+        manifest = raw_manifest(config, target, result)
+        write_json(target.with_name(target.name + ".manifest.json"), manifest)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(manifest, ensure_ascii=False, sort_keys=True))
+
+
+def _stage(
+    command: str,
+    config_path: Path,
+    input_path: Path,
+    output: Path,
+    dry_run: bool,
+    force: bool,
+    max_documents: int | None = None,
+) -> None:
+    from collections import Counter
+
+    try:
+        config = _data_config(config_path)
+        inputs: dict[str, object] = {"input": str(input_path), "sha256": sha256_file(input_path)}
+        if max_documents is not None:
+            inputs["max_documents"] = max_documents
+        operation = _operation(command, config, inputs)
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {"dry_run": True, "output": str(output), "fingerprint": fingerprint(operation)},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        prepare_output(output, operation, force=force)
+        stats: Counter[str] = Counter()
+        if command == "extract":
+            rows = extract_rows(config, input_path, max_documents=max_documents)
+        elif command == "clean":
+            rows = clean_rows(config, read_jsonl_zst(input_path), stats)
+        elif command == "dedup":
+            rows = dedup_rows(config, read_jsonl_zst(input_path), stats)
+        elif command == "split":
+            rows = split_rows(config, read_jsonl_zst(input_path), stats)
+        else:
+            raise AssertionError(command)
+        count = write_jsonl_zst(output, rows)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(
+        json.dumps(
+            {"output": str(output), "documents": count, "stats": stats},
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+@data_app.command("extract")
+def data_extract(
+    config_path: Annotated[Path, typer.Option("--config")],
+    input_path: Annotated[Path, typer.Option("--input")],
+    output: Annotated[Path, typer.Option("--output")],
+    max_documents: Annotated[int | None, typer.Option("--max-documents", min=1)] = None,
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """namespace 0, 비 redirect, 최신 revision을 streaming 추출합니다."""
+    _stage("extract", config_path, input_path, output, dry_run, force, max_documents)
+
+
+@data_app.command("clean")
+def data_clean(
+    config_path: Annotated[Path, typer.Option("--config")],
+    input_path: Annotated[Path, typer.Option("--input")],
+    output: Annotated[Path, typer.Option("--output")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """markup 정책, Unicode 정규화와 품질 필터를 적용합니다."""
+    _stage("clean", config_path, input_path, output, dry_run, force)
+
+
+@data_app.command("dedup")
+def data_dedup(
+    config_path: Annotated[Path, typer.Option("--config")],
+    input_path: Annotated[Path, typer.Option("--input")],
+    output: Annotated[Path, typer.Option("--output")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """exact 및 선택적 MinHash near-dedup을 수행합니다."""
+    _stage("dedup", config_path, input_path, output, dry_run, force)
+
+
+@data_app.command("split")
+def data_split(
+    config_path: Annotated[Path, typer.Option("--config")],
+    input_path: Annotated[Path, typer.Option("--input")],
+    output: Annotated[Path, typer.Option("--output")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """document hash로 train/validation/test를 결정합니다."""
+    _stage("split", config_path, input_path, output, dry_run, force)
+
+
+@data_app.command("report")
+def data_report(
+    config_path: Annotated[Path, typer.Option("--config")],
+    input_path: Annotated[Path, typer.Option("--input")],
+    output: Annotated[Path, typer.Option("--output")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """schema/attribution/split을 검증하고 data manifest/report를 생성합니다."""
+    try:
+        config = _data_config(config_path)
+        operation = _operation(
+            "report", config, {"input": str(input_path), "sha256": sha256_file(input_path)}
+        )
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {"dry_run": True, "output": str(output), "fingerprint": fingerprint(operation)},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        prepare_output(output, operation, force=force)
+        from collections import Counter
+
+        stats: Counter[str] = Counter()
+        for row in read_jsonl_zst(input_path):
+            from llmex.data.schema import Document
+
+            document = Document.model_validate(row)
+            document.attribution()
+            stats["documents"] += 1
+            stats[f"split_{document.split}"] += 1
+        report = build_report(
+            config, input_path, stats, input_fingerprint=sha256_file(input_path), max_documents=None
+        )
+        write_json(output, report)
+        output.with_suffix(".md").write_text(report_markdown(report), encoding="utf-8")
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
+
+
+@data_app.command("sample-e2e")
+def data_sample_e2e(
+    config_path: Annotated[Path, typer.Option("--config")],
+    input_path: Annotated[Path, typer.Option("--input")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    max_documents: Annotated[int | None, typer.Option("--max-documents", min=1)] = None,
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """전체 M1 단계를 실행하고 manifest/report/100건 감사 표본을 만듭니다."""
+    try:
+        config = _data_config(config_path)
+        marker = output_dir / "data-manifest.json"
+        operation = _operation(
+            "sample-e2e",
+            config,
+            {
+                "input": str(input_path),
+                "sha256": sha256_file(input_path),
+                "max_documents": max_documents,
+            },
+        )
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {
+                        "dry_run": True,
+                        "output": str(output_dir),
+                        "fingerprint": fingerprint(operation),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        prepare_output(marker, operation, force=force)
+        report = run_e2e(config, input_path, output_dir, max_documents=max_documents)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))

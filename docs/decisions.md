@@ -58,6 +58,15 @@
 - 이유: 오타가 조용히 기본값으로 바뀌는 재현성 문제를 막고 자동화가 오류 코드를 안정적으로 판별하게 한다.
 - 검증: 잘못된 타입·알 수 없는 키·형상 불변조건·CLI 종료 코드 테스트를 통과해야 한다.
 
+## ADR-010: 표준 라이브러리 기반 보수적 MediaWiki parser
+
+- 상태: 승인
+- 배경: M1은 외부 네트워크 없이 fixture를 처리하고, 표·수식·목록·참조 정책과 제거량을 결정적으로 재현해야 한다. `mwparserfromhell`, `mwxml`, WikiExtractor를 비교했다.
+- 결정: XML은 Python `bz2`와 `xml.etree.ElementTree.iterparse`로 streaming 처리하고, markup은 정책이 명시된 보수적 parser를 프로젝트 안에 구현한다. namespace 0, redirect 제외, 마지막 revision 선택을 추출 경계에서 강제한다.
+- 대안: `mwxml`은 dump 순회 API가 좋지만 추가 의존성이 필요하고 markup을 정제하지 않는다. `mwparserfromhell`은 문법 범위가 넓지만 템플릿 확장 결과를 제공하지 않으며 추가 의존성과 버전 고정이 필요하다. WikiExtractor는 검증된 대규모 추출기지만 출력 정책을 세밀하게 통계화하고 schema attribution을 직접 보존하기 어렵다.
+- 결과: 표와 참조는 제거하고, 수식·목록·내부 링크의 표시 텍스트는 보존한다. 템플릿은 확장하지 않고 제거한다. 이 parser는 MediaWiki 렌더러와 동등하지 않으므로 잔존 markup 비율 필터와 샘플 감사를 필수로 둔다.
+- 검증: 확장 XML fixture의 최신 revision, namespace/redirect, 표·참조 제거, 수식·목록 보존 golden test와 결정적 E2E hash test를 통과해야 한다.
+
 ## ADR 템플릿
 
 ```text

@@ -61,6 +61,25 @@ class CleaningConfig(StrictModel):
 
     min_chars: int = Field(default=100, ge=1)
     normalize: Literal["NFC"] = "NFC"
+    min_hangul_ratio: float = Field(default=0.2, ge=0.0, le=1.0)
+    max_repetition_ratio: float = Field(default=0.35, ge=0.0, le=1.0)
+    max_markup_ratio: float = Field(default=0.05, ge=0.0, le=1.0)
+    table_policy: Literal["drop"] = "drop"
+    math_policy: Literal["text"] = "text"
+    list_policy: Literal["text"] = "text"
+    reference_policy: Literal["drop"] = "drop"
+    near_dedup: bool = False
+    near_dedup_threshold: float = Field(default=0.9, gt=0.0, le=1.0)
+    shingle_size: int = Field(default=5, ge=2, le=20)
+
+
+class DownloadConfig(StrictModel):
+    """다운로드 자원 및 복구 정책."""
+
+    timeout_seconds: float = Field(default=30.0, gt=0.0)
+    retries: int = Field(default=3, ge=0, le=20)
+    retry_backoff_seconds: float = Field(default=1.0, ge=0.0)
+    disk_overhead_ratio: float = Field(default=1.1, ge=1.0)
 
 
 class DataConfig(StrictModel):
@@ -71,6 +90,7 @@ class DataConfig(StrictModel):
     paths: PathConfig = PathConfig()
     dump: DumpConfig
     cleaning: CleaningConfig = CleaningConfig()
+    download: DownloadConfig = DownloadConfig()
 
 
 class ModelConfig(StrictModel):
