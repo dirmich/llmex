@@ -1,5 +1,6 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
 import json
+import pickle
 from pathlib import Path
 
 import numpy as np
@@ -175,6 +176,8 @@ def test_deterministic_resume_equivalence_metrics_and_best(tmp_path: Path) -> No
         for line in (resumed_config.run_dir / "metrics.jsonl").read_text().splitlines()
     ]
     assert {event["event"] for event in events} >= {"train", "validation"}
+    train_events = [event for event in events if event["event"] == "train"]
+    assert all(event["session_tokens"] <= event["tokens"] for event in train_events)
 
 
 def test_fingerprint_rejection_nan_diagnostic_and_corrupt_checkpoint(tmp_path: Path) -> None:
@@ -195,6 +198,20 @@ def test_fingerprint_rejection_nan_diagnostic_and_corrupt_checkpoint(tmp_path: P
     with pytest.raises(IntegrityError, match="loss"):
         failing.run()
     assert (failing.run_dir / "failure.json").is_file()
+
+
+def test_checkpoint_never_executes_malicious_pickle(tmp_path: Path) -> None:
+    marker = tmp_path / "executed"
+
+    class Payload:
+        def __reduce__(self) -> tuple[object, tuple[str]]:
+            return (eval, (f"open({str(marker)!r}, 'w').write('pwned')",))
+
+    checkpoint = tmp_path / "malicious.pt"
+    checkpoint.write_bytes(pickle.dumps(Payload()))
+    with pytest.raises(IntegrityError, match="읽을 수 없습니다"):
+        load_checkpoint(checkpoint, {})
+    assert not marker.exists()
 
 
 def test_cpu_overfit_and_cli_train_resume_smoke(tmp_path: Path) -> None:

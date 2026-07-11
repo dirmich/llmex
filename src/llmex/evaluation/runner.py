@@ -1,6 +1,7 @@
 """checkpoint 기반 평가, 생성, 오염 검사와 latency/memory benchmark."""
-# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportUnknownLambdaType=false
 
+import json
 import math
 import os
 import time
@@ -24,12 +25,14 @@ FROZEN_CLOZE = (
         "id": "ko-wiki-001",
         "prompt": "대한민국의 수도는 [MASK]이다.",
         "answer": "서울",
+        "candidates": ["서울", "부산", "평양"],
         "provenance": "고정 합성 평가 문항; Wikipedia 사실 형식",
     },
     {
         "id": "ko-wiki-002",
         "prompt": "훈민정음을 창제한 왕은 [MASK]이다.",
         "answer": "세종대왕",
+        "candidates": ["세종대왕", "태조", "정조"],
         "provenance": "고정 합성 평가 문항; Wikipedia 사실 형식",
     },
 )
@@ -102,23 +105,96 @@ def _repetition(ids: list[int]) -> float:
 def _contamination(config: EvaluationConfig, needles: list[str]) -> dict[str, Any]:
     if config.corpus is None:
         return {"status": "미실행", "reason": "corpus 경로가 설정되지 않았습니다"}
-    train = [str(row["text"]) for row in iter_documents(config.corpus, split="train")]
-    exact = {needle: any(needle in text for text in train) for needle in needles}
+    exact = dict.fromkeys(needles, False)
 
     def shingles(text: str, size: int = 5) -> set[str]:
         normalized = " ".join(text.split())
         return {normalized[i : i + size] for i in range(max(0, len(normalized) - size + 1))}
 
-    near: dict[str, float] = {}
-    for needle in needles:
-        left = shingles(needle)
-        scores: list[float] = []
-        for text in train:
-            right = shingles(text)
-            union = left | right
-            scores.append(len(left & right) / len(union) if union else 0.0)
-        near[needle] = max(scores, default=0.0)
-    return {"status": "완료", "exact": exact, "near_jaccard": near, "train_documents": len(train)}
+    needle_shingles = {needle: shingles(needle) for needle in needles}
+    near = dict.fromkeys(needles, 0.0)
+    documents = 0
+    for row in iter_documents(config.corpus, split="train"):
+        text = str(row["text"])
+        documents += 1
+        right = shingles(text)
+        for needle, left in needle_shingles.items():
+            exact[needle] = exact[needle] or needle in text
+            union_size = len(left) + len(right) - len(left & right)
+            score = len(left & right) / union_size if union_size else 0.0
+            near[needle] = max(near[needle], score)
+    return {
+        "status": "완료",
+        "algorithm": "single-pass-bounded-5gram",
+        "exact": exact,
+        "near_jaccard": near,
+        "train_documents": documents,
+    }
+
+
+def _conditional_score(
+    runtime: Any, prefix: str, candidate: str, suffix: str = ""
+) -> dict[str, Any]:
+    prefix_ids = runtime.tokenizer.encode(prefix).ids
+    candidate_ids = runtime.tokenizer.encode(candidate).ids
+    full_ids = runtime.tokenizer.encode(prefix + candidate + suffix).ids
+    if not prefix_ids or not candidate_ids or len(full_ids) > runtime.model.config.max_seq_len:
+        raise IntegrityError("cloze/canary 문항을 유효한 문맥으로 인코딩할 수 없습니다")
+    values = torch.tensor([full_ids], dtype=torch.long, device=runtime.device)
+    with torch.no_grad():
+        log_probs = F.log_softmax(runtime.model(values).logits[0, :-1], dim=-1)
+    start = max(0, len(prefix_ids) - 1)
+    target = full_ids[len(prefix_ids) : len(prefix_ids) + len(candidate_ids)]
+    scores = [float(log_probs[start + offset, token]) for offset, token in enumerate(target)]
+    total = sum(scores)
+    return {
+        "log_likelihood": total,
+        "mean_log_likelihood": total / len(scores),
+        "tokens": len(scores),
+    }
+
+
+def _canary(runtime: Any, config: EvaluationConfig) -> dict[str, Any]:
+    if config.canaries_file is None:
+        return {"status": "미실행", "gate": "실패", "reason": "canary provenance 파일 없음"}
+    try:
+        payload = json.loads(config.canaries_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise IntegrityError("canary provenance가 손상되었습니다") from exc
+    if (
+        not isinstance(payload, dict)
+        or payload.get("schema_version") != 1
+        or not payload.get("canaries")
+    ):
+        raise IntegrityError("canary provenance schema/items가 비었습니다")
+    rows = []
+    for item in payload["canaries"]:
+        candidates = item.get("candidates")
+        secret = item.get("secret")
+        if not isinstance(candidates, list) or secret not in candidates:
+            raise IntegrityError("canary secret/candidates 계약이 유효하지 않습니다")
+        scored = [
+            {"candidate": value, **_conditional_score(runtime, item["prefix"], value)}
+            for value in candidates
+        ]
+        scored.sort(key=lambda value: value["mean_log_likelihood"], reverse=True)
+        rank = next(index + 1 for index, value in enumerate(scored) if value["candidate"] == secret)
+        rows.append(
+            {
+                "id": item["id"],
+                "secret_rank": rank,
+                "exposed": rank <= config.canary_max_rank,
+                "scores": scored,
+            }
+        )
+    exposed = any(row["exposed"] for row in rows)
+    return {
+        "status": "완료",
+        "gate": "실패" if exposed else "통과",
+        "threshold_rank": config.canary_max_rank,
+        "canaries": rows,
+        "provenance_sha256": sha256_file(config.canaries_file),
+    }
 
 
 def generate(config: EvaluationConfig, prompt: str | None = None) -> dict[str, Any]:
@@ -225,15 +301,29 @@ def evaluate(config: EvaluationConfig) -> dict[str, Any]:
         }
     generations = generate(config)["generations"]
     cloze: list[dict[str, Any]] = []
+    correct = 0
     for item in FROZEN_CLOZE:
-        _prefix, suffix = item["prompt"].split("[MASK]")
-        candidates = [item["answer"], suffix]
+        prompt = str(item["prompt"])
+        prefix, suffix = prompt.split("[MASK]")
+        candidates = [str(value) for value in item["candidates"]]
+        scored = [
+            {
+                "candidate": candidate,
+                **_conditional_score(runtime, prefix, candidate, suffix),
+            }
+            for candidate in candidates
+        ]
+        scored.sort(key=lambda value: value["mean_log_likelihood"], reverse=True)
+        rank = next(
+            index + 1 for index, value in enumerate(scored) if value["candidate"] == item["answer"]
+        )
+        correct += rank == 1
         cloze.append(
             {
                 **item,
-                "candidate_token_lengths": [
-                    len(runtime.tokenizer.encode(value).ids) for value in candidates
-                ],
+                "answer_rank": rank,
+                "correct": rank == 1,
+                "scores": scored,
             }
         )
     needles = [str(item["answer"]) for item in FROZEN_CLOZE] + config.prompts
@@ -242,10 +332,15 @@ def evaluate(config: EvaluationConfig) -> dict[str, Any]:
         "kind": "evaluation",
         "fingerprints": runtime.fingerprints,
         "splits": split_results,
-        "cloze_schema": {"version": 1, "items": cloze},
+        "cloze_schema": {
+            "version": 2,
+            "scoring": "conditional mean log-likelihood; higher is better",
+            "accuracy": correct / len(cloze),
+            "items": cloze,
+        },
         "generation_quality": generations,
         "contamination": _contamination(config, needles),
-        "canary_exposure": {"status": "미검출", "canaries": []},
+        "canary_exposure": _canary(runtime, config),
         "long_train_match": _contamination(config, [row["text"] for row in generations]),
     }
     lines = [

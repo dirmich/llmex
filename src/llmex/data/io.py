@@ -1,6 +1,7 @@
 """원자적 JSON/JSONL.ZST 입출력과 fingerprint 충돌 보호."""
 
 import json
+import os
 import shutil
 import subprocess
 from collections.abc import Iterable, Iterator, Mapping
@@ -8,7 +9,27 @@ from pathlib import Path
 from typing import Any
 
 from llmex.errors import ConflictError, InputError, IntegrityError
-from llmex.fingerprint import fingerprint
+from llmex.fingerprint import fingerprint, sha256_file
+
+
+def atomic_write_bytes(path: Path, content: bytes) -> None:
+    """파일과 디렉터리를 fsync한 뒤 원자적으로 교체한다."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    try:
+        with temporary.open("wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        directory = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def prepare_output(path: Path, operation: Mapping[str, Any], *, force: bool) -> str:
@@ -25,25 +46,37 @@ def prepare_output(path: Path, operation: Mapping[str, Any], *, force: bool) -> 
         if not force:
             raise ConflictError(f"출력이 이미 존재합니다(--force로 동일 작업 재생성): {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    sidecar.write_text(
-        json.dumps(
-            {"fingerprint": value, "operation": operation},
-            ensure_ascii=False,
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n",
-        encoding="utf-8",
+    atomic_write_bytes(
+        sidecar,
+        (
+            json.dumps(
+                {"schema_version": 1, "fingerprint": value, "operation": operation},
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        ).encode("utf-8"),
     )
     return value
 
 
 def write_json(path: Path, value: Mapping[str, Any]) -> None:
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    atomic_write_bytes(
+        path,
+        (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
     )
-    temporary.replace(path)
+
+
+def verify_artifact_contract(path: Path, sidecar: Path) -> None:
+    """artifact/sidecar의 schema, fingerprint, checksum 결속을 검증한다."""
+
+    try:
+        value = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise IntegrityError(f"artifact sidecar를 검증할 수 없습니다: {sidecar}") from exc
+    if value.get("schema_version") != 1 or value.get("sha256") != sha256_file(path):
+        raise IntegrityError(f"artifact sidecar 계약 불일치: {path}")
 
 
 def write_jsonl_zst(path: Path, rows: Iterable[Mapping[str, Any]]) -> int:

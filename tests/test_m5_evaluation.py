@@ -126,6 +126,10 @@ def test_eval_generate_benchmark_cli_e2e_and_artifacts(tmp_path: Path) -> None:
     assert report["splits"]["test"]["perplexity"] > 0
     assert report["splits"]["test"]["bits_per_byte"] > 0
     assert report["cloze_schema"]["items"][0]["provenance"]
+    assert "mean_log_likelihood" in report["cloze_schema"]["items"][0]["scores"][0]
+    assert 0.0 <= report["cloze_schema"]["accuracy"] <= 1.0
+    assert report["canary_exposure"]["status"] == "미실행"
+    assert report["canary_exposure"]["gate"] == "실패"
     for stem in ("evaluation", "generation", "benchmark"):
         assert (evaluation.output_dir / f"{stem}-report.md").is_file()
         assert (evaluation.output_dir / f"{stem}-report.checksums.json").is_file()

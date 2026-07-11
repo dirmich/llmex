@@ -16,7 +16,7 @@
 ## ADR-003: 문서 단위 split
 
 - 상태: 승인
-- 결정: 정규화된 page ID/title hash로 train/validation/test를 나눈다.
+- 결정: 정규화된 문서 본문의 SHA-256 hash로 train/validation/test를 나눈다.
 - 이유: 같은 문서의 chunk가 여러 split에 들어가는 누출을 방지한다.
 
 ## ADR-004: byte-level BPE
@@ -138,3 +138,9 @@
 - 대안: 문서 체크박스만 두는 방식은 자동 배포가 미승인 상태를 우회할 수 있어 폐기했다. 가중치 라이선스를 프로젝트가 임의 지정하는 방식도 법률 검토 전에는 채택하지 않는다.
 - 결과: 로컬 acceptance와 외부 공개 acceptance를 명확히 분리하며 현재 공개 판정은 금지다. checksum, SBOM, provenance는 공급망 증거이지 법률·안전 승인을 대체하지 않는다.
 - 검증: 누락·빈·부분 승인 JSON이 종료 코드 5로 실패하고 세 완전 승인만 통과해야 한다. `0.ref`, raw data, checkpoint는 wheel 경계 밖이어야 한다.
+
+## ADR-018 — 1.1.0 artifact·split hash 단일 계약
+
+- **결정:** 문서 split 식별자는 정규화된 문서 본문의 SHA-256(`document_sha256`)이며 page ID/title hash가 아니다. 구현과 `docs/data-report.md`의 계약을 이 정의로 고정한다.
+- **결정:** JSON/artifact와 sidecar는 임시 파일 fsync → 원자 rename → 디렉터리 fsync 순서를 공유한다. 재개 상태에는 출력 SHA-256·byte 크기·JSON schema version을 봉인하고 재개 전에 다시 계산한다.
+- **결정:** ADR 계약 변경은 구현·회귀 테스트·이 문서를 한 버전에서 함께 변경해야 하며 불일치는 무결성 실패다.

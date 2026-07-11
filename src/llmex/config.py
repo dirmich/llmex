@@ -210,6 +210,8 @@ class EvaluationConfig(StrictModel):
     use_cache: bool = True
     benchmark_warmup: int = Field(default=2, ge=0)
     benchmark_iterations: int = Field(default=5, gt=0)
+    canaries_file: YamlPath | None = None
+    canary_max_rank: int = Field(default=10, gt=0)
 
 
 class BudgetConfig(StrictModel):

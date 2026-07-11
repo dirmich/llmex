@@ -182,3 +182,12 @@
 - release audit: 비밀·로컬 경로·필수 문서·참조 import 경계 통과
 - build/bundle: `llmex-1.0.1.tar.gz`, `llmex-1.0.1-py3-none-any.whl`, 120개 파일 checksum과 65개 구성요소 SBOM 생성 통과
 - `git diff --check`: whitespace 오류 없음
+
+## 2026-07-11 — 1.1.0 최종 리뷰 차단 해소
+
+- 보호 CI trust store 기반 HMAC-SHA256 승인 서명, RFC3339 발급·만료, issuer/role allowlist, 승인자 분리, evidence SHA-256, 버전·Git commit·config fingerprint 결속을 구현했다.
+- pipeline evidence schema와 빈 JSON 거부, 단계 산출물 checksum/크기/schema 재검증, 실행 중 time/token/energy budget 중단, 실제 중단·손상·정리·재개 drill을 추가했다.
+- checkpoint는 `weights_only=True`만 사용하며 NumPy RNG를 안전 tensor/basic type으로 저장한다. 악성 pickle 비실행 회귀를 추가했다.
+- cloze 조건부 평균 log-likelihood·rank·accuracy와 canary 실제 rank gate/미실행 실패-폐쇄, 단일-pass 유계 메모리 exact/near contamination을 구현했다.
+- 재개 세션 delta 처리량과 누적 wall-time 처리량을 분리하고 wheel/sdist digest, wheel METADATA 기반 SBOM, 배포 artifact subject provenance를 생성한다.
+- artifact/JSON/sidecar 원자 쓰기·fsync 계약을 통일하고 split ADR을 실제 normalized-content SHA-256 계약과 일치시켰다.

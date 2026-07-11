@@ -122,6 +122,8 @@ class Trainer:
         self.best_validation_loss = math.inf
         self.terminate_requested = False
         self.last_loss: float | None = None
+        self.accumulated_wall_seconds = 0.0
+        self._session_started: float | None = None
         self.run_dir = config.run_dir
         self.checkpoint_dir = self.run_dir / "checkpoints"
         self.metrics_path = self.run_dir / "metrics.jsonl"
@@ -145,6 +147,12 @@ class Trainer:
             "validation_sampler": self.validation_sampler.state_dict(),
             "rng": rng_state(),
             "precision": self.precision,
+            "accumulated_wall_seconds": self.accumulated_wall_seconds
+            + (
+                time.perf_counter() - self._session_started
+                if self._session_started is not None
+                else 0.0
+            ),
         }
 
     def save(self, *, best: bool = False) -> Path:
@@ -161,6 +169,7 @@ class Trainer:
         self.validation_sampler.load_state_dict(checkpoint["validation_sampler"])
         self.step = int(checkpoint["step"])
         self.best_validation_loss = float(checkpoint.get("best_validation_loss", math.inf))
+        self.accumulated_wall_seconds = float(checkpoint.get("accumulated_wall_seconds", 0.0))
         if checkpoint["scheduler"] != {"step": self.step}:
             raise IntegrityError("scheduler 상태가 checkpoint step과 다릅니다")
         restore_rng_state(checkpoint["rng"])
@@ -198,6 +207,8 @@ class Trainer:
         previous = signal.getsignal(signal.SIGTERM)
         signal.signal(signal.SIGTERM, self._on_sigterm)
         started = time.perf_counter()
+        self._session_started = started
+        session_start_step = self.step
         try:
             self.model.train()
             while self.step < self.config.max_steps:
@@ -239,8 +250,14 @@ class Trainer:
                 self.last_loss = total_loss / self.config.gradient_accumulation_steps
                 if self.step % self.config.log_interval == 0:
                     elapsed = time.perf_counter() - started
-                    tokens_seen = (
+                    cumulative_tokens = (
                         self.step
+                        * self.config.micro_batch_size
+                        * self.config.gradient_accumulation_steps
+                        * (self.config.sequence_length - 1)
+                    )
+                    session_tokens = (
+                        (self.step - session_start_step)
                         * self.config.micro_batch_size
                         * self.config.gradient_accumulation_steps
                         * (self.config.sequence_length - 1)
@@ -251,8 +268,11 @@ class Trainer:
                         "loss": self.last_loss,
                         "learning_rate": lr,
                         "gradient_norm": float(grad_norm),
-                        "tokens": tokens_seen,
-                        "tokens_per_second": tokens_seen / max(elapsed, 1e-9),
+                        "tokens": cumulative_tokens,
+                        "session_tokens": session_tokens,
+                        "session_tokens_per_second": session_tokens / max(elapsed, 1e-9),
+                        "tokens_per_second": cumulative_tokens
+                        / max(self.accumulated_wall_seconds + elapsed, 1e-9),
                         "precision": self.precision,
                         "device": self.device.type,
                     }
@@ -302,6 +322,8 @@ class Trainer:
                     break
             self.save()
         finally:
+            self.accumulated_wall_seconds += time.perf_counter() - started
+            self._session_started = None
             signal.signal(signal.SIGTERM, previous)
         return {
             "step": self.step,

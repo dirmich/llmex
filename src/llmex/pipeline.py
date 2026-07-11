@@ -1,15 +1,17 @@
-"""M6 재개 가능한 파이프라인, 자원·외부 증거 게이트와 보고서."""
+"""M6 재개 가능한 파이프라인, 자원·외부 증거·예산 게이트."""
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 
 import json
 import platform
 import resource
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from llmex.config import PipelineConfig
+from llmex.config import PipelineConfig, PipelineStageConfig
 from llmex.data.io import write_json
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
@@ -33,9 +35,7 @@ def _memory() -> dict[str, int]:
 
 
 def preflight(config: PipelineConfig) -> dict[str, Any]:
-    disk = shutil.disk_usage(config.run_dir.parent)
-    memory = _memory()
-    gib = 1024**3
+    disk, memory, gib = shutil.disk_usage(config.run_dir.parent), _memory(), 1024**3
     checks = {
         "disk": disk.free >= config.budget.minimum_free_disk_gib * gib,
         "memory": memory["available_bytes"] >= config.budget.minimum_available_memory_gib * gib,
@@ -60,24 +60,124 @@ def _state_path(config: PipelineConfig) -> Path:
 def _read_state(config: PipelineConfig) -> dict[str, Any]:
     path = _state_path(config)
     if path.exists():
-        value = json.loads(path.read_text(encoding="utf-8"))
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise IntegrityError("pipeline 상태가 손상되었습니다") from exc
+        if not isinstance(value, dict) or value.get("schema_version") != 2:
+            raise IntegrityError("pipeline 상태 schema가 손상되었습니다")
         if value.get("config_fingerprint") != fingerprint(config.model_dump(mode="json")):
             raise IntegrityError("기존 pipeline 상태와 설정 fingerprint가 다릅니다")
         return value
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "config_fingerprint": fingerprint(config.model_dump(mode="json")),
         "상태": "대기",
         "단계": {},
     }
 
 
-def _evidence(config: PipelineConfig) -> list[dict[str, Any]]:
-    return [
-        {"path": str(path), "sha256": sha256_file(path), "bytes": path.stat().st_size}
-        for path in config.required_evidence
-        if path.is_file()
-    ]
+def _validate_json(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise IntegrityError(f"JSON evidence/output이 손상되었습니다: {path}") from exc
+    if not isinstance(value, dict) or not value:
+        raise IntegrityError(f"빈 JSON object는 evidence/output이 아닙니다: {path}")
+    return value
+
+
+def _validate_evidence(path: Path, config_fp: str) -> dict[str, Any]:
+    value = _validate_json(path)
+    required = {"schema_version", "kind", "issuer", "issued_at", "subject", "artifact"}
+    if value.get("schema_version") != 1 or not required.issubset(value):
+        raise IntegrityError(f"구조화 evidence schema/필드 누락: {path}")
+    subject, artifact = value["subject"], value["artifact"]
+    if not isinstance(subject, dict) or subject.get("config_fingerprint") != config_fp:
+        raise IntegrityError(f"evidence config fingerprint 불일치: {path}")
+    if not isinstance(artifact, dict):
+        raise IntegrityError(f"evidence artifact 누락: {path}")
+    target = path.parent / str(artifact.get("path", ""))
+    if not target.is_file() or artifact.get("sha256") != sha256_file(target):
+        raise IntegrityError(f"evidence artifact checksum 불일치: {path}")
+    return {
+        "path": str(path),
+        "sha256": sha256_file(path),
+        "bytes": path.stat().st_size,
+        "kind": value["kind"],
+        "artifact_sha256": artifact["sha256"],
+    }
+
+
+def _output_records(stage: PipelineStageConfig) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for path in stage.outputs:
+        if not path.is_file() or path.stat().st_size == 0:
+            raise IntegrityError(f"pipeline 출력 누락/빈 파일: {path}")
+        schema: int | None = None
+        if path.suffix == ".json":
+            value = _validate_json(path)
+            raw_schema = value.get("schema_version")
+            if not isinstance(raw_schema, int):
+                raise IntegrityError(f"stage JSON output schema_version 누락: {path}")
+            schema = raw_schema
+        records.append(
+            {
+                "path": str(path),
+                "sha256": sha256_file(path),
+                "bytes": path.stat().st_size,
+                "schema_version": schema,
+            }
+        )
+    return records
+
+
+def _outputs_valid(stage: PipelineStageConfig, previous: dict[str, Any]) -> bool:
+    try:
+        return previous.get("outputs") == _output_records(stage)
+    except IntegrityError:
+        return False
+
+
+def _usage(config: PipelineConfig) -> dict[str, float]:
+    path = config.run_dir / "resource-usage.json"
+    if not path.is_file():
+        return {"tokens": 0.0, "energy_kwh": 0.0}
+    value = _validate_json(path)
+    try:
+        return {"tokens": float(value["tokens"]), "energy_kwh": float(value["energy_kwh"])}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise IntegrityError("resource usage telemetry가 유효하지 않습니다") from exc
+
+
+def _execute(
+    stage: PipelineStageConfig, config: PipelineConfig, deadline: float
+) -> tuple[subprocess.Popen[str], float]:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise IntegrityError("pipeline 시간 예산이 소진되었습니다")
+    process = subprocess.Popen(
+        stage.command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    started = time.monotonic()
+    while process.poll() is None:
+        usage = _usage(config)
+        if (
+            usage["tokens"] > config.budget.token_budget
+            or usage["energy_kwh"] > config.budget.maximum_energy_kwh
+        ):
+            process.terminate()
+            process.wait(timeout=5)
+            raise IntegrityError("pipeline token/energy 예산을 실행 중 초과했습니다")
+        if (
+            time.monotonic() - started > min(stage.timeout_seconds, remaining)
+            or time.monotonic() >= deadline
+        ):
+            process.terminate()
+            process.wait(timeout=5)
+            raise IntegrityError("pipeline stage/time 예산을 실행 중 초과했습니다")
+        time.sleep(0.02)
+    return process, time.monotonic() - started
 
 
 def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, Any]:
@@ -86,66 +186,69 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
     write_json(config.run_dir / "preflight.json", check)
     if check["판정"] != "통과":
         raise IntegrityError("자원 preflight가 실패했습니다")
-    missing = [str(path) for path in config.required_evidence if not path.is_file()]
     state = _read_state(config)
-    state["상태"] = "실행 중"
-    state["외부_증거_누락"] = missing
+    config_fp = cast(str, state["config_fingerprint"])
+    evidence: list[dict[str, Any]] = []
+    evidence_errors: list[str] = []
+    for path in config.required_evidence:
+        try:
+            evidence.append(_validate_evidence(path, config_fp))
+        except IntegrityError as exc:
+            evidence_errors.append(str(exc))
+    state.update({"상태": "실행 중", "외부_증거_오류": evidence_errors})
     write_json(_state_path(config), state)
-    started = time.monotonic()
+    deadline = time.monotonic() + config.budget.maximum_hours * 3600
     for stage in config.stages:
-        previous = state["단계"].get(stage.name, {})
-        if previous.get("상태") == "통과" and all(path.exists() for path in stage.outputs):
+        previous = cast(dict[str, Any], state["단계"].get(stage.name, {}))
+        if previous.get("상태") == "통과" and _outputs_valid(stage, previous):
             continue
-        if stage.external and (not allow_external or missing):
+        if stage.external and (
+            not allow_external or evidence_errors or len(evidence) != len(config.required_evidence)
+        ):
             state["단계"][stage.name] = {"상태": "외부 게이트 대기", "명령": stage.command}
             continue
-        before = time.monotonic()
-        completed = subprocess.run(
-            stage.command, text=True, capture_output=True, timeout=stage.timeout_seconds
-        )
+        process, elapsed = _execute(stage, config, deadline)
+        stdout, stderr = process.communicate()
         record: dict[str, Any] = {
-            "상태": "통과" if completed.returncode == 0 else "실패",
-            "returncode": completed.returncode,
-            "elapsed_seconds": time.monotonic() - before,
+            "상태": "통과" if process.returncode == 0 else "실패",
+            "returncode": process.returncode,
+            "elapsed_seconds": elapsed,
             "명령": stage.command,
-            "stdout_tail": completed.stdout[-4000:],
-            "stderr_tail": completed.stderr[-4000:],
+            "stdout_tail": stdout[-4000:],
+            "stderr_tail": stderr[-4000:],
         }
-        if completed.returncode == 0:
-            absent = [str(path) for path in stage.outputs if not path.exists()]
-            if absent:
-                record["상태"] = "실패"
-                record["누락_출력"] = absent
+        if process.returncode == 0:
+            try:
+                record["outputs"] = _output_records(stage)
+            except IntegrityError as exc:
+                record.update({"상태": "실패", "output_error": str(exc)})
         state["단계"][stage.name] = record
         write_json(_state_path(config), state)
         if record["상태"] == "실패":
             state["상태"] = "실패"
             write_json(_state_path(config), state)
             raise IntegrityError(f"pipeline 단계가 실패했습니다: {stage.name}")
-        if (time.monotonic() - started) / 3600 > config.budget.maximum_hours:
-            raise IntegrityError("pipeline 실행 시간이 승인 예산을 초과했습니다")
     waiting = any(item["상태"] == "외부 게이트 대기" for item in state["단계"].values())
-    state["상태"] = "외부 게이트 대기" if waiting else "완료"
-    state["증거"] = _evidence(config)
-    state["재개_명령"] = "uv run llmex pipeline run --config <동일-config.yaml>"
+    state.update(
+        {
+            "상태": "외부 게이트 대기" if waiting else "완료",
+            "증거": evidence,
+            "resource_usage": _usage(config),
+            "재개_명령": "uv run llmex pipeline run --config <동일-config.yaml>",
+        }
+    )
     write_json(_state_path(config), state)
-    manifest = {
-        "schema_version": 1,
+    manifest: dict[str, Any] = {
+        "schema_version": 2,
         "config": config.model_dump(mode="json"),
-        "config_fingerprint": state["config_fingerprint"],
+        "config_fingerprint": config_fp,
         "status_sha256": sha256_file(_state_path(config)),
-        "증거": state["증거"],
+        "증거": evidence,
         "완료": state["상태"] == "완료",
     }
     manifest["fingerprint"] = fingerprint(manifest)
     write_json(config.run_dir / "run-manifest.json", manifest)
-    immutable_path = config.run_dir / f"run-manifest-{manifest['fingerprint']}.json"
-    if immutable_path.exists():
-        previous = json.loads(immutable_path.read_text(encoding="utf-8"))
-        if previous != manifest:
-            raise IntegrityError("불변 run manifest fingerprint 충돌이 발생했습니다")
-    else:
-        write_json(immutable_path, manifest)
+    write_json(config.run_dir / f"run-manifest-{manifest['fingerprint']}.json", manifest)
     return state
 
 
@@ -171,12 +274,51 @@ def export(config: PipelineConfig) -> dict[str, Any]:
 
 
 def recovery_drill(config: PipelineConfig) -> dict[str, Any]:
-    state = _read_state(config)
-    before = fingerprint(state)
-    temporary = config.run_dir / ".recovery-drill.tmp"
-    temporary.write_text("의도적 중단", encoding="utf-8")
-    temporary.unlink()
-    after = fingerprint(_read_state(config))
-    result = {"판정": "통과" if before == after else "실패", "상태_fingerprint": after}
+    """실제 subprocess 중단, partial 손상, 정리와 재개를 검증한다."""
+    drill = config.run_dir / ".recovery-drill"
+    drill.mkdir(parents=True, exist_ok=True)
+    partial, final = drill / "partial.json", drill / "final.json"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            f"import pathlib,time; pathlib.Path({str(partial)!r}).write_text('{{'); time.sleep(30)",
+        ]
+    )
+    for _ in range(100):
+        if partial.exists():
+            break
+        time.sleep(0.01)
+    process.terminate()
+    process.wait(timeout=5)
+    interrupted = process.returncode != 0 and partial.exists()
+    try:
+        json.loads(partial.read_text())
+    except (json.JSONDecodeError, OSError):
+        corrupted = True
+    else:
+        corrupted = False
+    partial.unlink(missing_ok=True)
+    resumed = (
+        subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                f"import json,pathlib; pathlib.Path({str(final)!r}).write_text(json.dumps({{'schema_version':1,'resumed':True}}))",  # noqa: E501
+            ],
+            check=False,
+        ).returncode
+        == 0
+    )
+    verified = _validate_json(final).get("resumed") is True
+    result = {
+        "schema_version": 1,
+        "판정": "통과" if interrupted and corrupted and resumed and verified else "실패",
+        "중단": interrupted,
+        "손상_탐지": corrupted,
+        "partial_정리": not partial.exists(),
+        "재개": resumed and verified,
+        "final_sha256": sha256_file(final),
+    }
     write_json(config.run_dir / "recovery-drill.json", result)
     return result

@@ -231,3 +231,14 @@
 - 반복 NaN/Inf 또는 checkpoint 복구 실패
 - 예상 비용/시간이 승인값의 120% 초과
 - 라이선스·개인정보 문제가 해결되지 않은 상태의 공개 시도
+
+## 1.1.0 최종 리뷰 차단 해소
+
+- [x] 신뢰 저장소 서명 외부 승인과 대상/evidence 결속
+- [x] 구조화 pipeline evidence 및 빈 JSON 실패-폐쇄
+- [x] 안전 checkpoint 로드와 악성 pickle 비실행 회귀
+- [x] 실제 cloze/canary 계측과 유계 contamination
+- [x] runtime 예산 강제, stage 재개 무결성, session delta 처리량
+- [x] wheel/sdist 기반 SBOM/provenance와 recovery drill
+- [x] 원자적 artifact/sidecar 및 ADR hash 계약 정합화
+- [ ] 외부 법무·장기 baseline·공개 책임자 승인(실제 보호 CI 서명 필요)

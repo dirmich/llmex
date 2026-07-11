@@ -1,4 +1,5 @@
 """원자적 checkpoint 저장, 포인터 갱신과 엄격한 상태 복구."""
+# pyright: reportUnknownMemberType=false
 
 import os
 import random
@@ -12,9 +13,16 @@ from llmex.errors import IntegrityError
 
 
 def rng_state() -> dict[str, object]:
+    numpy_state = cast(tuple[str, np.ndarray[Any, Any], int, int, float], np.random.get_state())
     state: dict[str, object] = {
         "python": random.getstate(),
-        "numpy": np.random.get_state(),
+        "numpy": {
+            "algorithm": numpy_state[0],
+            "keys": torch.from_numpy(numpy_state[1].copy()),
+            "position": numpy_state[2],
+            "has_gauss": numpy_state[3],
+            "cached_gaussian": numpy_state[4],
+        },
         "torch_cpu": torch.get_rng_state(),
     }
     if torch.cuda.is_available():
@@ -24,7 +32,17 @@ def rng_state() -> dict[str, object]:
 
 def restore_rng_state(state: dict[str, object]) -> None:
     random.setstate(state["python"])  # type: ignore[arg-type]
-    np.random.set_state(state["numpy"])  # type: ignore[arg-type]
+    numpy_state = cast(dict[str, object], state["numpy"])
+    keys = cast(torch.Tensor, numpy_state["keys"]).cpu().numpy().astype(np.uint32, copy=False)
+    np.random.set_state(
+        (
+            str(numpy_state["algorithm"]),
+            keys,
+            int(cast(int, numpy_state["position"])),
+            int(cast(int, numpy_state["has_gauss"])),
+            float(cast(float, numpy_state["cached_gaussian"])),
+        )
+    )
     torch.set_rng_state(state["torch_cpu"])  # type: ignore[arg-type]
     if "torch_cuda" in state and torch.cuda.is_available():
         torch.cuda.set_rng_state_all(state["torch_cuda"])  # type: ignore[arg-type]
@@ -67,7 +85,7 @@ def load_checkpoint(path: Path, expected_fingerprints: dict[str, str]) -> dict[s
     if not path.is_file():
         raise IntegrityError(f"checkpoint가 없습니다: {path}")
     try:
-        value = torch.load(path, map_location="cpu", weights_only=False)
+        value = torch.load(path, map_location="cpu", weights_only=True)
     except Exception as exc:
         raise IntegrityError(f"checkpoint를 읽을 수 없습니다: {path}: {exc}") from exc
     if not isinstance(value, dict):
