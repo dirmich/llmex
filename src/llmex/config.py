@@ -241,6 +241,7 @@ class PipelineConfig(StrictModel):
     name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
     seed: int = Field(default=42, ge=0)
     run_dir: YamlPath
+    subject_repository: YamlPath
     budget: BudgetConfig
     stages: list[PipelineStageConfig] = Field(min_length=1)
     required_evidence: list[YamlPath] = []

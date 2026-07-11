@@ -12,9 +12,10 @@ from pathlib import Path
 from typing import Any, cast
 
 from llmex.config import PipelineConfig, PipelineStageConfig
-from llmex.data.io import write_json
+from llmex.data.io import atomic_write_bytes, write_json
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
+from llmex.trust import CANONICAL_COMMIT, repository_commit, verify_statement
 
 
 def _memory() -> dict[str, int]:
@@ -89,19 +90,43 @@ def _validate_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _validate_evidence(path: Path, config_fp: str) -> dict[str, Any]:
+def _validate_evidence(path: Path, config_fp: str, repository: Path, commit: str) -> dict[str, Any]:
     value = _validate_json(path)
-    required = {"schema_version", "kind", "issuer", "issued_at", "subject", "artifact"}
+    required = {
+        "schema_version",
+        "kind",
+        "issuer",
+        "role",
+        "issued_at",
+        "expires_at",
+        "subject",
+        "artifact",
+        "signature",
+    }
     if value.get("schema_version") != 1 or not required.issubset(value):
         raise IntegrityError(f"구조화 evidence schema/필드 누락: {path}")
     subject, artifact = value["subject"], value["artifact"]
-    if not isinstance(subject, dict) or subject.get("config_fingerprint") != config_fp:
-        raise IntegrityError(f"evidence config fingerprint 불일치: {path}")
+    if (
+        not isinstance(subject, dict)
+        or subject.get("config_fingerprint") != config_fp
+        or subject.get("git_commit") != commit
+        or not CANONICAL_COMMIT.fullmatch(str(subject.get("git_commit", "")))
+    ):
+        raise IntegrityError(f"evidence commit/config fingerprint 불일치: {path}")
     if not isinstance(artifact, dict):
         raise IntegrityError(f"evidence artifact 누락: {path}")
     target = path.parent / str(artifact.get("path", ""))
     if not target.is_file() or artifact.get("sha256") != sha256_file(target):
         raise IntegrityError(f"evidence artifact checksum 불일치: {path}")
+    if not isinstance(artifact.get("sha256"), str) or not isinstance(artifact.get("path"), str):
+        raise IntegrityError(f"evidence artifact schema 불일치: {path}")
+    verify_statement(
+        value,
+        repository=repository,
+        expected_role="baseline",
+        expected_kind="baseline-evidence",
+        signed_payload={key: item for key, item in value.items() if key != "signature"},
+    )
     return {
         "path": str(path),
         "sha256": sha256_file(path),
@@ -141,15 +166,43 @@ def _outputs_valid(stage: PipelineStageConfig, previous: dict[str, Any]) -> bool
         return False
 
 
-def _usage(config: PipelineConfig) -> dict[str, float]:
+def _usage(
+    config: PipelineConfig,
+    *,
+    authoritative: bool = False,
+    repository: Path | None = None,
+    commit: str | None = None,
+    config_fp: str | None = None,
+) -> dict[str, float]:
     path = config.run_dir / "resource-usage.json"
     if not path.is_file():
+        if authoritative:
+            raise IntegrityError("외부 stage의 최종 서명 resource telemetry가 없습니다")
         return {"tokens": 0.0, "energy_kwh": 0.0}
     value = _validate_json(path)
     try:
-        return {"tokens": float(value["tokens"]), "energy_kwh": float(value["energy_kwh"])}
+        usage = {"tokens": float(value["tokens"]), "energy_kwh": float(value["energy_kwh"])}
     except (KeyError, TypeError, ValueError) as exc:
         raise IntegrityError("resource usage telemetry가 유효하지 않습니다") from exc
+    if authoritative:
+        subject = value.get("subject")
+        if (
+            value.get("schema_version") != 1
+            or value.get("final") is not True
+            or not isinstance(subject, dict)
+            or subject.get("git_commit") != commit
+            or subject.get("config_fingerprint") != config_fp
+            or repository is None
+        ):
+            raise IntegrityError("외부 stage telemetry schema/최종성/대상 결속이 유효하지 않습니다")
+        verify_statement(
+            value,
+            repository=repository,
+            expected_role="baseline",
+            expected_kind="resource-usage",
+            signed_payload={key: item for key, item in value.items() if key != "signature"},
+        )
+    return usage
 
 
 def _execute(
@@ -190,11 +243,12 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
         raise IntegrityError("자원 preflight가 실패했습니다")
     state = _read_state(config)
     config_fp = cast(str, state["config_fingerprint"])
+    repository, commit = repository_commit(config.subject_repository)
     evidence: list[dict[str, Any]] = []
     evidence_errors: list[str] = []
     for path in config.required_evidence:
         try:
-            evidence.append(_validate_evidence(path, config_fp))
+            evidence.append(_validate_evidence(path, config_fp, repository, commit))
         except IntegrityError as exc:
             evidence_errors.append(str(exc))
     state.update({"상태": "실행 중", "외부_증거_오류": evidence_errors})
@@ -202,12 +256,31 @@ def run(config: PipelineConfig, *, allow_external: bool = False) -> dict[str, An
     deadline = time.monotonic() + config.budget.maximum_hours * 3600
     for stage in config.stages:
         previous = cast(dict[str, Any], state["단계"].get(stage.name, {}))
-        if previous.get("상태") == "통과" and _outputs_valid(stage, previous):
-            continue
+        telemetry_error: str | None = None
+        if stage.external:
+            try:
+                _usage(
+                    config,
+                    authoritative=True,
+                    repository=repository,
+                    commit=commit,
+                    config_fp=config_fp,
+                )
+            except IntegrityError as exc:
+                telemetry_error = str(exc)
         if stage.external and (
-            not allow_external or evidence_errors or len(evidence) != len(config.required_evidence)
+            not allow_external
+            or evidence_errors
+            or len(evidence) != len(config.required_evidence)
+            or telemetry_error is not None
         ):
-            state["단계"][stage.name] = {"상태": "외부 게이트 대기", "명령": stage.command}
+            state["단계"][stage.name] = {
+                "상태": "외부 게이트 대기",
+                "명령": stage.command,
+                "telemetry_error": telemetry_error,
+            }
+            continue
+        if previous.get("상태") == "통과" and _outputs_valid(stage, previous):
             continue
         process, elapsed = _execute(stage, config, deadline)
         stdout, stderr = process.communicate()
@@ -271,7 +344,7 @@ def export(config: PipelineConfig) -> dict[str, Any]:
         "|---|---|",
     ]
     rows.extend(f"| {name} | {item['상태']} |" for name, item in state["단계"].items())
-    (config.run_dir / "dashboard.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    atomic_write_bytes(config.run_dir / "dashboard.md", ("\n".join(rows) + "\n").encode())
     return payload
 
 

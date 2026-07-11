@@ -102,12 +102,15 @@ def release_audit() -> None:
 
 
 @release_app.command("gate")
-def release_gate(approvals: Annotated[Path, typer.Option("--approvals")]) -> None:
+def release_gate(
+    approvals: Annotated[Path, typer.Option("--approvals")],
+    repository: Annotated[Path, typer.Option("--repository-root")] = Path("."),
+) -> None:
     """법무·장기 baseline·공개 배포의 외부 승인을 검증합니다."""
     try:
         from llmex.release import external_gate
 
-        result = external_gate(approvals)
+        result = external_gate(approvals, repository)
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))

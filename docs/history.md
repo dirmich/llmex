@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-11 · 1.2.0 외부 신뢰 경계 차단 해제
+
+- 승인 파일 위치가 아니라 명시 subject repository root와 canonical HEAD commit에 release/pipeline 진술을 결속했다.
+- HEAD에 봉인되고 group/other 쓰기가 금지된 `.llmex/trust-policy.json`의 key digest·role·kind만 권위 있는 보호 CI policy로 인정한다. 일반 프로세스 환경변수만으로 만든 self-signed 결과는 승인하지 않는다.
+- 외부 evidence와 최종 resource telemetry의 서명, RFC3339 유효 기간, role/kind, commit/config/artifact 결속을 검증하고 누락·변조 시 대기한다.
+- JSONL.ZST와 pipeline Markdown까지 file/directory fsync와 atomic replace 계약으로 통일했다.
+
 ## 2026-07-11 · 1.1.1 AI slop 정리
 
 - `acf2841..45bd4ff`의 변경 코드·테스트만 대상으로 52개 targeted regression을 먼저 통과시켰다.

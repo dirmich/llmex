@@ -1,0 +1,21 @@
+{
+  "authority": "protected-ci",
+  "issuers": {
+    "llmex-baseline-ci": {
+      "key_sha256": "9062492c141e10c7419374eab0f1269f479772ae54d91b4b88d4e0503b62f365",
+      "kinds": ["baseline-evidence", "resource-usage"],
+      "roles": ["baseline"]
+    },
+    "llmex-legal-ci": {
+      "key_sha256": "a9b5188830ab154a2c8efb9b43d448f5c890ff9f02ca2ec7c90e3e9e7e58ec96",
+      "kinds": ["legal-approval"],
+      "roles": ["legal"]
+    },
+    "llmex-release-ci": {
+      "key_sha256": "413d6bd8ff3b5156aa185a154d0aa2d429b6b020e9e45db058693266f6084024",
+      "kinds": ["release-approval"],
+      "roles": ["release"]
+    }
+  },
+  "schema_version": 1
+}

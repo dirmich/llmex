@@ -144,3 +144,16 @@
 - **결정:** 문서 split 식별자는 정규화된 문서 본문의 SHA-256(`document_sha256`)이며 page ID/title hash가 아니다. 구현과 `docs/data-report.md`의 계약을 이 정의로 고정한다.
 - **결정:** JSON/artifact와 sidecar는 임시 파일 fsync → 원자 rename → 디렉터리 fsync 순서를 공유한다. 재개 상태에는 출력 SHA-256·byte 크기·JSON schema version을 봉인하고 재개 전에 다시 계산한다.
 - **결정:** ADR 계약 변경은 구현·회귀 테스트·이 문서를 한 버전에서 함께 변경해야 하며 불일치는 무결성 실패다.
+
+## ADR-019 — 1.2.0 보호 CI 신뢰 경계
+
+- **결정:** release와 pipeline 외부 진술은 approval 파일 경로가 아니라 명시 Git 최상위
+  subject repository와 canonical HEAD commit에 결속한다.
+- **권위:** HEAD에 byte 단위로 봉인되고 group/other 쓰기가 금지된
+  `.llmex/trust-policy.json`만 issuer key digest, exact role과 kind를 정한다. 프로세스 환경은
+  policy digest에 맞는 보호 signing material을 운반할 뿐 policy를 새로 정의하지 못한다.
+- **실패-폐쇄:** 잘못된 Git root/commit, role/kind/시각/config/artifact/서명, 만료와 변조를
+  거부한다. 외부 stage의 최종 서명 token/energy telemetry가 없으면 실행하지 않는다.
+- **평가·원자 계약:** 평가 near contamination은 문자 5-gram Jaccard이며 MinHash가 아니다.
+  canary provenance 부재는 미실행/실패다. JSONL.ZST와 dashboard Markdown도 file/directory
+  fsync 뒤 atomic replace한다.

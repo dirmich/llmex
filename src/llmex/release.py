@@ -3,10 +3,7 @@
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import json
-import os
 import re
 import subprocess
 import sys
@@ -14,12 +11,13 @@ import zipfile
 from datetime import UTC, datetime
 from email.parser import Parser
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from llmex import __version__
 from llmex.data.io import write_json
 from llmex.errors import InputError, IntegrityError
 from llmex.fingerprint import sha256_file
+from llmex.trust import repository_commit, verify_statement
 
 SCHEMA_VERSION = 1
 REQUIRED_RELEASE_FILES = (
@@ -45,6 +43,11 @@ REQUIRED_RELEASE_FILES = (
     "docs/examples.md",
 )
 EXTERNAL_GATES = ("법무 검토", "장기 baseline", "공개 배포 결정")
+GATE_POLICY = {
+    "법무 검토": ("legal", "legal-approval"),
+    "장기 baseline": ("baseline", "baseline-evidence"),
+    "공개 배포 결정": ("release", "release-approval"),
+}
 REFERENCE_DIR = "0" + ".ref"
 REFERENCE_MODULE = "llm" + "_math"
 MAC_USER_PREFIX = "/" + "Users" + "/"
@@ -202,28 +205,7 @@ def audit(root: Path) -> dict[str, Any]:
     return {"판정": "통과", "검사": ["비밀", "로컬 경로", "필수 문서", "참조 import 경계"]}
 
 
-def _approval_policy() -> tuple[dict[str, str], dict[str, set[str]]]:
-    try:
-        keys = cast(dict[str, str], json.loads(os.environ["LLMEX_APPROVAL_KEYS"]))
-        raw_roles = cast(dict[str, list[str]], json.loads(os.environ["LLMEX_APPROVAL_ROLES"]))
-    except (KeyError, json.JSONDecodeError, TypeError) as exc:
-        raise IntegrityError("보호 CI 승인 trust store가 설정되지 않았습니다") from exc
-    roles = {issuer: set(values) for issuer, values in raw_roles.items()}
-    if not keys or set(keys) != set(roles):
-        raise IntegrityError("승인 issuer key/role allowlist가 비었거나 불일치합니다")
-    return keys, roles
-
-
-def _rfc3339(value: object) -> datetime:
-    if not isinstance(value, str) or not value.endswith(("Z", "+00:00")):
-        raise ValueError("UTC RFC3339 시각이 아닙니다")
-    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    if parsed.tzinfo is None:
-        raise ValueError("timezone이 없습니다")
-    return parsed.astimezone(UTC)
-
-
-def external_gate(approvals: Path) -> dict[str, Any]:
+def external_gate(approvals: Path, repository: Path) -> dict[str, Any]:
     """보호 CI trust store와 evidence digest에 결속된 외부 승인을 검증한다."""
     try:
         payload = json.loads(approvals.read_text(encoding="utf-8"))
@@ -231,11 +213,7 @@ def external_gate(approvals: Path) -> dict[str, Any]:
         raise InputError(f"외부 승인 파일을 읽을 수 없습니다: {approvals}: {exc}") from exc
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
         raise IntegrityError("외부 승인 schema가 없거나 지원되지 않습니다")
-    keys, allowed_roles = _approval_policy()
-    now = datetime.now(UTC)
-    expected_commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=approvals.parent, text=True, capture_output=True
-    ).stdout.strip()
+    repository, expected_commit = repository_commit(repository)
     target = payload.get("target")
     if (
         not isinstance(target, dict)
@@ -261,17 +239,10 @@ def external_gate(approvals: Path) -> dict[str, Any]:
             or not isinstance(approver, str)
         ):
             raise IntegrityError(f"{name}: issuer/role/approver 누락")
-        if issuer not in keys or role not in allowed_roles[issuer]:
-            raise IntegrityError(f"{name}: issuer/role allowlist 위반")
+        expected_role, expected_kind = GATE_POLICY[name]
         if approver in approvers:
             raise IntegrityError("서로 다른 gate에 동일 승인자를 사용할 수 없습니다")
         approvers.add(approver)
-        try:
-            issued, expires = _rfc3339(item.get("issued_at")), _rfc3339(item.get("expires_at"))
-        except (ValueError, TypeError) as exc:
-            raise IntegrityError(f"{name}: RFC3339 시각이 유효하지 않습니다") from exc
-        if not issued <= now < expires or expires <= issued:
-            raise IntegrityError(f"{name}: 승인이 아직 유효하지 않거나 만료되었습니다")
         evidence = item.get("evidence")
         if not isinstance(evidence, dict):
             raise IntegrityError(f"{name}: evidence 누락")
@@ -283,11 +254,19 @@ def external_gate(approvals: Path) -> dict[str, Any]:
             "target": target,
             **{key: value for key, value in item.items() if key != "signature"},
         }
-        canonical = json.dumps(signed, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        expected = hmac.new(keys[issuer].encode(), canonical.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(str(item.get("signature", "")), expected):
-            raise IntegrityError(f"{name}: 신뢰 가능한 서명 검증 실패")
-    return {"판정": "승인", "게이트": list(EXTERNAL_GATES), "target": target}
+        verify_statement(
+            item,
+            repository=repository,
+            expected_role=expected_role,
+            expected_kind=expected_kind,
+            signed_payload=signed,
+        )
+    return {
+        "판정": "승인",
+        "권위": "protected-ci",
+        "게이트": list(EXTERNAL_GATES),
+        "target": target,
+    }
 
 
 def bundle(root: Path, output: Path) -> dict[str, Any]:

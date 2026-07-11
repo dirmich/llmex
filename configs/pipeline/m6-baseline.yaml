@@ -1,6 +1,7 @@
 name: m6-baseline
 seed: 42
 run_dir: runs/m6-baseline
+subject_repository: .
 budget:
   minimum_free_disk_gib: 40.0
   minimum_available_memory_gib: 16.0

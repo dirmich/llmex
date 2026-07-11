@@ -2,6 +2,15 @@
 
 > 다음 세션은 위에서 아래로 진행한다. `[ ]`를 구현 전에 `[~]`, 검증 후 `[x]`로 바꾼다. 각 milestone 종료 시 명령과 artifact 경로를 아래 실행 기록에 남긴다.
 
+## 1.2.0 외부 신뢰 경계
+
+- [x] release subject repository/canonical commit 결속과 gate별 exact role 검증
+- [x] Git 봉인 보호 CI policy와 일반 env self-signing 권위 분리
+- [x] pipeline evidence 서명·role/kind·시각·commit/config/artifact 검증
+- [x] 외부 stage 최종 token/energy telemetry 부재·변조 실패-폐쇄
+- [x] canary/atomic/contamination 문서 계약 동기화
+- [ ] 실제 보호 environment에서 1.2.0 공개 승인 artifact 발급(외부 대기)
+
 ## 1.1.1 정리
 
 - [x] `acf2841..45bd4ff` 변경 코드·테스트의 52개 regression 동작 잠금
@@ -119,7 +128,7 @@
 - [x] temperature/top-k/top-p generation CLI
 - [x] repetition, distinct-n, Unicode validity
 - [x] exact contamination 검사
-- [x] MinHash contamination 검사
+- [x] 정규화 문자 5-gram Jaccard contamination 검사(MinHash 아님)
 - [x] canary exposure test
 - [x] 긴 문자열 train match/암기 검사
 - [x] 평가 JSON 및 Markdown renderer

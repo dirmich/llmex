@@ -96,7 +96,14 @@ def write_jsonl_zst(path: Path, rows: Iterable[Mapping[str, Any]]) -> int:
         process.kill()
         temporary.unlink(missing_ok=True)
         raise
-    temporary.replace(path)
+    with temporary.open("rb") as stream:
+        os.fsync(stream.fileno())
+    os.replace(temporary, path)
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
     return count
 
 

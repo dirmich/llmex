@@ -1,5 +1,11 @@
+import hashlib
+
+# pyright: reportArgumentType=false
+import hmac
 import json
+import subprocess
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -13,10 +19,50 @@ from llmex.fingerprint import fingerprint, sha256_file
 from llmex.pipeline import export, preflight, recovery_drill, run
 
 
-def _config(tmp_path: Path, evidence: Path, output: Path) -> PipelineConfig:
+def _repository(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, str]:
+    signing_material = "baseline-material"
+    monkeypatch.setenv(
+        "LLMEX_PROTECTED_SIGNING_KEYS", json.dumps({"baseline-ci": signing_material})
+    )
+    repository = tmp_path / "subject"
+    repository.mkdir()
+    (repository / ".llmex").mkdir()
+    policy = {
+        "schema_version": 1,
+        "authority": "protected-ci",
+        "issuers": {
+            "baseline-ci": {
+                "key_sha256": hashlib.sha256(signing_material.encode()).hexdigest(),
+                "roles": ["baseline"],
+                "kinds": ["baseline-evidence", "resource-usage"],
+            }
+        },
+    }
+    (repository / ".llmex/trust-policy.json").write_text(json.dumps(policy))
+    subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+    subprocess.run(["git", "add", "."], cwd=repository, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-qm",
+            "policy",
+        ],
+        cwd=repository,
+        check=True,
+    )
+    return repository, signing_material
+
+
+def _config(tmp_path: Path, evidence: Path, output: Path, repository: Path) -> PipelineConfig:
     payload = {
         "name": "m6-test",
         "run_dir": str(tmp_path / "run"),
+        "subject_repository": str(repository),
         "budget": {
             "minimum_free_disk_gib": 0.001,
             "minimum_available_memory_gib": 0.001,
@@ -44,31 +90,77 @@ def _config(tmp_path: Path, evidence: Path, output: Path) -> PipelineConfig:
     return PipelineConfig.model_validate(payload)
 
 
-def test_pipeline_structured_evidence_resume_checksum_drill_and_export(tmp_path: Path) -> None:
-    output, evidence, artifact = (
-        tmp_path / "완료.json",
-        tmp_path / "승인.json",
-        tmp_path / "근거.txt",
-    )
-    config = _config(tmp_path, evidence, output)
+def _sign(value: dict[str, object], secret: str) -> dict[str, object]:
+    canonical = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return {
+        **value,
+        "signature": hmac.new(secret.encode(), canonical.encode(), hashlib.sha256).hexdigest(),
+    }
+
+
+def _write_evidence(path: Path, config: PipelineConfig, repository: Path, secret: str) -> None:
+    artifact = path.parent / "근거.txt"
+    artifact.write_text("검토 완료")
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repository, check=True, text=True, capture_output=True
+    ).stdout.strip()
+    now = datetime.now(UTC)
+    value = {
+        "schema_version": 1,
+        "kind": "baseline-evidence",
+        "issuer": "baseline-ci",
+        "role": "baseline",
+        "issued_at": (now - timedelta(minutes=1)).isoformat(),
+        "expires_at": (now + timedelta(hours=1)).isoformat(),
+        "subject": {
+            "git_commit": commit,
+            "config_fingerprint": fingerprint(config.model_dump(mode="json")),
+        },
+        "artifact": {"path": artifact.name, "sha256": sha256_file(artifact)},
+    }
+    path.write_text(json.dumps(_sign(value, secret)))
+
+
+def _write_telemetry(config: PipelineConfig, repository: Path, secret: str) -> Path:
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repository, check=True, text=True, capture_output=True
+    ).stdout.strip()
+    now = datetime.now(UTC)
+    value = {
+        "schema_version": 1,
+        "kind": "resource-usage",
+        "issuer": "baseline-ci",
+        "role": "baseline",
+        "issued_at": (now - timedelta(minutes=1)).isoformat(),
+        "expires_at": (now + timedelta(hours=1)).isoformat(),
+        "subject": {
+            "git_commit": commit,
+            "config_fingerprint": fingerprint(config.model_dump(mode="json")),
+        },
+        "final": True,
+        "tokens": 10,
+        "energy_kwh": 0.1,
+    }
+    path = config.run_dir / "resource-usage.json"
+    path.write_text(json.dumps(_sign(value, secret)))
+    return path
+
+
+def test_pipeline_signed_evidence_telemetry_resume_and_export(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, secret = _repository(tmp_path, monkeypatch)
+    output, evidence = tmp_path / "완료.json", tmp_path / "승인.json"
+    config = _config(tmp_path, evidence, output, repository)
     assert preflight(config)["판정"] == "통과"
     assert run(config)["상태"] == "외부 게이트 대기"
-    evidence.write_text("{}")
+    evidence.write_text(json.dumps({"schema_version": 1, "kind": "anything", "issuer": "self"}))
     assert run(config, allow_external=True)["상태"] == "외부 게이트 대기"
-    artifact.write_text("검토 완료")
-    config_fp = fingerprint(config.model_dump(mode="json"))
-    evidence.write_text(
-        json.dumps(
-            {
-                "schema_version": 1,
-                "kind": "human-audit",
-                "issuer": "protected-ci",
-                "issued_at": "2026-07-11T00:00:00Z",
-                "subject": {"config_fingerprint": config_fp},
-                "artifact": {"path": artifact.name, "sha256": sha256_file(artifact)},
-            }
-        )
-    )
+    _write_evidence(evidence, config, repository, secret)
+    assert (
+        run(config, allow_external=True)["상태"] == "외부 게이트 대기"
+    )  # telemetry 부재 fail-closed
+    _write_telemetry(config, repository, secret)
     assert run(config, allow_external=True)["상태"] == "완료"
     output.write_text('{"schema_version":1,"result":"변조"}')
     assert run(config, allow_external=True)["단계"]["local"]["outputs"][0]["sha256"] == sha256_file(
@@ -83,10 +175,35 @@ def test_pipeline_structured_evidence_resume_checksum_drill_and_export(tmp_path:
     )
 
 
-def test_pipeline_budget_enforced_during_stage(tmp_path: Path) -> None:
-    evidence = tmp_path / "e.json"
-    output = tmp_path / "o.json"
-    config = _config(tmp_path, evidence, output).model_copy(
+def test_pipeline_rejects_architect_self_attestation_and_mutations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, secret = _repository(tmp_path, monkeypatch)
+    evidence, output = tmp_path / "e.json", tmp_path / "o.json"
+    config = _config(tmp_path, evidence, output, repository)
+    _write_evidence(evidence, config, repository, secret)
+    original = json.loads(evidence.read_text())
+    for field, bad in (("kind", "anything"), ("role", "release"), ("issued_at", "not-a-time")):
+        value = json.loads(json.dumps(original))
+        value[field] = bad
+        evidence.write_text(json.dumps(value))
+        assert run(config, allow_external=True)["상태"] == "외부 게이트 대기"
+    value = json.loads(json.dumps(original))
+    value["subject"]["git_commit"] = "0" * 40
+    evidence.write_text(json.dumps(value))
+    assert run(config, allow_external=True)["상태"] == "외부 게이트 대기"
+    value = json.loads(json.dumps(original))
+    value["signature"] = "0" * 64
+    evidence.write_text(json.dumps(value))
+    assert run(config, allow_external=True)["상태"] == "외부 게이트 대기"
+
+
+def test_pipeline_budget_enforced_during_stage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository, _ = _repository(tmp_path, monkeypatch)
+    evidence, output = tmp_path / "e.json", tmp_path / "o.json"
+    config = _config(tmp_path, evidence, output, repository).model_copy(
         update={
             "required_evidence": [],
             "stages": [
@@ -112,6 +229,7 @@ def test_pipeline_rejects_over_baseline() -> None:
     payload = {
         "name": "invalid",
         "run_dir": "runs/x",
+        "subject_repository": ".",
         "budget": {
             "minimum_free_disk_gib": 1.0,
             "minimum_available_memory_gib": 1.0,

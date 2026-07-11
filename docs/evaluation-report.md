@@ -8,7 +8,7 @@ validation/test는 겹치지 않는 다음-token window로 평가한다. 합산 
 
 고정 cloze schema v1은 문항 ID, `[MASK]` prompt, 정답과 provenance를 보존한다. 고정 생성 suite는 띄어쓰기, 조사·어미, 고유명사, 숫자·날짜 범주를 포함한다. 생성 결과에는 반복률, distinct-1/2, 엄격한 UTF-8 유효성, EOS 도달과 문맥 제한 종료를 기록한다.
 
-corpus가 주어지면 평가 문자열과 생성문에 대해 train 본문 substring exact 검사와 정규화 문자 5-gram Jaccard near-match를 수행한다. canary 목록은 학습 단계에서 주입된 값이 없으면 빈 목록과 `미검출` 상태로 명시하며, 생성문의 긴 train match 결과를 별도 보존한다. 실제 공개 판단에는 사람이 canary와 고유 구절 목록을 승인해야 한다.
+corpus가 주어지면 평가 문자열과 생성문에 대해 train 본문 substring exact 검사와 정규화 문자 5-gram Jaccard near-match를 수행한다. 이는 평가 contamination에서 MinHash를 사용한다는 뜻이 아니다. canary provenance가 없으면 `미실행/실패`이며 성공이나 미검출로 간주하지 않는다. 생성문의 긴 train match 결과도 별도 보존한다. 실제 공개 판단에는 사람이 canary와 고유 구절 목록을 승인해야 한다.
 
 ## 산출물
 

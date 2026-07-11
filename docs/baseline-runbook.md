@@ -38,3 +38,10 @@ cat runs/m6-baseline/dashboard.md
 ```
 
 전체 dump와 장기 학습이 미완료인 동안 정상 상태는 `외부 게이트 대기`다.
+
+## 1.2.0 외부 evidence와 telemetry
+
+외부 단계 evidence는 `baseline-evidence` kind와 `baseline` role, issuer, UTC RFC3339 발급/만료,
+subject Git commit/config fingerprint, artifact path/SHA-256 및 보호 CI 서명을 포함한다. 같은 대상에
+결속된 `resource-usage.json`은 `resource-usage` kind, `final=true`, 누적 tokens/energy_kwh와 서명을
+가져야 한다. 하나라도 없거나 만료·변조되면 `--allow-external`이어도 단계는 실행되지 않고 대기한다.
