@@ -105,6 +105,9 @@ class ModelConfig(StrictModel):
     n_kv_heads: int = Field(gt=0)
     ffn_hidden_size: int = Field(gt=0)
     dropout: float = Field(ge=0.0, lt=1.0)
+    norm_eps: float = Field(default=1e-5, gt=0.0)
+    rope_theta: float = Field(default=10000.0, gt=0.0)
+    init_std: float = Field(default=0.02, gt=0.0)
 
     @model_validator(mode="after")
     def validate_attention_shape(self) -> "ModelConfig":
@@ -112,6 +115,8 @@ class ModelConfig(StrictModel):
             raise ValueError("d_model은 n_heads로 나누어져야 합니다")
         if self.n_heads % self.n_kv_heads != 0:
             raise ValueError("n_heads는 n_kv_heads로 나누어져야 합니다")
+        if (self.d_model // self.n_heads) % 2 != 0:
+            raise ValueError("RoPE를 위해 attention head 차원은 짝수여야 합니다")
         return self
 
 

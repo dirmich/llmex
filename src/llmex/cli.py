@@ -42,11 +42,13 @@ fingerprint_app = typer.Typer(help="입력 fingerprint를 계산합니다.", no_
 run_app = typer.Typer(help="재현 가능한 실행 디렉터리를 관리합니다.", no_args_is_help=True)
 data_app = typer.Typer(help="Wikimedia M1 데이터 파이프라인을 실행합니다.", no_args_is_help=True)
 tokenizer_app = typer.Typer(help="M2 토크나이저와 token shard를 생성합니다.", no_args_is_help=True)
+model_app = typer.Typer(help="M3 decoder-only 모델을 검사합니다.", no_args_is_help=True)
 app.add_typer(config_app, name="config")
 app.add_typer(fingerprint_app, name="fingerprint")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
 app.add_typer(tokenizer_app, name="tokenizer")
+app.add_typer(model_app, name="model")
 
 
 class ConfigKind(StrEnum):
@@ -172,6 +174,47 @@ def _tokenizer_command(command: str, config_path: Path, dry_run: bool, force: bo
             "pack": pack_tokenizer,
         }
         result = functions[command](config, force=force)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@model_app.command("inspect")
+def model_inspect(
+    config_path: Annotated[Path, typer.Option("--config")],
+    output: Annotated[Path | None, typer.Option("--output")] = None,
+    dry_run: Annotated[bool, typer.Option()] = False,
+    force: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """정확한 파라미터 수와 가중치·AdamW 학습 메모리를 기록합니다."""
+    try:
+        from llmex.model import CausalLM
+
+        config = load_yaml(config_path, ModelConfig)
+        target = output or Path("artifacts") / "model" / config.name / "inspect.json"
+        operation = {"command": "model inspect", "config": config.model_dump(mode="json")}
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {"dry_run": True, "output": str(target), "fingerprint": fingerprint(operation)},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        operation_fingerprint = prepare_output(target, operation, force=force)
+        model = CausalLM(config)
+        estimate = model.memory_estimate()
+        result: dict[str, object] = {
+            "schema_version": 1,
+            "model": config.name,
+            "config": config.model_dump(mode="json"),
+            "fingerprint": operation_fingerprint,
+            **estimate,
+            "weight_tying": model.lm_head.weight is model.token_embedding.weight,
+        }
+        write_json(target, result)
+        write_json(target.with_name("resolved-config.json"), config.model_dump(mode="json"))
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))

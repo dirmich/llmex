@@ -76,6 +76,15 @@
 - 결과: 16k/32k 설정을 모두 제공하고 실제 vocab 최대 ID에 따라 `uint16` 또는 `uint32`를 자동 선택한다. tokenizer/corpus fingerprint, source 경계, checksum, token 수, 최소/최대 ID를 manifest에 기록한다.
 - 검증: 특수 ID, UNK 0건, 임의 유효 Unicode round-trip, train-only fitting, split 누출 거부, EOS/next-token 정렬, 원자적 shard와 두 번 실행 checksum 동일성을 통과해야 한다.
 
+## ADR-012: 독립 구현한 modern decoder와 SDPA 기준 경계
+
+- 상태: 승인
+- 배경: M3는 교재의 설명용 nano-GPT를 production dependency로 사용하지 않으면서 causal mask, RoPE offset, GQA와 mixed precision에서 일관된 동작을 제공해야 한다.
+- 결정: bias 없는 Pre-Norm RMSNorm/RoPE/GQA/SwiGLU decoder를 typed PyTorch 모듈로 독립 구현한다. 기본 attention은 PyTorch SDPA를 사용하고 명시적 절대 위치 causal boolean mask를 전달한다. 수치 검증용 eager 구현은 같은 projection과 mask를 공유한다. embedding/LM head는 동일 Parameter를 사용하고 residual output projection에는 `1/sqrt(2L)` 초기화 scale을 적용한다.
+- 대안: 교재 notebook class를 직접 옮기면 빠르지만 독립 구현·typing·cache 계약을 충족하지 못한다. `is_causal=True`만 사용하면 KV cache offset query에서 mask 의미가 모호해질 수 있다. 별도 LM head 복사는 저장공간과 파라미터를 불필요하게 늘린다.
+- 결과: eager correctness를 기준으로 CPU에서 항상 검증할 수 있고, SDPA가 실행 환경에 맞는 backend를 선택한다. KV cache는 v1.1 공개 CLI보다 먼저 내부 API로 제공하되 cache 없는 forward와 동일 logits/생성 결과를 유지한다.
+- 검증: 수식 tensor, SDPA/eager parity, 미래 token leakage 0, cache parity, finite gradient, state dict round-trip, 128문서 overfit과 inspect artifact를 통과해야 한다.
+
 ## ADR 템플릿
 
 ```text

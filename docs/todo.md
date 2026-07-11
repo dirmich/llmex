@@ -68,20 +68,20 @@
 
 ## M3 decoder-only 모델
 
-- [ ] `ModelConfig` 불변조건 validation
-- [ ] RMSNorm 구현과 reference test
-- [ ] RoPE 구현, cache, position offset test
-- [ ] GQA/MHA attention 구현
-- [ ] causal leakage test
-- [ ] SDPA와 eager reference 결과 비교
-- [ ] SwiGLU 구현
-- [ ] Pre-Norm decoder block
-- [ ] token embedding/LM head weight tying
-- [ ] shifted causal loss
-- [ ] parameter count와 VRAM estimate
-- [ ] forward/backward shape/property tests
-- [ ] state_dict round-trip test
-- [ ] 128문서 overfit test
+- [x] `ModelConfig` 불변조건 validation
+- [x] RMSNorm 구현과 reference test
+- [x] RoPE 구현, cache, position offset test
+- [x] GQA/MHA attention 구현
+- [x] causal leakage test
+- [x] SDPA와 eager reference 결과 비교
+- [x] SwiGLU 구현
+- [x] Pre-Norm decoder block
+- [x] token embedding/LM head weight tying
+- [x] shifted causal loss
+- [x] parameter count와 VRAM estimate
+- [x] forward/backward shape/property tests
+- [x] state_dict round-trip test
+- [x] 128문서 overfit test
 
 ## M4 학습 시스템
 
@@ -156,6 +156,7 @@
 | 2026-07-11 | M0 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff lint/format; Pyright; Pytest; CLI help; ref checksum; `docker compose config`; `git diff --check`; DGX Spark CUDA smoke | `14 passed`; GB10/CUDA 13.0/bf16 `finite=true`; NGC 25.10 digest 고정 | M1 Wikipedia 데이터 |
 | 2026-07-11 | M1 fixture smoke | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright; Pytest; `llmex data sample-e2e --max-documents 1000`; `git diff --check` | 외부 네트워크 없는 확장 fixture, local HTTP resume, checksum/filter/attribution/split/E2E hash 검증; 실제 dump canary 미실행 | 실제 dump canary 후 M2 토크나이저 |
 | 2026-07-11 | M2 fixture tokenizer | 미커밋 작업 트리 | `uv sync`; Ruff format/check; Pyright; Pytest; fixture `tokenizer train/evaluate/pack` 2회; manifest 비교; `git diff --check` | 16k byte-level BPE, Unicode 10,000표본/속성, train-only, EOS/memmap/checksum 재현성 검증 | 실제 corpus 16k/32k 비교 후 M3 |
+| 2026-07-11 | M3 decoder-only 모델 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; `llmex model inspect`; GB10 CUDA forward/backward; ref checksum; `git diff --check` | `36 passed`; strict 오류 0건; 2,835,584 parameters; CUDA finite loss; RMSNorm/RoPE/GQA/SDPA/SwiGLU/tied LM/loss/generation/KV cache와 128문서 overfit 검증 | M4 학습 시스템 |
 
 ## 즉시 중단 조건
 

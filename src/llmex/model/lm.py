@@ -1,0 +1,152 @@
+"""Decoder-only causal language model, loss와 생성."""
+
+from dataclasses import dataclass
+from typing import cast
+
+import torch
+from torch import Tensor, nn
+from torch.nn import functional as F
+
+from llmex.config import ModelConfig
+from llmex.model.attention import KVCache
+from llmex.model.block import DecoderBlock
+from llmex.model.norm import RMSNorm
+
+
+@dataclass(frozen=True)
+class CausalLMOutput:
+    logits: Tensor
+    loss: Tensor | None
+    cache: tuple[KVCache, ...] | None
+
+
+@dataclass(frozen=True)
+class GenerationConfig:
+    max_new_tokens: int = 20
+    temperature: float = 1.0
+    top_k: int | None = None
+    eos_id: int | None = None
+    use_cache: bool = True
+
+
+class CausalLM(nn.Module):
+    """tied embedding을 사용하는 Pre-Norm causal LM."""
+
+    def __init__(self, config: ModelConfig) -> None:
+        super().__init__()
+        self.config = config
+        self.token_embedding = nn.Embedding(config.vocab_size, config.d_model)
+        self.dropout = nn.Dropout(config.dropout)
+        self.blocks = nn.ModuleList(DecoderBlock(config) for _ in range(config.n_layers))
+        self.final_norm = RMSNorm(config.d_model, config.norm_eps)
+        self.lm_head = nn.Linear(config.d_model, config.vocab_size, bias=False)
+        self.lm_head.weight = self.token_embedding.weight
+        self.apply(self._initialize)
+        scale = 1.0 / (2.0 * config.n_layers) ** 0.5
+        for untyped_block in self.blocks:
+            block = cast(DecoderBlock, untyped_block)
+            block.attention.out_proj.weight.data.mul_(scale)
+            block.ffn.down.weight.data.mul_(scale)
+
+    def _initialize(self, module: nn.Module) -> None:
+        if isinstance(module, (nn.Linear, nn.Embedding)):
+            nn.init.normal_(module.weight, mean=0.0, std=self.config.init_std)
+
+    def forward(
+        self,
+        input_ids: Tensor,
+        *,
+        targets: Tensor | None = None,
+        ignore_index: int = -100,
+        cache: tuple[KVCache, ...] | None = None,
+        use_cache: bool = False,
+        implementation: str = "sdpa",
+    ) -> CausalLMOutput:
+        if input_ids.ndim != 2 or input_ids.dtype != torch.long:
+            raise ValueError("input_ids는 int64[B,T]여야 합니다")
+        if targets is not None and targets.shape != input_ids.shape:
+            raise ValueError("targets shape은 input_ids와 같아야 합니다")
+        if targets is not None and input_ids.size(1) < 2:
+            raise ValueError("shifted loss 계산에는 두 개 이상의 token이 필요합니다")
+        if cache is not None and len(cache) != len(self.blocks):
+            raise ValueError("KV cache layer 수가 모델과 다릅니다")
+        past = 0 if cache is None else cache[0][0].size(-2)
+        if input_ids.size(1) < 1 or past + input_ids.size(1) > self.config.max_seq_len:
+            raise ValueError("입력 길이가 max_seq_len 범위를 벗어났습니다")
+        hidden = self.dropout(self.token_embedding(input_ids))
+        presents: list[KVCache] = []
+        for index, untyped_block in enumerate(self.blocks):
+            block = cast(DecoderBlock, untyped_block)
+            layer_cache = None if cache is None else cache[index]
+            hidden, present = block(
+                hidden, cache=layer_cache, use_cache=use_cache, implementation=implementation
+            )
+            if present is not None:
+                presents.append(present)
+        logits = self.lm_head(self.final_norm(hidden))
+        loss = None
+        if targets is not None:
+            loss = F.cross_entropy(
+                logits[:, :-1].contiguous().view(-1, self.config.vocab_size),
+                targets[:, 1:].contiguous().view(-1),
+                ignore_index=ignore_index,
+            )
+        return CausalLMOutput(logits, loss, tuple(presents) if use_cache else None)
+
+    @torch.no_grad()
+    def generate(
+        self,
+        input_ids: Tensor,
+        generation: GenerationConfig,
+        *,
+        generator: torch.Generator | None = None,
+    ) -> Tensor:
+        if generation.max_new_tokens < 0 or generation.temperature < 0:
+            raise ValueError("생성 길이와 temperature는 음수일 수 없습니다")
+        if generation.top_k is not None and generation.top_k < 1:
+            raise ValueError("top_k는 1 이상이어야 합니다")
+        if generation.eos_id is not None and not 0 <= generation.eos_id < self.config.vocab_size:
+            raise ValueError("eos_id가 vocab 범위를 벗어났습니다")
+        result = input_ids
+        cache: tuple[KVCache, ...] | None = None
+        current = input_ids
+        was_training = self.training
+        self.eval()
+        try:
+            for _ in range(generation.max_new_tokens):
+                if result.size(1) >= self.config.max_seq_len:
+                    break
+                output = self(current, cache=cache, use_cache=generation.use_cache)
+                cache = output.cache
+                scores = output.logits[:, -1]
+                if generation.temperature == 0:
+                    next_token = scores.argmax(dim=-1, keepdim=True)
+                else:
+                    scores = scores / generation.temperature
+                    if generation.top_k is not None:
+                        k = min(generation.top_k, scores.size(-1))
+                        threshold = torch.topk(scores, k).values[:, -1, None]
+                        scores = scores.masked_fill(scores < threshold, -torch.inf)
+                    next_token = torch.multinomial(
+                        torch.softmax(scores, dim=-1), 1, generator=generator
+                    )
+                result = torch.cat((result, next_token), dim=1)
+                current = next_token if generation.use_cache else result
+                if generation.eos_id is not None and bool(
+                    torch.all(next_token == generation.eos_id)
+                ):
+                    break
+        finally:
+            self.train(was_training)
+        return result
+
+    def parameter_count(self) -> int:
+        return sum(parameter.numel() for parameter in self.parameters())
+
+    def memory_estimate(self, *, bytes_per_parameter: int = 4) -> dict[str, int]:
+        parameters = self.parameter_count()
+        return {
+            "parameters": parameters,
+            "weights_bytes": parameters * bytes_per_parameter,
+            "training_bytes_adamw": parameters * (bytes_per_parameter + 4 + 8),
+        }
