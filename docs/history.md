@@ -73,3 +73,27 @@
 - NVIDIA GB10 CUDA forward/backward smoke: finite loss와 역전파 통과
 - `cd 0.ref && shasum -a 256 -c SHA256SUMS`: 전체 참조 무결성 통과
 - `git diff --check`: whitespace 오류 없음
+
+## 2026-07-11 · M4 결정적 학습 엔진
+
+- 패키지 버전을 `0.5.0`으로 올리고 strict `TrainingConfig`와 AdamW 설정을 추가했다.
+- checksum 검증 memmap shard dataset, shard 경계 연속 context, epoch/cursor 복구형 결정적 sampler와 next-token batch를 구현했다.
+- tied parameter 중복을 제거한 decay/no-decay AdamW group, update 단위 warmup+cosine, gradient accumulation과 global norm clipping을 구현했다.
+- CUDA bf16 우선 자동 선택, CUDA fp16 GradScaler, bf16 scaler 비활성, CPU/MPS fp32 fallback 정책을 구현했다.
+- train/validation/생성 표본 JSONL과 처리량·CUDA peak memory 지표, validation NLL/perplexity와 best 판정을 구현했다.
+- 보존형 step, latest, best checkpoint를 flush·file/directory `fsync`·atomic rename으로 저장한다.
+- model/optimizer/scheduler/scaler, train/validation sampler, Python·NumPy·PyTorch CPU/CUDA RNG와 best 상태를 완전 복구한다.
+- config/corpus/tokenizer/model/shard fingerprint 충돌, shard/checkpoint 손상과 NaN/Inf를 즉시 거부하고 진단 artifact를 남긴다.
+- SIGTERM은 현재 update 경계에서 graceful checkpoint 후 종료하며 `train run/resume/smoke` CLI를 제공한다.
+- CPU 50-step loss 감소, accumulation 동등성, bitwise 중단·재개와 오류주입 테스트를 추가했다.
+
+### M4 마감 검증 기록
+
+- `uv sync --frozen`: 0.5.0 lockfile 변경 없이 동기화 통과
+- `uv run ruff format --check .`, `uv run ruff check .`: 통과
+- `uv run pyright`: strict 기준 오류·경고 0건
+- `uv run pytest -q`: `42 passed`
+- CLI E2E: 0.5.0/version, help, training config validate, `train smoke --dry-run`, 테스트 내부 실제 train/resume/smoke 통과
+- CPU: 50 optimizer step loss 감소, 연속/중단·재개 state bitwise 동일, NaN·손상·fingerprint 오류주입 통과
+- NVIDIA GB10 CUDA: bf16 autocast 실제 2-step train/validation, JSONL CUDA peak memory, latest/best checkpoint 통과
+- `git diff --check`: whitespace 오류 없음

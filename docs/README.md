@@ -10,4 +10,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 4. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 5. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: M0–M3 구현 완료. 모델 수식·계약과 검증 범위는 [M3 모델 보고서](model-report.md), 실행 환경과 전체 검증 이력은 [환경](environment.md), [구현 이력](history.md)을 참고한다.
+현재 상태: M0–M4 구현 완료. 학습 계약과 검증 범위는 [M4 학습 보고서](training-report.md), 모델 수식은 [M3 모델 보고서](model-report.md), 전체 이력은 [구현 이력](history.md)을 참고한다.

@@ -96,3 +96,12 @@
 - 결과:
 - 검증:
 ```
+
+## ADR-013: 상태 완전 복구형 단일 프로세스 trainer
+
+- 상태: 승인
+- 배경: optimizer와 모델만 저장하면 재개 직후 데이터 순서, dropout, scheduler와 mixed precision scale이 달라져 동일한 학습으로 볼 수 없다.
+- 결정: token shard의 전역 연속 window를 epoch별 결정적 순열로 표본화하고 epoch/cursor를 저장한다. checkpoint에는 모델, AdamW, scheduler step, scaler, Python·NumPy·CPU/CUDA PyTorch RNG, train/validation sampler, best validation과 입력 fingerprint를 함께 저장한다. 보존형 step 파일과 `latest.pt`, `best.pt`는 임시 파일을 `fsync`한 뒤 atomic rename한다.
+- 대안: PyTorch DataLoader의 일반 shuffle은 worker prefetch 상태까지 재현하기 어렵다. 문서별 무작위 표본화는 짧은 문서 편향과 shard 경계 계약을 복잡하게 한다. 외부 실험 추적기는 오프라인·로컬 재현 요구에 맞지 않는다.
+- 결과: 기본 경로는 worker 0인 단일 프로세스이며 checkpoint 직후 재개가 CPU에서 bitwise 동일하다. bf16은 scaler를 사용하지 않고 fp16 CUDA만 GradScaler를 사용한다. config/corpus/tokenizer/model/shard fingerprint가 하나라도 다르면 재개를 거부한다.
+- 검증: shard 경계 window, sampler 복구, accumulation 동등성, LR 경계, CPU 50-step overfit, bitwise 중단·재개, 손상 checkpoint/shard와 NaN 오류주입, CLI train/resume/smoke를 자동 검사한다.

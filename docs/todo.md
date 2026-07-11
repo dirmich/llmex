@@ -85,22 +85,22 @@
 
 ## M4 학습 시스템
 
-- [ ] deterministic memmap dataset/sampler
-- [ ] document boundary와 context sampling 정책
-- [ ] AdamW decay/no-decay parameter groups
-- [ ] warmup + cosine scheduler
-- [ ] gradient accumulation과 clipping
-- [ ] bf16/fp16/fp32 device capability 선택
-- [ ] JSONL metric logger
-- [ ] 고정 prompt sample logger
-- [ ] validation loop
-- [ ] 원자적 checkpoint writer
-- [ ] model/optimizer/scheduler/scaler/RNG/data cursor 저장
-- [ ] strict fingerprint checkpoint resume
-- [ ] SIGTERM graceful checkpoint
-- [ ] NaN/Inf fail-fast diagnostic
-- [ ] CPU smoke 50 step
-- [ ] 중단·재개 동일성 integration test
+- [x] deterministic memmap dataset/sampler
+- [x] document boundary와 context sampling 정책
+- [x] AdamW decay/no-decay parameter groups
+- [x] warmup + cosine scheduler
+- [x] gradient accumulation과 clipping
+- [x] bf16/fp16/fp32 device capability 선택
+- [x] JSONL metric logger
+- [x] 고정 prompt sample logger
+- [x] validation loop
+- [x] 원자적 checkpoint writer
+- [x] model/optimizer/scheduler/scaler/RNG/data cursor 저장
+- [x] strict fingerprint checkpoint resume
+- [x] SIGTERM graceful checkpoint
+- [x] NaN/Inf fail-fast diagnostic
+- [x] CPU smoke 50 step
+- [x] 중단·재개 동일성 integration test
 
 ## M5 평가와 추론
 
@@ -157,6 +157,7 @@
 | 2026-07-11 | M1 fixture smoke | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright; Pytest; `llmex data sample-e2e --max-documents 1000`; `git diff --check` | 외부 네트워크 없는 확장 fixture, local HTTP resume, checksum/filter/attribution/split/E2E hash 검증; 실제 dump canary 미실행 | 실제 dump canary 후 M2 토크나이저 |
 | 2026-07-11 | M2 fixture tokenizer | 미커밋 작업 트리 | `uv sync`; Ruff format/check; Pyright; Pytest; fixture `tokenizer train/evaluate/pack` 2회; manifest 비교; `git diff --check` | 16k byte-level BPE, Unicode 10,000표본/속성, train-only, EOS/memmap/checksum 재현성 검증 | 실제 corpus 16k/32k 비교 후 M3 |
 | 2026-07-11 | M3 decoder-only 모델 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; `llmex model inspect`; GB10 CUDA forward/backward; ref checksum; `git diff --check` | `36 passed`; strict 오류 0건; 2,835,584 parameters; CUDA finite loss; RMSNorm/RoPE/GQA/SDPA/SwiGLU/tied LM/loss/generation/KV cache와 128문서 overfit 검증 | M4 학습 시스템 |
+| 2026-07-11 | M4 학습 엔진 | 미커밋 작업 트리 | `uv sync --frozen`; Ruff format/check; Pyright strict; 전체 Pytest; train CLI E2E; CPU 50-step; CUDA bf16 smoke; `git diff --check` | `42 passed`; strict 오류 0건; CPU 50-step/bitwise resume/오류주입 및 GB10 CUDA bf16 2-step 통과 | M5 평가·추론 |
 
 ## 즉시 중단 조건
 

@@ -9,7 +9,14 @@ from typing import Annotated, Never
 import typer
 
 from llmex import __version__
-from llmex.config import DataConfig, ModelConfig, StrictModel, TokenizerConfig, load_yaml
+from llmex.config import (
+    DataConfig,
+    ModelConfig,
+    StrictModel,
+    TokenizerConfig,
+    TrainingConfig,
+    load_yaml,
+)
 from llmex.data.download import download, fetch_metadata
 from llmex.data.io import prepare_output, read_jsonl_zst, write_json, write_jsonl_zst
 from llmex.data.pipeline import (
@@ -43,12 +50,14 @@ run_app = typer.Typer(help="재현 가능한 실행 디렉터리를 관리합니
 data_app = typer.Typer(help="Wikimedia M1 데이터 파이프라인을 실행합니다.", no_args_is_help=True)
 tokenizer_app = typer.Typer(help="M2 토크나이저와 token shard를 생성합니다.", no_args_is_help=True)
 model_app = typer.Typer(help="M3 decoder-only 모델을 검사합니다.", no_args_is_help=True)
+train_app = typer.Typer(help="M4 결정적 학습과 checkpoint 재개를 실행합니다.", no_args_is_help=True)
 app.add_typer(config_app, name="config")
 app.add_typer(fingerprint_app, name="fingerprint")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
 app.add_typer(tokenizer_app, name="tokenizer")
 app.add_typer(model_app, name="model")
+app.add_typer(train_app, name="train")
 
 
 class ConfigKind(StrEnum):
@@ -57,6 +66,7 @@ class ConfigKind(StrEnum):
     DATA = "data"
     MODEL = "model"
     TOKENIZER = "tokenizer"
+    TRAINING = "training"
 
 
 def _model(kind: ConfigKind) -> type[StrictModel]:
@@ -64,6 +74,8 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return DataConfig
     if kind is ConfigKind.TOKENIZER:
         return TokenizerConfig
+    if kind is ConfigKind.TRAINING:
+        return TrainingConfig
     return ModelConfig
 
 
@@ -218,6 +230,63 @@ def model_inspect(
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+def _training_command(config_path: Path, resume: Path | None, dry_run: bool) -> None:
+    try:
+        config = load_yaml(config_path, TrainingConfig)
+        operation = {"command": "train", "config": config.model_dump(mode="json")}
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    {
+                        "dry_run": True,
+                        "run_dir": str(config.run_dir),
+                        "fingerprint": fingerprint(operation),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+            )
+            return
+        from llmex.train import train
+
+        result = train(config, resume=resume)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@train_app.command("run")
+def training_run(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """새 학습 run을 시작합니다."""
+    _training_command(config_path, None, dry_run)
+
+
+@train_app.command("resume")
+def training_resume(
+    config_path: Annotated[Path, typer.Option("--config")],
+    checkpoint: Annotated[Path | None, typer.Option("--checkpoint")] = None,
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """latest 또는 지정 checkpoint의 모든 상태를 복구해 재개합니다."""
+    try:
+        config = load_yaml(config_path, TrainingConfig)
+    except LlmexError as error:
+        _emit_error(error)
+    _training_command(config_path, checkpoint or config.run_dir / "checkpoints/latest.pt", dry_run)
+
+
+@train_app.command("smoke")
+def training_smoke(
+    config_path: Annotated[Path, typer.Option("--config")],
+    dry_run: Annotated[bool, typer.Option()] = False,
+) -> None:
+    """CPU/CUDA smoke 설정을 끝까지 학습하고 검증합니다."""
+    _training_command(config_path, None, dry_run)
 
 
 @tokenizer_app.command("train")

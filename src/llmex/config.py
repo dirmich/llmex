@@ -132,6 +132,55 @@ class TokenizerConfig(StrictModel):
     evaluation_samples: int = Field(default=10_000, gt=0)
 
 
+class OptimizerConfig(StrictModel):
+    """AdamW 최적화 설정."""
+
+    learning_rate: float = Field(gt=0.0)
+    min_learning_rate: float = Field(default=0.0, ge=0.0)
+    weight_decay: float = Field(default=0.1, ge=0.0)
+    beta1: float = Field(default=0.9, ge=0.0, lt=1.0)
+    beta2: float = Field(default=0.95, ge=0.0, lt=1.0)
+    eps: float = Field(default=1e-8, gt=0.0)
+    warmup_steps: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def validate_learning_rates(self) -> "OptimizerConfig":
+        if self.min_learning_rate > self.learning_rate:
+            raise ValueError("min_learning_rate는 learning_rate 이하여야 합니다")
+        return self
+
+
+class TrainingConfig(StrictModel):
+    """M4 단일 프로세스 학습과 완전 재개 설정."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    model: ModelConfig
+    shards_manifest: YamlPath
+    run_dir: YamlPath
+    device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    precision: Literal["auto", "bf16", "fp16", "fp32"] = "auto"
+    sequence_length: int = Field(gt=1)
+    micro_batch_size: int = Field(gt=0)
+    gradient_accumulation_steps: int = Field(default=1, gt=0)
+    max_steps: int = Field(gt=0)
+    gradient_clip_norm: float = Field(default=1.0, gt=0.0)
+    validation_interval: int = Field(default=10, gt=0)
+    validation_batches: int = Field(default=4, gt=0)
+    checkpoint_interval: int = Field(default=10, gt=0)
+    log_interval: int = Field(default=1, gt=0)
+    optimizer: OptimizerConfig
+    deterministic: bool = True
+
+    @model_validator(mode="after")
+    def validate_training(self) -> "TrainingConfig":
+        if self.sequence_length > self.model.max_seq_len:
+            raise ValueError("sequence_length는 model.max_seq_len 이하여야 합니다")
+        if self.optimizer.warmup_steps > self.max_steps:
+            raise ValueError("warmup_steps는 max_steps 이하여야 합니다")
+        return self
+
+
 ConfigT = TypeVar("ConfigT", bound=StrictModel)
 
 
