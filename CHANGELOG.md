@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.4.0 - 2026-07-11
+
+- external stage마다 실행 직전 암호학적 난수를 생성해 환경 계약으로 전달하고, 사후 서명 telemetry의 nonce·run-id·stage·예산·Git commit·설정 fingerprint에 결속한다.
+- telemetry 발급 시각이 stage 시작 이후이고 만료 시각이 검증 현재 시점에 유효한지 확인해, digest와 서명이 다른 과거 telemetry 재생도 거부한다.
+- 모든 후속 stage 뒤 최종 성공 직전에 권위 telemetry의 digest와 서명·subject·예산을 다시 검증해 TOCTOU 변조를 실패-폐쇄한다.
+
 ## 1.3.0 - 2026-07-11
 
 - external stage 실행 전 final telemetry 재사용을 금지하고, 실행 후 새로 생성된 final 진술을 commit/config/stage/run-id/token·energy 예산과 Ed25519 서명에 결속해 재검증한다.

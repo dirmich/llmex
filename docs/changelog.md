@@ -1,5 +1,10 @@
 # 변경 기록
 
+## 1.4.0 - 2026-07-11
+
+- external stage별 실행 직전 nonce와 사후 발급시각을 서명 telemetry에 결속해 과거 재생을 차단했다.
+- 후속 stage 완료 뒤 권위 telemetry를 전부 재검증해 최종 성공 직전 TOCTOU 변조를 거부한다.
+
 ## 1.3.0 - 2026-07-11
 
 - external stage 종료 뒤 새로 생성된 `final=true` telemetry만 권위 있게 승인하며 서명·commit/config/stage/run-id·예산 결속과 최종 사용량 상한을 재검증한다.

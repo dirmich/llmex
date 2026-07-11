@@ -3,12 +3,15 @@
 
 import json
 import math
+import os
 import platform
 import resource
+import secrets
 import shutil
 import subprocess
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -179,6 +182,8 @@ def _usage(
     config_fp: str | None = None,
     stage_name: str | None = None,
     run_id: str | None = None,
+    nonce: str | None = None,
+    stage_started_at: datetime | None = None,
     root_public_key: str | None = None,
 ) -> dict[str, float]:
     path = config.run_dir / "resource-usage.json"
@@ -207,6 +212,7 @@ def _usage(
             or subject.get("config_fingerprint") != config_fp
             or subject.get("stage") != stage_name
             or subject.get("run_id") != run_id
+            or subject.get("nonce") != nonce
             or subject.get("budget") != expected_budget
             or repository is None
         ):
@@ -219,6 +225,12 @@ def _usage(
             signed_payload={key: item for key, item in value.items() if key != "signature"},
             root_public_key=root_public_key,
         )
+        try:
+            issued_at = datetime.fromisoformat(str(value["issued_at"]).replace("Z", "+00:00"))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise IntegrityError("외부 stage telemetry issued_at이 유효하지 않습니다") from exc
+        if stage_started_at is None or issued_at.astimezone(UTC) < stage_started_at:
+            raise IntegrityError("외부 stage telemetry가 stage 시작 전에 발급되었습니다")
         if (
             usage["tokens"] > config.budget.token_budget
             or usage["energy_kwh"] > config.budget.maximum_energy_kwh
@@ -228,13 +240,21 @@ def _usage(
 
 
 def _execute(
-    stage: PipelineStageConfig, config: PipelineConfig, deadline: float
+    stage: PipelineStageConfig,
+    config: PipelineConfig,
+    deadline: float,
+    *,
+    environment: dict[str, str] | None = None,
 ) -> tuple[subprocess.Popen[str], float]:
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         raise IntegrityError("pipeline 시간 예산이 소진되었습니다")
     process = subprocess.Popen(
-        stage.command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        stage.command,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=environment,
     )
     started = time.monotonic()
     while process.poll() is None:
@@ -290,6 +310,7 @@ def run(
     state.update({"상태": "실행 중", "외부_증거_오류": evidence_errors})
     write_json(_state_path(config), state)
     deadline = time.monotonic() + config.budget.maximum_hours * 3600
+    last_external: tuple[PipelineStageConfig, dict[str, Any]] | None = None
     for stage in config.stages:
         previous = cast(dict[str, Any], state["단계"].get(stage.name, {}))
         if stage.external and (
@@ -312,6 +333,10 @@ def run(
                     config_fp=config_fp,
                     stage_name=stage.name,
                     run_id=run_id,
+                    nonce=cast(str, previous.get("nonce")),
+                    stage_started_at=datetime.fromisoformat(
+                        cast(str, previous.get("stage_started_at"))
+                    ).astimezone(UTC),
                     root_public_key=trust_root_public_key,
                 )
                 if previous.get("resource_usage_sha256") != sha256_file(
@@ -319,13 +344,35 @@ def run(
                 ):
                     raise IntegrityError("재개 시 최종 telemetry digest가 변경되었습니다")
                 previous["resource_usage"] = resumed_usage
+                last_external = (stage, previous)
                 continue
             except IntegrityError:
                 pass
         telemetry_path = config.run_dir / "resource-usage.json"
         telemetry_before = sha256_file(telemetry_path) if telemetry_path.is_file() else None
+        nonce = secrets.token_urlsafe(32) if stage.external else None
+        stage_started_at = datetime.now(UTC)
+        environment = None
+        if stage.external:
+            environment = {
+                **os.environ,
+                "LLMEX_STAGE_NONCE": cast(str, nonce),
+                "LLMEX_RUN_ID": run_id,
+                "LLMEX_STAGE_NAME": stage.name,
+                "LLMEX_BUDGET_JSON": json.dumps(
+                    {
+                        "token_budget": config.budget.token_budget,
+                        "maximum_energy_kwh": config.budget.maximum_energy_kwh,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                "LLMEX_GIT_COMMIT": commit,
+                "LLMEX_CONFIG_FINGERPRINT": config_fp,
+                "LLMEX_TELEMETRY_PATH": str(telemetry_path.resolve()),
+            }
         try:
-            process, elapsed = _execute(stage, config, deadline)
+            process, elapsed = _execute(stage, config, deadline, environment=environment)
         except IntegrityError as exc:
             state["단계"][stage.name] = {
                 "상태": "실패",
@@ -344,6 +391,13 @@ def run(
             "stdout_tail": stdout[-4000:],
             "stderr_tail": stderr[-4000:],
         }
+        if stage.external:
+            record.update(
+                {
+                    "nonce": nonce,
+                    "stage_started_at": stage_started_at.isoformat(),
+                }
+            )
         if process.returncode == 0:
             try:
                 if stage.external:
@@ -362,9 +416,12 @@ def run(
                         config_fp=config_fp,
                         stage_name=stage.name,
                         run_id=run_id,
+                        nonce=nonce,
+                        stage_started_at=stage_started_at,
                         root_public_key=trust_root_public_key,
                     )
                     record["resource_usage_sha256"] = sha256_file(telemetry_path)
+                    last_external = (stage, record)
                 record["outputs"] = _output_records(stage)
             except IntegrityError as exc:
                 record.update({"상태": "실패", "verification_error": str(exc)})
@@ -375,11 +432,37 @@ def run(
             write_json(_state_path(config), state)
             raise IntegrityError(f"pipeline 단계가 실패했습니다: {stage.name}")
     waiting = any(item["상태"] == "외부 게이트 대기" for item in state["단계"].values())
+    final_usage = _usage(config)
+    if not waiting and last_external is not None:
+        stage, record = last_external
+        try:
+            final_usage = _usage(
+                config,
+                authoritative=True,
+                repository=repository,
+                commit=commit,
+                config_fp=config_fp,
+                stage_name=stage.name,
+                run_id=run_id,
+                nonce=cast(str, record["nonce"]),
+                stage_started_at=datetime.fromisoformat(
+                    cast(str, record["stage_started_at"])
+                ).astimezone(UTC),
+                root_public_key=trust_root_public_key,
+            )
+            if record.get("resource_usage_sha256") != sha256_file(
+                config.run_dir / "resource-usage.json"
+            ):
+                raise IntegrityError("최종 성공 전 권위 telemetry digest가 변경되었습니다")
+        except (IntegrityError, ValueError, KeyError) as exc:
+            state.update({"상태": "실패", "최종_검증_오류": str(exc)})
+            write_json(_state_path(config), state)
+            raise IntegrityError("파이프라인 최종 telemetry 재검증이 실패했습니다") from exc
     state.update(
         {
             "상태": "외부 게이트 대기" if waiting else "완료",
             "증거": evidence,
-            "resource_usage": _usage(config),
+            "resource_usage": final_usage,
             "run_id": run_id,
             "재개_명령": "uv run llmex pipeline run --config <동일-config.yaml>",
         }

@@ -158,6 +158,16 @@
   canary provenance 부재는 미실행/실패다. JSONL.ZST와 dashboard Markdown도 file/directory
   fsync 뒤 atomic replace한다.
 
+## ADR-021 — 1.4.0 nonce 결속과 최종 telemetry 재검증
+
+**결정:** external stage 실행 직전 암호학적 nonce를 생성해 환경으로 전달하고, 사후 telemetry subject와
+발급시각에 결속한다. 모든 후속 stage 종료 뒤 마지막 권위 파일의 digest와 전체 서명 계약을 다시
+검증한다. digest 차이만으로 freshness를 판정하거나 중간 검증 결과만으로 최종 성공하지 않는다.
+
+**근거:** 같은 대상에 대한 서로 다른 유효 과거 서명은 digest 검사를 우회할 수 있고, 후속 stage가
+권위 파일을 바꾸면 중간 검증만으로 TOCTOU를 차단할 수 없다. nonce와 최종 재검증을 함께 적용해야
+이번 실행의 사후 측정과 최종 성공 시점의 권위가 연결된다.
+
 ## ADR-020 — 1.3.0 사후 telemetry와 Ed25519 신뢰 체인
 
 - 결정: external stage의 실행 전 telemetry는 live 중단 보조값일 뿐 승인 근거가 아니다. 종료 후 실행 전 digest와 다른 `final=true` 진술을 issuer 서명, Git commit, config fingerprint, stage, deterministic run-id, token/energy 예산과 최종 사용량에 결속해 검증한 뒤에만 통과한다.

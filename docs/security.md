@@ -10,6 +10,18 @@ credential을 요구하지 않으며 `.env`, key, raw data, checkpoint를 Git에
 
 scanner 결과는 완전한 안전 보장이 아니다. 의심 artifact는 격리하고 checksum과 실행 이력을 보존한다.
 
+## 1.4.0 external telemetry 재생·TOCTOU 방어
+
+각 external stage는 실행 직전에 암호학적으로 안전한 난수 nonce를 생성한다. subprocess에는
+`LLMEX_STAGE_NONCE`, `LLMEX_RUN_ID`, `LLMEX_STAGE_NAME`, `LLMEX_BUDGET_JSON`,
+`LLMEX_GIT_COMMIT`, `LLMEX_CONFIG_FINGERPRINT`, `LLMEX_TELEMETRY_PATH`만 실행 계약으로
+전달한다. 권위 telemetry는 이 값을 subject에 서명하고 stage 시작 이후 발급되어야 하며 검증 시점에
+만료되지 않아야 한다. 따라서 과거의 다른 유효 서명이나 다른 digest도 현재 nonce와 맞지 않아 거부된다.
+
+마지막 external stage 이후 모든 후속 stage가 끝나면 최종 성공 기록 전에 권위 파일의 SHA-256과
+서명·subject·예산·사용량 상한을 다시 검증한다. 파일 교체, 서명 제거, subject 변경, 예산 변경은
+파이프라인 전체 실패로 기록된다.
+
 ## 1.3.0 Ed25519 보호 CI 권위 경계
 
 권위 있는 외부 판정은 명시한 subject repository의 Git 최상위 root와 canonical HEAD commit을

@@ -9,7 +9,12 @@ from pathlib import Path
 import pytest
 import yaml
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+    PublicFormat,
+)
 from typer.testing import CliRunner
 
 from llmex.cli import app
@@ -63,7 +68,39 @@ def _repository(tmp_path: Path) -> tuple[Path, Ed25519PrivateKey, str]:
     return repository, issuer_key, _public(root_key)
 
 
-def _config(tmp_path: Path, evidence: Path, output: Path, repository: Path) -> PipelineConfig:
+def _telemetry_command(key: Ed25519PrivateKey) -> list[str]:
+    private = base64.b64encode(
+        key.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
+    ).decode()
+    script = """
+import base64,json,os,pathlib
+from datetime import UTC,datetime,timedelta
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+subject={
+    'nonce':os.environ['LLMEX_STAGE_NONCE'],
+    'run_id':os.environ['LLMEX_RUN_ID'],
+    'stage':os.environ['LLMEX_STAGE_NAME'],
+    'budget':json.loads(os.environ['LLMEX_BUDGET_JSON']),
+    'git_commit':os.environ['LLMEX_GIT_COMMIT'],
+    'config_fingerprint':os.environ['LLMEX_CONFIG_FINGERPRINT'],
+}
+now=datetime.now(UTC)
+value={'schema_version':1,'kind':'resource-usage','issuer':'baseline-ci','role':'baseline','issued_at':now.isoformat(),'expires_at':(now+timedelta(hours=1)).isoformat(),'subject':subject,'final':True,'tokens':10,'energy_kwh':0.1}
+canonical=json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()
+key=Ed25519PrivateKey.from_private_bytes(base64.b64decode(PRIVATE_KEY))
+value['signature']=base64.b64encode(key.sign(canonical)).decode()
+pathlib.Path(os.environ['LLMEX_TELEMETRY_PATH']).write_text(json.dumps(value))
+"""
+    return [sys.executable, "-c", f"PRIVATE_KEY={private!r}\n{script}"]
+
+
+def _config(
+    tmp_path: Path,
+    evidence: Path,
+    output: Path,
+    repository: Path,
+    issuer_key: Ed25519PrivateKey,
+) -> PipelineConfig:
     payload = {
         "name": "m6-test",
         "run_dir": str(tmp_path / "run"),
@@ -91,11 +128,7 @@ def _config(tmp_path: Path, evidence: Path, output: Path, repository: Path) -> P
             },
             {
                 "name": "external",
-                "command": [
-                    sys.executable,
-                    "-c",
-                    f"import shutil; shutil.copyfile({str(tmp_path / 'telemetry-template.json')!r}, {str(tmp_path / 'run/resource-usage.json')!r})",  # noqa: E501
-                ],
+                "command": _telemetry_command(issuer_key),
                 "external": True,
             },
         ],
@@ -129,7 +162,12 @@ def _write_evidence(
 
 
 def _write_telemetry(
-    config: PipelineConfig, repository: Path, key: Ed25519PrivateKey, **updates: object
+    config: PipelineConfig,
+    repository: Path,
+    key: Ed25519PrivateKey,
+    *,
+    nonce: str = "past-valid-nonce",
+    **updates: object,
 ) -> Path:
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=repository, check=True, text=True, capture_output=True
@@ -153,6 +191,7 @@ def _write_telemetry(
                     "run_dir": str(config.run_dir.resolve()),
                 }
             ),
+            "nonce": nonce,
             "budget": {"token_budget": 1000, "maximum_energy_kwh": 1.0},
         },
         "final": True,
@@ -170,7 +209,7 @@ def test_pipeline_signed_evidence_telemetry_resume_and_export(
 ) -> None:
     repository, secret, root = _repository(tmp_path)
     output, evidence = tmp_path / "완료.json", tmp_path / "승인.json"
-    config = _config(tmp_path, evidence, output, repository)
+    config = _config(tmp_path, evidence, output, repository, secret)
     assert preflight(config)["판정"] == "통과"
     assert run(config, trust_root_public_key=root)["상태"] == "외부 게이트 대기"
     evidence.write_text(json.dumps({"schema_version": 1, "kind": "anything", "issuer": "self"}))
@@ -178,9 +217,6 @@ def test_pipeline_signed_evidence_telemetry_resume_and_export(
         run(config, allow_external=True, trust_root_public_key=root)["상태"] == "외부 게이트 대기"
     )
     _write_evidence(evidence, config, repository, secret)
-    with pytest.raises(IntegrityError):
-        run(config, allow_external=True, trust_root_public_key=root)
-    _write_telemetry(config, repository, secret)
     assert run(config, allow_external=True, trust_root_public_key=root)["상태"] == "완료"
     output.write_text('{"schema_version":1,"result":"변조"}')
     assert run(config, allow_external=True, trust_root_public_key=root)["단계"]["local"]["outputs"][
@@ -200,7 +236,7 @@ def test_pipeline_rejects_architect_self_attestation_and_mutations(
 ) -> None:
     repository, secret, root = _repository(tmp_path)
     evidence, output = tmp_path / "e.json", tmp_path / "o.json"
-    config = _config(tmp_path, evidence, output, repository)
+    config = _config(tmp_path, evidence, output, repository, secret)
     _write_evidence(evidence, config, repository, secret)
     original = json.loads(evidence.read_text())
     for field, bad in (("kind", "anything"), ("role", "release"), ("issued_at", "not-a-time")):
@@ -225,32 +261,31 @@ def test_pipeline_rejects_architect_self_attestation_and_mutations(
     )
 
 
-@pytest.mark.parametrize("attack", ["stale", "unsigned", "not-final", "tampered", "over-budget"])
+@pytest.mark.parametrize("attack", ["unsigned", "not-final", "tampered", "over-budget"])
 def test_external_final_telemetry_is_authoritative_post_execution_gate(
     tmp_path: Path, attack: str
 ) -> None:
     repository, issuer, root = _repository(tmp_path)
     evidence, output = tmp_path / "e.json", tmp_path / "o.json"
-    config = _config(tmp_path, evidence, output, repository)
-    _write_evidence(evidence, config, repository, issuer)
-    template = _write_telemetry(config, repository, issuer)
-    value = json.loads(template.read_text())
+    config = _config(tmp_path, evidence, output, repository, issuer)
+    command = _telemetry_command(issuer)
+    script = command[2]
     if attack == "unsigned":
-        value.pop("signature")
+        script += (
+            "\nvalue.pop('signature'); "
+            "pathlib.Path(os.environ['LLMEX_TELEMETRY_PATH']).write_text(json.dumps(value))"
+        )
     elif attack == "not-final":
-        value = _sign(
-            {**{k: v for k, v in value.items() if k != "signature"}, "final": False}, issuer
-        )
+        script = script.replace("'final':True", "'final':False")
     elif attack == "tampered":
-        value["tokens"] = 11
-    elif attack == "over-budget":
-        value = _sign(
-            {**{k: v for k, v in value.items() if k != "signature"}, "tokens": 1001}, issuer
+        script += (
+            "\nvalue['tokens']=11; "
+            "pathlib.Path(os.environ['LLMEX_TELEMETRY_PATH']).write_text(json.dumps(value))"
         )
-    template.write_text(json.dumps(value))
-    if attack == "stale":
-        config.run_dir.mkdir()
-        (config.run_dir / "resource-usage.json").write_bytes(template.read_bytes())
+    elif attack == "over-budget":
+        script = script.replace("'tokens':10", "'tokens':1001")
+    config.stages[1].command = [sys.executable, "-c", script]
+    _write_evidence(evidence, config, repository, issuer)
     with pytest.raises(IntegrityError, match="pipeline 단계가 실패했습니다"):
         run(config, allow_external=True, trust_root_public_key=root)
     state = json.loads((config.run_dir / "pipeline-status.json").read_text())
@@ -258,12 +293,67 @@ def test_external_final_telemetry_is_authoritative_post_execution_gate(
     assert state["단계"]["external"]["상태"] == "실패"
 
 
+def test_external_rejects_different_valid_past_telemetry_replay(tmp_path: Path) -> None:
+    repository, issuer, root = _repository(tmp_path)
+    evidence, output = tmp_path / "e.json", tmp_path / "o.json"
+    config = _config(tmp_path, evidence, output, repository, issuer)
+    replay = config.run_dir.parent / "telemetry-template.json"
+    config.stages[1].command = [
+        sys.executable,
+        "-c",
+        (
+            "import shutil; "
+            f"shutil.copyfile({str(replay)!r}, "
+            f"{str(config.run_dir / 'resource-usage.json')!r})"
+        ),
+    ]
+    _write_evidence(evidence, config, repository, issuer)
+    first = _write_telemetry(config, repository, issuer, nonce="past-valid-nonce-a")
+    config.run_dir.mkdir()
+    (config.run_dir / "resource-usage.json").write_bytes(first.read_bytes())
+    _write_telemetry(
+        config,
+        repository,
+        issuer,
+        nonce="past-valid-nonce-b",
+        tokens=11,
+    )
+    assert sha256_file(config.run_dir / "resource-usage.json") != sha256_file(replay)
+    with pytest.raises(IntegrityError, match="pipeline 단계가 실패했습니다"):
+        run(config, allow_external=True, trust_root_public_key=root)
+
+
+def test_pipeline_revalidates_authoritative_telemetry_before_success(tmp_path: Path) -> None:
+    repository, issuer, root = _repository(tmp_path)
+    evidence, output = tmp_path / "e.json", tmp_path / "o.json"
+    config = _config(tmp_path, evidence, output, repository, issuer)
+    external, local = config.stages[1], config.stages[0]
+    local.command = [
+        sys.executable,
+        "-c",
+        (
+            "import json,pathlib; "
+            f"pathlib.Path({str(config.run_dir / 'resource-usage.json')!r}).write_text("
+            "json.dumps({'schema_version':1,'tokens':0,'energy_kwh':0})); "
+            f"pathlib.Path({str(output)!r}).write_text(json.dumps({{'schema_version':1}}))"
+        ),
+    ]
+    config.stages = [external, local]
+    _write_evidence(evidence, config, repository, issuer)
+    with pytest.raises(IntegrityError, match="최종 telemetry 재검증"):
+        run(config, allow_external=True, trust_root_public_key=root)
+    state = json.loads((config.run_dir / "pipeline-status.json").read_text())
+    assert state["상태"] == "실패"
+
+
 def test_pipeline_budget_enforced_during_stage(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repository, _, _ = _repository(tmp_path)
     evidence, output = tmp_path / "e.json", tmp_path / "o.json"
-    config = _config(tmp_path, evidence, output, repository).model_copy(
+    config = _config(
+        tmp_path, evidence, output, repository, Ed25519PrivateKey.generate()
+    ).model_copy(
         update={
             "required_evidence": [],
             "stages": [

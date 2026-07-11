@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-11 · 1.4.0 external telemetry freshness와 최종 권위 재검증
+
+- external command 실행 직전에 예측 불가능한 nonce를 만들고 `LLMEX_STAGE_NONCE`를 포함한 환경 계약으로 run-id, stage, 예산, Git commit, 설정 fingerprint 및 출력 경로를 전달한다.
+- command가 실행 중 실제 사후 telemetry를 발급하도록 정상 회귀를 바꾸고, 서명 subject의 모든 실행 식별자와 `issued_at >= stage_started_at`, 현재 만료 유효성을 검증한다.
+- 서로 다른 유효 서명을 가진 과거 telemetry 재생과 후속 local stage의 권위 파일 TOCTOU 변조를 회귀 테스트로 차단했다.
+- 최종 성공 직전 마지막 권위 telemetry의 digest, 서명, subject, 예산과 사용량 상한을 전부 다시 검증하며 실패 상태를 원자적으로 기록한다.
+
 ## 2026-07-11 · 1.3.0 사후 권위 gate와 공개키 신뢰 체인
 
 - external stage의 사전 final telemetry는 승인 근거로 사용하지 않으며, 실행 직전 digest와 다른 사후 final telemetry가 없으면 단계와 전체 상태를 실패로 고정한다.

@@ -1,5 +1,14 @@
 # LLMEX 개발 TODO
 
+## 1.4.0 차단 해제
+
+- [x] external stage별 암호학적 nonce/challenge 실행 직전 생성과 환경 계약 전달
+- [x] nonce/run-id/stage/예산/commit/config fingerprint 서명 subject 결속
+- [x] stage 시작 이후 발급 및 현재 만료 유효성 검증
+- [x] 서로 다른 유효 과거 telemetry replay 회귀 차단
+- [x] 후속 stage 종료 뒤 최종 권위 telemetry 전체 재검증과 TOCTOU 회귀 차단
+- [ ] 실제 보호 environment에서 1.4.0 공개 승인 artifact 발급(외부 대기)
+
 ## 1.3.0 architect 차단 해제
 
 - [x] external stage 실행 후 새 final telemetry의 freshness·서명·대상·예산 사후 gate
