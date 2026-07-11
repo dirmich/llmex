@@ -164,3 +164,21 @@
 - `llmex release audit`은 비밀·로컬 경로·필수 문서·참조 경계를 통과했다. bundle은 120개 파일, 65개 설치 구성요소의 checksum/SBOM/provenance를 생성했다.
 - 빈 외부 승인 파일은 의도대로 종료 코드 5로 실패했다. 참조 SHA-256과 `git diff --check`도 통과했다.
 - 외부 미실행 항목: 전체 corpus 장기 baseline, 독립 법무·데이터·안전 검토, 공개 채널 배포.
+
+## 2026-07-11 · M0–M7 최종 AI slop 정리 (1.0.1)
+
+- 범위를 `d2cebc0^..c55078a`의 변경 파일로 고정하고 수정 전 전체 `49 passed`로 동작을 잠갔다.
+- fallback-like inventory에서 downloader 재시도 루프 뒤의 도달 불가능한 대체 오류 분기를 masking fallback slop으로 분류해 삭제했다. 재시도 소진 시 원인 문자열을 보존한 `InputError`가 발생하는 회귀 테스트를 추가했다.
+- `/proc/meminfo` 읽기 실패 시 자원 검사를 실패시키는 경로, 원자 저장의 임시 파일 정리, Git 정보 비가용 표시, tokenizer byte fallback은 실패-폐쇄 또는 외부 호환성 경계로 분류해 보존했다.
+- dead code 외 duplication, naming/error handling, 불필요한 abstraction은 공개 계약을 유지하면서 개선할 고신뢰 후보가 없어 변경하지 않았다. 새 의존성은 추가하지 않았다.
+- 프로젝트·패키지 버전을 1.0.1로 올리고 `uv.lock`, CLI·bundle 버전 회귀 테스트, 한국어 릴리스 문서를 동기화했다.
+
+### 1.0.1 cleanup 검증 기록
+
+- 표적 회귀 테스트: `18 passed`
+- Ruff format/check: 49개 Python 파일 통과
+- Pyright strict: 오류·경고 0건
+- 전체 Pytest: `50 passed`
+- release audit: 비밀·로컬 경로·필수 문서·참조 import 경계 통과
+- build/bundle: `llmex-1.0.1.tar.gz`, `llmex-1.0.1-py3-none-any.whl`, 120개 파일 checksum과 65개 구성요소 SBOM 생성 통과
+- `git diff --check`: whitespace 오류 없음

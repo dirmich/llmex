@@ -15,7 +15,7 @@ def test_release_audit_and_bundle(tmp_path: Path) -> None:
     assert audit(ROOT)["판정"] == "통과"
     output = tmp_path / "재현"
     result = bundle(ROOT, output)
-    assert result["버전"] == "1.0.0"
+    assert result["버전"] == "1.0.1"
     checksums = json.loads((output / "checksums.json").read_text(encoding="utf-8"))
     assert any(item["path"] == "NOTICE.md" for item in checksums["files"])
     sbom = json.loads((output / "sbom.cdx.json").read_text(encoding="utf-8"))

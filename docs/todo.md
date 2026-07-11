@@ -192,6 +192,22 @@
 | 장기 baseline | M6 전체 evidence | 대기·공개 금지 |
 | 공개 결정 | 책임자 승인 JSON | 대기·공개 금지 |
 
+### 1.0.1 최종 cleanup 검증표
+
+| 점검 항목 | 근거 | 판정 |
+|---|---|---|
+| 동작 잠금 | 수정 전 `49 passed` | 통과 |
+| fallback-like 분류 | masking 1건 삭제, grounded fail-safe 4종 보존 | 통과 |
+| dead code | downloader 도달 불가능 분기 삭제 | 통과 |
+| duplication | 고신뢰 중복 후보 없음 | 변경 없음 |
+| naming/error handling | 공개 계약을 유지할 최소 후보 없음 | 변경 없음 |
+| 불필요 abstraction | 제거 가능한 단일 전달 계층 없음 | 변경 없음 |
+| 회귀 보강 | 재시도 소진과 원인 보존 테스트 추가 | 통과 |
+| 버전·lock | 1.0.1 및 `uv.lock` 동기화 | 통과 |
+| 전체 품질 | Ruff, Pyright strict, `50 passed` | 통과 |
+| 릴리스 | audit, sdist/wheel, 120개 파일 bundle | 통과 |
+| diff 위생 | `git diff --check` | 통과 |
+
 ## 실행 기록
 
 | 날짜 | milestone | commit/run | 검증 명령 | 결과/artifact | 다음 작업 |

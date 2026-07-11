@@ -3,6 +3,8 @@ import hashlib
 import html
 import json
 import threading
+import urllib.error
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -19,7 +21,7 @@ from llmex.data.io import read_jsonl_zst
 from llmex.data.pipeline import run_e2e
 from llmex.data.schema import Document
 from llmex.data.split import split_for
-from llmex.errors import IntegrityError
+from llmex.errors import InputError, IntegrityError
 from llmex.fingerprint import sha256_file
 
 ROOT = Path(__file__).parents[1]
@@ -147,6 +149,25 @@ def test_local_http_range_resume_and_corrupt_checksum(tmp_path: Path) -> None:
     finally:
         server.shutdown()
         thread.join()
+
+
+def test_download_retry_exhaustion_preserves_failure_evidence(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def fail_request(*_args: object, **_kwargs: object) -> None:
+        raise urllib.error.URLError("의도적 연결 실패")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fail_request)
+    with pytest.raises(InputError, match=r"다운로드 재시도 소진.*의도적 연결 실패"):
+        download(
+            "https://example.invalid/dump",
+            tmp_path / "raw.bin",
+            expected_sha256="0" * 64,
+            timeout=1,
+            retries=1,
+            backoff=0,
+            disk_overhead_ratio=1,
+        )
 
 
 def test_split_disjoint_and_deterministic_e2e(expanded_bz2: Path, tmp_path: Path) -> None:

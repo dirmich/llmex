@@ -60,7 +60,6 @@ def download(
     destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(destination.suffix + ".part")
     resumed_from = partial.stat().st_size if partial.exists() else 0
-    last_error: Exception | None = None
     for attempt in range(retries + 1):
         try:
             headers = {"Range": f"bytes={partial.stat().st_size}-"} if partial.exists() else {}
@@ -78,12 +77,9 @@ def download(
                     shutil.copyfileobj(response, stream, length=1024 * 1024)
             break
         except (OSError, urllib.error.URLError) as exc:
-            last_error = exc
             if attempt == retries:
                 raise InputError(f"다운로드 재시도 소진: {url}: {exc}") from exc
             time.sleep(backoff * (2**attempt))
-    if last_error is not None and not partial.exists():
-        raise InputError(f"다운로드 실패: {last_error}")
     actual = sha256_file(partial)
     if actual != expected_sha256:
         raise IntegrityError(f"다운로드 checksum 불일치: 기대 {expected_sha256}, 실제 {actual}")
