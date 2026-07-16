@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.5.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습 경로를 제공한다. 전체 Wikipedia baseline과 외부 장기 학습·공개 승인 gate는 계속 별도 대기 상태이며, SFT 완료가 그 승인을 대신하지 않는다.
+LLMEX 1.5.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습 경로를 제공한다. 전체 Wikipedia corpus/tokenizer는 완료되었고 baseline 장기 학습은 진행 중이다. SFT 실험 완료가 100k 학습, 최종 평가, 대화 품질 또는 외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 

@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.5.1 - 2026-07-17
+
+- 전체 Wikipedia corpus/tokenizer 실측과 진행 중인 87,804,672-parameter baseline의 기록 시점 snapshot을 문서화했다.
+- CarrotAI SFT 및 qwen36mtp 증류 수치를 기록하고 repetition 0.96875, EOS 실패, newline 붕괴 때문에 대화 가능 상태가 아님을 명시했다.
+- 100k 종료 뒤 checkpoint 검증부터 평가·생성, SFT·확대 증류, 대화 gate, 필요 시 DPO, API packaging까지의 순서를 동기화했다.
+
 ## 1.5.0 - 2026-07-11
 
 - provenance/license/hash JSONL loader, assistant-only SFT, 원자 재개, heldout gate와 chat 생성을 추가했다.

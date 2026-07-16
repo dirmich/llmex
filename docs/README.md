@@ -12,4 +12,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 5. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 6. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.5.0, M0–M7 로컬 계약과 G003 대화 SFT 경로 완료·외부 공개 gate 대기. [M7 릴리스 체크리스트](release-checklist.md), [재현성 bundle](reproducibility.md), [acceptance matrix](acceptance-matrix.md)에 자동 통과 범위와 외부 승인 경계를 기록한다.
+현재 상태: 1.5.1, M0–M7 로컬 계약과 전체 Wikipedia corpus/tokenizer를 완료했으며 baseline 장기 학습은 진행 중이다. G003 대화 SFT 경로는 실험 단계이고 외부 공개 gate는 대기한다. [M7 릴리스 체크리스트](release-checklist.md), [재현성 bundle](reproducibility.md), [acceptance matrix](acceptance-matrix.md)에 자동 통과 범위와 외부 승인 경계를 기록한다.

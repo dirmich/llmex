@@ -1,5 +1,41 @@
 # 구현 이력
 
+## 2026-07-17 · 1.5.1 전체 Wikipedia baseline 및 대화 실험 기록
+
+### 완료: 데이터와 tokenizer
+
+- Wikipedia dump `20260701`, SHA-256 `991b26eb4588d2eddafd472a3b7dd2a8503740fb3e6c46d14baeef60d83e5582`를 사용했다.
+- extraction 753,081건, clean 747,718건, dedup 747,532건(exact duplicates 186건), split train/validation/test 732,393/7,521/7,618건이다.
+- corpus는 `data/processed/corpus-v1.jsonl.zst`, 711,548,455 bytes, SHA-256 `d959eb11051b405a509839e6a3f75e1c66b6f7e2aa88fbac3ff63580e0dea165`이다.
+- tokenizer는 `artifacts/tokenizers/bpe-16k`이며 chars/token 1.990337, bytes/token 4.400516, tokens/word 2.346399, byte reduction 77.275394%, UNK 0, Unicode 표본 10,000이다.
+
+### 진행 중: baseline 기록 시점 snapshot
+
+- 기록 시각은 `2026-07-17T02:57:01+09:00`이다. 87,804,672 parameters, 100,000 steps, 6,553,600,000 tokens 목표로 GB10 CUDA bf16 학습 중이다.
+- 프로세스는 PID `1082225` (`uv run llmex train run --config configs/training/baseline-100m.yaml`)와 PID `1082250` (`llmex train run`)이다.
+- 경로는 config `configs/training/baseline-100m.yaml`, metrics `runs/baseline-100m/metrics.jsonl`, checkpoints `runs/baseline-100m/checkpoints`이다. 최신 checkpoint 파일명은 `step-00089500.pt`이다.
+- metrics 마지막 행은 step 89,900, loss 2.3045945167541504, gradient norm 0.6804365515708923, learning rate 0.000037014643665840424, tokens 5,885,932,800, tokens/s 13,141.819194612375, peak memory 4,496,564,736 bytes였다.
+- 관련 휘발성 실행 경로는 `/tmp/llmex-pretrain/run-full-corpus.sh`, `/tmp/llmex-pretrain/full-corpus.log`, `/tmp/llmex-pretrain/train.log`이다. 100k 완료, final eval, conversation 검증은 아직 완료되지 않았다.
+
+### 완료: 과거 CarrotAI SFT와 qwen36mtp 증류 실험
+
+- CarrotAI revision `5c0e2c0180b50400e401dd0b296043f18fc6cb3f`를 사용했으며 raw 7,040, dedup 6,853, split 6,204/649였다.
+- 50-step loss 9.377446, NLL 9.332419, PPL 11,298.43; 500-step loss 7.411470, NLL 7.338655, PPL 1,538.64; 1,000-step NLL 6.476955, PPL 649.99; 2,000-step NLL 6.120403, PPL 455.05였다.
+- qwen36mtp teacher 100건을 모두 accepted했고 train 90건/heldout 10건으로 분리했으며 mean repetition 0.121885, 총 30,547 tokens였다. distill 100-step은 loss 6.299877, NLL 6.475069, PPL 648.76였다.
+- 실행 성공과 safety만 통과했다. repetition 0.96875, EOS 실패, newline 붕괴가 남아 대화 가능 모델이 아니다.
+- 과거 SFT artifact인 `/tmp/llmex-public-sft/result.json`, `/tmp/llmex-public-sft-long/result.json`, `/tmp/llmex-public-sft-2000/result.json`, `/tmp/llmex-distill/result.json`은 실제 실험 근거지만 휘발성 result 경로이므로 정식 artifact로 승격하기 전에는 `/tmp` 수명 경계를 갖는다.
+
+### 100k 후 계획
+
+1. final/latest/best checkpoint의 존재 여부, SHA-256, fingerprint, optimizer/scheduler/RNG 상태, NaN/Inf 여부를 확인한다.
+2. validation/test NLL/PPL, cloze, contamination, fixed prompts, repetition/EOS/Unicode, throughput/memory를 평가한다.
+3. CarrotAI 공개 instruction으로 SFT를 다시 수행하고 validation 결과로 checkpoint를 선택한다.
+4. teacher 데이터를 수천~수만 건으로 확대하면서 provenance와 request/response hash를 기록하고 train/heldout 비중복을 검증한다.
+5. 공개 instruction 데이터와 teacher 데이터를 혼합해 학습한다.
+6. 한국어 문법, 문장 종결, 암기 복사, 수동 평가를 포함해 conversation/EOS/repetition/safety gate를 모두 통과시킨다.
+7. 필요하면 DPO를 수행한다.
+8. checkpoint/tokenizer/config/model card/license provenance를 패키징하고 chat history/streaming/sampling/API를 검증한다.
+
 ## 2026-07-11 · G003 한국어 대화 학습 경로 (1.5.0)
 
 - 승인 license allowlist, dataset/source/date provenance, canonical 행 SHA-256와 파일 SHA-256를 검증하고 train/heldout 중복을 거부한다.

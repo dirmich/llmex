@@ -1,5 +1,37 @@
 # LLMEX 개발 TODO
 
+## 1.5.1 전체 Wikipedia baseline 및 대화 실험
+
+### 완료
+
+- [x] Wikipedia dump `20260701` 고정 및 SHA-256 검증
+- [x] extraction 753,081 → clean 747,718 → dedup 747,532(exact duplicates 186) → split 732,393/7,521/7,618
+- [x] `data/processed/corpus-v1.jsonl.zst` 711,548,455 bytes 및 SHA-256 검증
+- [x] `artifacts/tokenizers/bpe-16k` 실측: chars/token 1.990337, bytes/token 4.400516, tokens/word 2.346399, byte reduction 77.275394%, UNK 0, Unicode 10,000
+- [x] CarrotAI revision `5c0e2c0180b50400e401dd0b296043f18fc6cb3f`, raw/dedup/split 7,040/6,853/6,204·649 실험
+- [x] CarrotAI 50/500/1,000/2,000-step NLL·PPL 기록
+- [x] qwen36mtp teacher 100건(100건 accepted, train/heldout 90/10, repetition 0.121885, 30,547 tokens)과 distill 100-step 결과 기록
+- [x] 실행 성공·safety 통과와 repetition 0.96875/EOS 실패/newline 붕괴 기록
+
+### 진행 중
+
+- [~] 87,804,672 parameters, 100,000 steps, 6,553,600,000 tokens의 GB10 CUDA bf16 baseline 장기 학습
+- [~] 기록 시점 `2026-07-17T02:57:01+09:00`: PID 1082225/1082250, step 89,900, 최신 `step-00089500.pt`
+- [ ] 100k 완료
+- [ ] final eval
+- [ ] conversation 검증
+
+### 100k 후 계획
+
+1. [ ] checkpoint integrity
+2. [ ] best/latest eval + generate
+3. [ ] CarrotAI SFT
+4. [ ] teacher 수천~수만 확대
+5. [ ] mixed distill
+6. [ ] conversation/EOS/repetition/safety/manual gate
+7. [ ] 필요 시 DPO
+8. [ ] API packaging
+
 ## G003 한국어 대화 학습 경로 (1.5.0)
 
 - [x] JSONL provenance/license/행·파일 hash 검증
@@ -179,12 +211,12 @@
 - [x] 100M baseline 완료 전 120M 초과 설정 거부 확인
 - [x] 날짜 고정 전체 dump URL/checksum 승인(공식 SHA-1 일치·로컬 SHA-256)
 - [x] raw 저장공간과 예상 artifact 용량 preflight
-- [ ] 전체 extract/clean/dedup/split report 승인
-- [ ] tokenizer 16k/32k 실제 비교 후 선택(16k 조건부 기본값 기록)
+- [x] 전체 extract/clean/dedup/split report 승인
+- [x] tokenizer 16k 실제 측정 및 선택
 - [x] baseline parameter/token budget 확정
-- [ ] 1% token pilot
-- [ ] throughput, memory, loss, checkpoint 복구 검토
-- [ ] baseline 학습 실행
+- [x] 1% token pilot
+- [x] throughput, memory, loss, checkpoint 복구 검토
+- [~] baseline 학습 실행
 - [ ] best/final checkpoint 평가
 - [ ] 실패·중단 포함 training report 작성
 

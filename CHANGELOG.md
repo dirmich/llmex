@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.5.1 - 2026-07-17
+
+- 전체 Wikipedia corpus와 16k tokenizer 실측을 완료하고, 87,804,672-parameter baseline의 100,000-step 장기 학습 진행 상황을 기록했다.
+- CarrotAI SFT와 qwen36mtp teacher/distillation 실험 결과를 보존했다. 실행과 safety gate는 통과했지만 repetition 0.96875, EOS 실패, newline 붕괴로 대화 가능 모델은 아니다.
+- 100k 종료 후 checkpoint 무결성, 평가·생성, SFT·대규모 teacher·mixed distillation, 대화 품질 gate, 필요 시 DPO와 API packaging 순으로 후속 작업을 동기화했다.
+
 ## 1.5.0 - 2026-07-11
 
 - provenance/license/행 hash/파일 SHA-256 검증 JSONL chat loader와 assistant-only SFT template를 추가했다.
