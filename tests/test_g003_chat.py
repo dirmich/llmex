@@ -607,6 +607,74 @@ def test_sft_continuous_and_resume_are_deterministic(tmp_path: Path) -> None:
         assert torch.equal(continuous_parameter, resumed_parameter)
 
 
+def test_sft_same_step_checkpoint_requests_are_coalesced(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _config(tmp_path / "overlap", max_steps=2)
+    trainer = SFTTrainer(config)
+    original_save = trainer.save
+    saves: list[tuple[int, bool]] = []
+
+    def counted_save(*, best: bool = False) -> Path:
+        saves.append((trainer.step, best))
+        return original_save(best=best)
+
+    monkeypatch.setattr(trainer, "save", counted_save)
+    trainer.run(stop_after_steps=1)
+
+    assert saves == [(1, True)]
+    best_path = config.run_dir / "checkpoints/best.pt"
+    best_bytes = best_path.read_bytes()
+    best = torch.load(best_path, map_location="cpu", weights_only=True)
+    latest = torch.load(
+        config.run_dir / "checkpoints/latest.pt", map_location="cpu", weights_only=True
+    )
+    assert best["step"] == latest["step"] == 1
+
+    resumed = SFTTrainer(config)
+    resumed.resume(config.run_dir / "checkpoints/latest.pt")
+    resumed_save = resumed.save
+    resumed_validate = resumed.validate
+    resumed_saves: list[tuple[int, bool]] = []
+
+    def counted_resumed_save(*, best: bool = False) -> Path:
+        resumed_saves.append((resumed.step, best))
+        return resumed_save(best=best)
+
+    def worse_validation() -> float:
+        resumed_validate()
+        return resumed.best_validation_loss + 1.0
+
+    monkeypatch.setattr(resumed, "save", counted_resumed_save)
+    monkeypatch.setattr(resumed, "validate", worse_validation)
+    resumed_result = resumed.run()
+
+    assert resumed_saves == [(2, False)]
+    assert best_path.read_bytes() == best_bytes
+    resumed_latest = torch.load(
+        config.run_dir / "checkpoints/latest.pt", map_location="cpu", weights_only=True
+    )
+    assert resumed_latest["step"] == 2
+    assert resumed_latest["best_validation_loss"] == best["best_validation_loss"]
+    assert Path(str(resumed_result["checkpoint"])).is_file()
+
+    zero_iteration = SFTTrainer(config)
+    zero_iteration.resume(config.run_dir / "checkpoints/latest.pt")
+    zero_save = zero_iteration.save
+    zero_saves: list[tuple[int, bool]] = []
+
+    def counted_zero_save(*, best: bool = False) -> Path:
+        zero_saves.append((zero_iteration.step, best))
+        return zero_save(best=best)
+
+    monkeypatch.setattr(zero_iteration, "save", counted_zero_save)
+    zero_result = zero_iteration.run()
+
+    assert zero_saves == [(2, False)]
+    assert Path(str(zero_result["checkpoint"])).is_file()
+    assert best_path.read_bytes() == best_bytes
+
+
 def test_sft_fresh_run은_기존_run_dir를_거부하고_resume만_계속_사용한다(
     tmp_path: Path,
 ) -> None:

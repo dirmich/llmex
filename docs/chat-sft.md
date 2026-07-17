@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.5는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, fresh SFT 실행 경계, 상한이 있는 token cache, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
+LLMEX 1.9.6는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, fresh SFT 실행 경계, 상한이 있는 token cache, step별 단일 checkpoint 저장, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -92,6 +92,8 @@ trainer는 전체 길이와 generation gate를 검사하는 1차 tokenization의
 bf16은 CUDA 또는 CPU에서 사용하며 gradient scaler를 사용하지 않는다. fp16은 CUDA 전용이고 gradient scaler를 사용한다. fp32는 autocast와 scaler를 사용하지 않는다. 지원하지 않는 장치·정밀도 조합은 학습 전에 중단한다.
 
 `micro_batch_size × gradient_accumulation_steps`는 한 optimizer step의 batch 수를 결정한다. 누적 도중에는 checkpoint를 저장하지 않으며 optimizer 경계에서만 원자적으로 저장한다. `max_steps`를 늘려 재개하면 checkpoint에 저장된 원래 scheduler horizon을 유지하고, horizon을 지난 추가 step에서는 `min_learning_rate`를 유지한다.
+
+validation best 갱신, `checkpoint_interval`, 현재 실행의 final/stop-after가 같은 optimizer step에 겹쳐도 checkpoint payload는 한 번만 직렬화한다. 개선 step은 그 한 번으로 step/latest/best를 함께 갱신하고, 비개선 step은 step/latest만 갱신해 기존 best를 보존한다. 이미 target step인 zero-iteration 재개는 기존과 같이 한 번 저장한다.
 
 정식 full step은 최종 mix의 train 행 수 `N`이 확정된 뒤 계산한다. micro batch 4, accumulation 16이면 sampler가 epoch 끝의 4행 미만 tail을 버리므로 `ceil(3 × floor(N / 4) / 16)`은 정확히 3 epoch가 아니라 약 3 epoch의 시작값이다. pilot 실측 시간·loss·GPU 사용률을 확인한 뒤 full 예산을 확정한다.
 

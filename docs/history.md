@@ -1,5 +1,19 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.6 SFT step별 단일 checkpoint 저장
+
+### 중복 대용량 쓰기 제거
+
+- 기존 SFT loop는 validation loss 개선 시 `best=True`, checkpoint interval 도달 시 일반 저장, loop 종료 뒤 final 저장을 각각 호출했다. 세 조건이 같은 optimizer step에 겹치면 동일한 모델·optimizer·sampler·RNG payload를 최대 세 번 직렬화하고 step/latest/best 파일을 합계 최대 7번 썼다.
+- 이제 validation 개선 여부, checkpoint interval과 현재 실행의 target/final step을 한 번 판정해 step당 `save`를 최대 한 번만 호출한다. 개선 step은 그 한 번으로 step/latest/best를 갱신하고 비개선 step은 step/latest만 갱신해 이전 best를 보존한다.
+- `stop_after_steps`로 주기 전 중단해도 target step checkpoint를 남기며, 진입 시 이미 target step인 zero-iteration 재개도 기존처럼 한 번 저장한다. checkpoint schema, payload, 원자 쓰기와 strict resume 계약은 바꾸지 않았다.
+
+### 검증
+
+- 실제 `save`에 위임하는 spy로 개선+주기+중단 종료 겹침이 `(step=1,best=true)` 한 번임을 검증했다. 그 latest를 strict resume한 뒤 실제 validation 상태는 진행시키고 loss만 기존 best보다 크게 만들어 비개선+주기+final이 `(step=2,best=false)` 한 번이며 best 파일 bytes와 best loss가 보존됨을 확인했다. step 2 latest의 zero-iteration resume도 한 번만 저장하고 유효한 checkpoint 경로를 반환했다.
+- 전체 `166 passed`, Ruff lint/71파일 format, Pyright strict 오류 0, release audit와 `git diff --check`를 통과했다. 독립 리뷰의 기존 best 보존·zero-iteration 회귀 부족 MEDIUM을 실제 resume 시나리오로 폐쇄한 뒤 최종 `APPROVE`를 받았다.
+- 정식 qwen36mtp v5 수집은 GPU를 공유하지 않고 계속 진행한다.
+
 ## 2026-07-18 · 1.9.5 모듈별 단계 학습 교재
 
 ### 56개 모듈 전수 지도와 제작 워크북

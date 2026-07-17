@@ -1,8 +1,13 @@
 # LLMEX 개발 TODO
 
-## 1.9.5 모듈별 교재 보강 및 정식 teacher 수집 진행
+## 1.9.6 SFT checkpoint 중복 저장 제거 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] validation best·checkpoint interval·중단/final이 같은 step에 겹칠 때 단일 `save`
+- [x] 개선 step의 `best.pt` 갱신과 비개선 step의 기존 best 보존
+- [x] stop-after final checkpoint와 zero-iteration 저장 fallback 유지
+- [x] 실제 저장 위임 spy로 개선·비개선 겹침 회귀 검증
 
 - [x] `src/llmex` Python 56개 전수의 책임·입출력·불변식·완료 증거 지도
 - [x] CPU fixture, CUDA pilot, DGX Spark, localhost teacher 환경별 진단과 비용 경계

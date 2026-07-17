@@ -833,6 +833,7 @@ class SFTTrainer:
             },
         )
         last_loss = math.nan
+        checkpoint: Path | None = None
         self.model.train()
         while self.step < target_step:
             self.optimizer.zero_grad(set_to_none=True)
@@ -887,6 +888,7 @@ class SFTTrainer:
                         "device": self.device.type,
                     }
                 )
+            save_best = False
             if (
                 self.step % self.config.validation_interval == 0
                 or self.step == self.config.max_steps
@@ -903,10 +905,15 @@ class SFTTrainer:
                     }
                 )
                 if improved:
-                    self.save(best=True)
-            if self.step % self.config.checkpoint_interval == 0:
-                self.save()
-        checkpoint = self.save()
+                    save_best = True
+            if (
+                save_best
+                or self.step % self.config.checkpoint_interval == 0
+                or self.step == target_step
+            ):
+                checkpoint = self.save(best=save_best)
+        if checkpoint is None:
+            checkpoint = self.save()
         return {
             "step": self.step,
             "loss": last_loss,

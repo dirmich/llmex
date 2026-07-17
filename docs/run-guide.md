@@ -222,6 +222,8 @@ preflight의 `token_cache`에는 split별 rows/tokens/input_bytes/label_bytes/of
 
 새 `sft train`은 빈 디렉터리를 포함해 이미 존재하는 `run_dir`를 거부한다. pilot과 full은 같은 100k `latest` base checkpoint를 지정하되 서로 다른 미존재 run 디렉터리를 사용한다. full은 pilot checkpoint를 base나 resume 대상으로 사용하지 않는다. 중단된 동일 run만 `sft resume`으로 이어간다.
 
+validation best, checkpoint interval과 final/stop-after가 같은 optimizer step에 겹쳐도 저장은 한 번만 수행된다. 개선 step은 step/latest/best를 함께 갱신하고 비개선 step은 step/latest만 갱신하므로, checkpoint 주기를 줄여도 같은 step의 중복 대용량 쓰기는 발생하지 않는다.
+
 ```bash
 test ! -e runs/sft-qwen36mtp-v5-pilot
 uv run llmex sft train --config configs/sft/qwen36mtp-v5-pilot.yaml

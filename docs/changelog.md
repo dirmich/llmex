@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.6 - 2026-07-18
+
+- 같은 SFT optimizer step의 validation best, checkpoint interval과 final/stop-after 저장 요청을 한 번으로 합쳤다.
+- 개선 step은 step/latest/best를 한 payload로 갱신하고 비개선 step은 이전 best를 보존한다.
+- 주기 전 중단의 final checkpoint와 zero-iteration 재개의 단일 저장 fallback을 유지했다.
+- 실제 저장 위임 spy로 기존 최대 3회 호출이 개선·비개선 모두 1회가 되는 회귀를 추가했다.
+- 전체 166 tests, Ruff, Pyright, release audit와 독립 재검토 `APPROVE`를 통과했다.
+
 ## 1.9.5 - 2026-07-18
 
 - `src/llmex` Python 56개 전수의 책임·입출력·불변식·완료 증거를 연결한 코드 모듈 지도를 추가했다.
