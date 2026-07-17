@@ -1,5 +1,34 @@
 # 구현 이력
 
+## 2026-07-18 · 1.8.1 서명된 수동 blind review와 release 결속
+
+### 구현 완료: 수동 review 입력과 결정적 표본
+
+- `llmex sft quality-review-template`, `quality-gate`, `quality-review-validate`를 추가했다. template은 통과한 자동 quality 결과의 canonical full-row hash, results/report/manifest SHA-256과 sampling challenge에 결속된다.
+- 자동 결과 population이 100개 미만이면 즉시 실패한다. 100개 이상에서는 safety-critical response를 전수 포함하고 profile·seed·category·profile-seed·multi-turn coverage를 유지하면서 최소 100개를 SHA-256 순서로 결정적으로 선택한다.
+- reviewer에게는 대화 `context`, 응답, category, rubric과 결속 hash만 제공한다. decoding profile·seed, checkpoint/teacher 정보, 기대 판정·자동 점수는 blind template에서 제거해 검토 누출을 막는다.
+
+### 구현 완료: 독립 서명과 품질 판정
+
+- quality reviewer는 정확히 2명, safety reviewer는 정확히 1명이며 큰 비-safety 점수 불일치가 있을 때만 adjudicator 1명을 허용한다. identity, issuer와 Ed25519 공개키 authority를 모두 서로 다르게 요구한다.
+- 한 invocation에서 Git commit, 고정 root가 서명한 trust policy bytes와 issuer map을 한 번 snapshot한다. 모든 review/adjudication 서명은 같은 context에서 role·kind·RFC3339 발급/만료·target·exact item/response/full-row hash 집합을 검증한다.
+- safety 점수의 큰 불일치는 adjudication으로 덮을 수 없고 즉시 veto한다. critical flag와 safety reviewer 4점 미만도 즉시 실패한다.
+- 각 item/criterion은 adjudication resolved score 또는 두 quality reviewer 평균 중 하나의 canonical effective score를 갖는다. 같은 matrix로 전체 평균, 핵심 4점 이상 item 비율, dimension 평균과 category 핵심 평균을 계산한다. 전체 핵심 평균 4.0, 핵심 4점 이상 item 90%, 모든 dimension/category 4.0 이상을 요구한다.
+
+### artifact·release·신뢰 경계
+
+- template과 gate artifact는 배타 lock, staging, fsync와 원자 교체로 publish하며 처음 snapshot한 bytes로 재검증한다. 부분 출력, symlink, 중복 submission, ABA 교체와 checksum/fingerprint 변조는 실패-폐쇄된다.
+- release 외부 gate에 `수동 품질 평가`를 네 번째 필수 gate로 추가했다. manual manifest/report의 exact schema, canonical fingerprint, report SHA, 최소 100 표본, 모든 metric·worst 값, reviewer/submission/adjudication 수, safety/sample·점수 평균·이산 통과 count 관계와 release version·Git commit·config fingerprint를 strict 검증한다.
+- release의 법무·baseline·수동 품질·공개 결정 서명은 한 번 snapshot한 동일 `TrustContext`와 commit으로 검증한다.
+- production `.llmex/trust-policy.json`에는 신규 `quality-reviewer`, `safety-reviewer`, `quality-adjudicator`, `quality-release` 역할을 등록하지 않았다. 고정 root private key가 없는 상태에서 policy를 자체 서명하거나 훼손하지 않았으며, 보호 환경이 적법한 policy와 evidence를 발급하기 전 실제 운영 gate는 의도적으로 실패-폐쇄된다.
+
+### 검증 결과와 남은 실제 작업
+
+- 독립 code-reviewer와 architect의 반복 재검토에서 모든 HIGH/MEDIUM과 architecture WATCH를 폐쇄하고 최종 `APPROVE`를 받았다.
+- `uv run pytest -q` 148 tests, `uv run ruff check .`, `uv run ruff format --check .`, `uv run pyright`를 통과했다.
+- 1.8.1은 수동 gate 소프트웨어 구현 완료를 뜻한다. 정식 v5 teacher 수집과 혼합 SFT가 끝난 실제 best/latest 모델에 대해 template을 만들고 사람이 quality·safety review를 수행한 것은 아니다. 따라서 현재 모델의 수동 품질이나 공개 배포는 승인되지 않았다.
+- 정식 `qwen36mtp-10k-v5` 수집은 동적 상태다. 변하는 completed/pending 수를 이력에 고정하지 않고 `uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml`로 확인한다.
+
 ## 2026-07-18 · 1.8.0 SHA 고정 자동 대화 품질 gate
 
 ### 완료: 실제 멀티턴 자동 평가

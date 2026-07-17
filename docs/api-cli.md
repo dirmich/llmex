@@ -7,7 +7,7 @@
 | `config`, `fingerprint`, `run` | 설정·입력·실행 identity |
 | `data`, `tokenizer` | corpus와 token shard 생성 |
 | `model`, `train` | inspect, 학습, 재개, smoke |
-| `sft` | 공개·teacher mix, 실제 SFT preflight, train/resume/eval/generate, SHA 고정 자동 품질 gate |
+| `sft` | 공개·teacher mix, 실제 SFT preflight, train/resume/eval/generate, SHA 고정 자동·서명 수동 품질 gate |
 | `eval`, `generate`, `benchmark` | 품질·안전 평가와 추론 |
 | `distill` | teacher preflight/prepare/collect/resume/status/export/validate |
 | `pipeline` | preflight/run/status/drill/export |
@@ -66,4 +66,14 @@ uv run llmex sft quality-validate --config <quality-config.yaml>
 
 설정은 `expected_sft_config_sha256`, `expected_checkpoint_sha256`, `expected_suite_sha256`을 필수로 요구한다. greedy는 temperature 0·seed 하나, sampling은 양의 temperature·합계 최소 5개 고정 seed다. repository suite의 canonical 계획은 24 scenarios·27 turns에 greedy 1회와 sampling 5회를 적용한 162 responses다. 실행 결과는 `output_dir/results.jsonl`, `report.json`, `manifest.json`이며 lock·staging·manifest-last publish와 전체 재유도로 부분 출력·동시 실행·ABA 교체·변조를 실패-폐쇄한다.
 
-`report.json`의 `gate_passed`는 자동 판정일 뿐 수동 품질이나 공개 승인 결과가 아니다. teacher judge는 1.8.0에서 꺼져 있고 향후 advisory-only이며, 수동 review/approval CLI는 1.8.1 범위다.
+`report.json`의 `gate_passed`는 자동 판정일 뿐 실제 사람 품질이나 공개 승인 결과가 아니다. teacher judge는 비활성화되어 있고 향후 advisory-only다.
+
+## SFT 수동 품질 gate CLI
+
+| 명령 | 계약 |
+|---|---|
+| `llmex sft quality-review-template --config <경로>` | 자동 full-row·artifact·challenge에 결속된 최소 100개 blind template과 safety-critical 전수를 원자 생성한다. |
+| `llmex sft quality-gate ...` | 독립 quality 2명·safety 1명·필요 adjudicator의 서명과 exact item/hash, effective score gate를 검증해 report/manifest를 원자 생성한다. |
+| `llmex sft quality-review-validate ...` | 현재 template·submission·단일 trust context에서 수동 artifact를 재유도해 byte 단위로 검증한다. |
+
+CLI는 trust root override를 노출하지 않는다. 명시적인 Git 최상위 `--repository`와 production pinned root를 사용하며, production policy에 신규 quality 역할이 아직 없으므로 보호 환경이 서명 policy를 갱신하기 전 실제 운영은 실패-폐쇄된다. 구현 완료는 실제 모델의 사람 검토 완료를 의미하지 않는다.

@@ -318,6 +318,85 @@ def sft_quality_validate(config_path: Annotated[Path, typer.Option("--config")])
     _sft_quality_call(config_path, "validate")
 
 
+@sft_app.command("quality-review-template")
+def sft_quality_review_template(
+    config_path: Annotated[Path, typer.Option("--config")],
+) -> None:
+    """통과한 자동 평가에 결속된 결정적 blind review 표본을 생성합니다."""
+    try:
+        config = load_yaml(config_path, SFTQualityConfig)
+        from llmex.chat.quality_review import quality_review_template
+
+        result = quality_review_template(config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+def _sft_quality_review_gate_call(
+    config_path: Path,
+    repository: Path,
+    quality_reviews: list[Path],
+    safety_review: Path,
+    adjudications: list[Path],
+    *,
+    validate: bool,
+) -> None:
+    try:
+        config = load_yaml(config_path, SFTQualityConfig)
+        from llmex.chat.quality_review import quality_gate, validate_quality_gate
+
+        operation = validate_quality_gate if validate else quality_gate
+        result = operation(
+            config,
+            repository,
+            quality_reviews,
+            safety_review,
+            adjudications,
+        )
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@sft_app.command("quality-gate")
+def sft_quality_gate(
+    config_path: Annotated[Path, typer.Option("--config")],
+    repository: Annotated[Path, typer.Option("--repository")],
+    quality_reviews: Annotated[list[Path], typer.Option("--quality-review")],
+    safety_review: Annotated[Path, typer.Option("--safety-review")],
+    adjudications: Annotated[list[Path] | None, typer.Option("--adjudication")] = None,
+) -> None:
+    """독립 서명된 human review로 실패-폐쇄 수동 품질 gate를 생성합니다."""
+    _sft_quality_review_gate_call(
+        config_path,
+        repository,
+        quality_reviews,
+        safety_review,
+        adjudications or [],
+        validate=False,
+    )
+
+
+@sft_app.command("quality-review-validate")
+def sft_quality_review_validate(
+    config_path: Annotated[Path, typer.Option("--config")],
+    repository: Annotated[Path, typer.Option("--repository")],
+    quality_reviews: Annotated[list[Path], typer.Option("--quality-review")],
+    safety_review: Annotated[Path, typer.Option("--safety-review")],
+    adjudications: Annotated[list[Path] | None, typer.Option("--adjudication")] = None,
+) -> None:
+    """수동 quality gate와 모든 서명 evidence를 현재 artifact에서 재검증합니다."""
+    _sft_quality_review_gate_call(
+        config_path,
+        repository,
+        quality_reviews,
+        safety_review,
+        adjudications or [],
+        validate=True,
+    )
+
+
 def _sft_train(config_path: Path, resume: Path | None, dry_run: bool) -> None:
     try:
         config = _sft_config(config_path)

@@ -4,10 +4,13 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+import os
 import re
 import stat
 import subprocess
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -21,6 +24,14 @@ POLICY_PATH = Path(".llmex/trust-policy.json")
 CANONICAL_COMMIT = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})")
 # 이 키만 production trust anchor다. 저장소 policy가 자신의 권위를 선언할 수 없다.
 PINNED_ROOT_PUBLIC_KEY = "7Ye4+UNipKIjUGrNl/+Ri1EbNmAKuEd7QH+FE3TPcWM="
+
+
+@dataclass(frozen=True)
+class TrustContext:
+    repository: Path
+    git_commit: str
+    policy_sha256: str
+    issuers: dict[str, dict[str, Any]]
 
 
 def _canonical(value: dict[str, Any]) -> bytes:
@@ -76,13 +87,20 @@ def repository_commit(repository: Path) -> tuple[Path, str]:
     return root, commit
 
 
-def _load_policy(repository: Path, root_public_key: str | None = None) -> dict[str, Any]:
+def _load_policy_snapshot(
+    repository: Path, commit: str, root_public_key: str | None = None
+) -> tuple[dict[str, Any], bytes]:
     policy_path = repository / POLICY_PATH
+    if policy_path.is_symlink():
+        raise IntegrityError("trust policy symlink는 허용되지 않습니다")
     try:
-        raw = policy_path.read_bytes()
-        mode = stat.S_IMODE(policy_path.stat().st_mode)
+        with policy_path.open("rb") as stream:
+            before = os.fstat(stream.fileno())
+            raw = stream.read()
+            after = os.fstat(stream.fileno())
+        mode = stat.S_IMODE(before.st_mode)
         committed = subprocess.run(
-            ["git", "show", f"HEAD:{POLICY_PATH.as_posix()}"],
+            ["git", "show", f"{commit}:{POLICY_PATH.as_posix()}"],
             cwd=repository,
             check=True,
             capture_output=True,
@@ -90,6 +108,13 @@ def _load_policy(repository: Path, root_public_key: str | None = None) -> dict[s
         policy = json.loads(raw)
     except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
         raise IntegrityError("서명된 trust policy를 검증할 수 없습니다") from exc
+    if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+    ) or len(raw) != before.st_size:
+        raise IntegrityError("trust policy immutable snapshot을 만들 수 없습니다")
     if raw != committed or mode & 0o022:
         raise IntegrityError("trust policy가 HEAD와 다르거나 group/other 쓰기 가능합니다")
     if not isinstance(policy, dict) or policy.get("schema_version") != 2:
@@ -102,7 +127,19 @@ def _load_policy(repository: Path, root_public_key: str | None = None) -> dict[s
     issuers = policy.get("issuers")
     if not isinstance(issuers, dict) or not issuers:
         raise IntegrityError("issuer policy가 비었습니다")
-    return policy
+    return cast(dict[str, Any], policy), raw
+
+
+def load_trust_context(repository: Path, root_public_key: str | None = None) -> TrustContext:
+    """Git commit과 서명 policy를 한 번 snapshot한 invocation trust context를 만든다."""
+    root, commit = repository_commit(repository)
+    policy, raw = _load_policy_snapshot(root, commit, root_public_key)
+    return TrustContext(
+        repository=root,
+        git_commit=commit,
+        policy_sha256=hashlib.sha256(raw).hexdigest(),
+        issuers=cast(dict[str, dict[str, Any]], policy["issuers"]),
+    )
 
 
 def rfc3339(value: object) -> datetime:
@@ -124,10 +161,27 @@ def verify_statement(
     root_public_key: str | None = None,
 ) -> None:
     """고정 root가 승인한 issuer의 role/kind, 기간, Ed25519 서명을 검증한다."""
-    policy = _load_policy(repository, root_public_key)
+    context = load_trust_context(repository, root_public_key)
+    verify_statement_context(
+        statement,
+        context=context,
+        expected_role=expected_role,
+        expected_kind=expected_kind,
+        signed_payload=signed_payload,
+    )
+
+
+def verify_statement_context(
+    statement: dict[str, Any],
+    *,
+    context: TrustContext,
+    expected_role: str,
+    expected_kind: str,
+    signed_payload: dict[str, Any],
+) -> None:
+    """이미 snapshot한 동일 trust context에서 진술 하나를 검증한다."""
     issuer, role = statement.get("issuer"), statement.get("role")
-    issuers = cast(dict[str, Any], policy["issuers"])
-    item = issuers.get(issuer) if isinstance(issuer, str) else None
+    item = context.issuers.get(issuer) if isinstance(issuer, str) else None
     if (
         not isinstance(item, dict)
         or role != expected_role
@@ -149,3 +203,24 @@ def verify_statement(
         _public_key(item.get("public_key"), str(issuer)),
         expected_kind,
     )
+
+
+def issuer_authority_fingerprint(
+    repository: Path, issuer: str, root_public_key: str | None = None
+) -> str:
+    """검증된 trust policy issuer 공개키의 authority fingerprint를 반환한다."""
+    return issuer_authority_fingerprint_context(
+        load_trust_context(repository, root_public_key), issuer
+    )
+
+
+def issuer_authority_fingerprint_context(context: TrustContext, issuer: str) -> str:
+    """동일 invocation trust context의 issuer authority fingerprint를 반환한다."""
+    item = context.issuers.get(issuer)
+    if not isinstance(item, dict):
+        raise IntegrityError("알 수 없는 issuer입니다")
+    encoded = item.get("public_key")
+    _public_key(encoded, issuer)
+    if not isinstance(encoded, str):
+        raise IntegrityError("issuer 공개키가 문자열이 아닙니다")
+    return hashlib.sha256(base64.b64decode(encoded, validate=True)).hexdigest()

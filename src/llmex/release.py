@@ -3,7 +3,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import math
+import os
 import re
 import subprocess
 import sys
@@ -16,8 +19,8 @@ from typing import Any
 from llmex import __version__
 from llmex.data.io import write_json
 from llmex.errors import InputError, IntegrityError
-from llmex.fingerprint import sha256_file
-from llmex.trust import repository_commit, verify_statement
+from llmex.fingerprint import fingerprint, sha256_file
+from llmex.trust import load_trust_context, verify_statement_context
 
 SCHEMA_VERSION = 1
 REQUIRED_RELEASE_FILES = (
@@ -42,10 +45,11 @@ REQUIRED_RELEASE_FILES = (
     "docs/reproducibility.md",
     "docs/examples.md",
 )
-EXTERNAL_GATES = ("법무 검토", "장기 baseline", "공개 배포 결정")
+EXTERNAL_GATES = ("법무 검토", "장기 baseline", "수동 품질 평가", "공개 배포 결정")
 GATE_POLICY = {
     "법무 검토": ("legal", "legal-approval"),
     "장기 baseline": ("baseline", "baseline-evidence"),
+    "수동 품질 평가": ("quality-release", "manual-quality-gate-approval"),
     "공개 배포 결정": ("release", "release-approval"),
 }
 REFERENCE_DIR = "0" + ".ref"
@@ -215,7 +219,8 @@ def external_gate(
         raise InputError(f"외부 승인 파일을 읽을 수 없습니다: {approvals}: {exc}") from exc
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
         raise IntegrityError("외부 승인 schema가 없거나 지원되지 않습니다")
-    repository, expected_commit = repository_commit(repository)
+    trust_context = load_trust_context(repository, trust_root_public_key)
+    repository, expected_commit = trust_context.repository, trust_context.git_commit
     target = payload.get("target")
     if (
         not isinstance(target, dict)
@@ -249,20 +254,22 @@ def external_gate(
         if not isinstance(evidence, dict):
             raise IntegrityError(f"{name}: evidence 누락")
         evidence_path = approvals.parent / str(evidence.get("path", ""))
-        if not evidence_path.is_file() or evidence.get("sha256") != sha256_file(evidence_path):
+        evidence_bytes = _immutable_evidence_bytes(evidence_path)
+        if evidence.get("sha256") != hashlib.sha256(evidence_bytes).hexdigest():
             raise IntegrityError(f"{name}: evidence 파일/checksum 불일치")
+        if name == "수동 품질 평가":
+            _manual_quality_evidence(evidence_bytes, evidence_path.parent, target)
         signed = {
             "gate": name,
             "target": target,
             **{key: value for key, value in item.items() if key != "signature"},
         }
-        verify_statement(
+        verify_statement_context(
             item,
-            repository=repository,
+            context=trust_context,
             expected_role=expected_role,
             expected_kind=expected_kind,
             signed_payload=signed,
-            root_public_key=trust_root_public_key,
         )
     return {
         "판정": "승인",
@@ -270,6 +277,177 @@ def external_gate(
         "게이트": list(EXTERNAL_GATES),
         "target": target,
     }
+
+
+def _immutable_evidence_bytes(path: Path) -> bytes:
+    if any(item.is_symlink() for item in (path, *path.parents) if item.exists()):
+        raise IntegrityError("외부 gate evidence symlink/path traversal은 허용되지 않습니다")
+    try:
+        with path.open("rb") as stream:
+            before = os.fstat(stream.fileno())
+            data = stream.read()
+            after = os.fstat(stream.fileno())
+    except OSError as exc:
+        raise IntegrityError(f"외부 gate evidence를 읽을 수 없습니다: {path}") from exc
+    identity_before = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+    identity_after = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+    if identity_before != identity_after or len(data) != before.st_size:
+        raise IntegrityError("외부 gate evidence immutable snapshot을 만들 수 없습니다")
+    return data
+
+
+def _manual_quality_evidence(
+    manifest_bytes: bytes, evidence_directory: Path, release_target: dict[str, Any]
+) -> None:
+    """수동 품질 manifest와 report의 의미·checksum·release subject 결속을 검증한다."""
+    from llmex.chat.quality_review import ReviewTarget
+
+    try:
+        manifest = json.loads(manifest_bytes)
+        report_path = evidence_directory / "gate-report.json"
+        report_bytes = _immutable_evidence_bytes(report_path)
+        report = json.loads(report_bytes)
+    except json.JSONDecodeError as exc:
+        raise IntegrityError("수동 품질 gate evidence를 읽을 수 없습니다") from exc
+    manifest_keys = {"schema_version", "kind", "target", "submissions", "outputs", "fingerprint"}
+    report_keys = {
+        "schema_version",
+        "kind",
+        "target",
+        "reviewer_identities",
+        "sample_responses",
+        "safety_responses",
+        "mean_core_score",
+        "all_core_at_least_4_rate",
+        "score_matrix_policy",
+        "dimension_means",
+        "category_core_means",
+        "worst_dimension_mean",
+        "worst_category_core_mean",
+        "critical_count",
+        "disagreements",
+        "unresolved_disagreements",
+        "teacher_judge",
+        "gate_passed",
+        "fingerprint",
+    }
+    if (
+        not isinstance(manifest, dict)
+        or set(manifest) != manifest_keys
+        or not isinstance(report, dict)
+        or set(report) != report_keys
+    ):
+        raise IntegrityError("수동 품질 gate manifest/report key 집합이 정확하지 않습니다")
+    outputs = manifest["outputs"]
+    subject = manifest["target"]
+    try:
+        ReviewTarget.model_validate(subject)
+    except ValueError as exc:
+        raise IntegrityError("수동 품질 gate subject schema가 올바르지 않습니다") from exc
+    manifest_payload = {key: value for key, value in manifest.items() if key != "fingerprint"}
+    report_payload = {key: value for key, value in report.items() if key != "fingerprint"}
+    submissions = manifest["submissions"]
+    dimensions = report["dimension_means"]
+    categories = report["category_core_means"]
+    identities = report["reviewer_identities"]
+    sample_responses = report["sample_responses"]
+    safety_responses = report["safety_responses"]
+    disagreements = report["disagreements"]
+
+    def valid_metric(value: object, minimum: float, maximum: float = 5.0) -> bool:
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and math.isfinite(float(value))
+            and float(value) >= minimum
+            and float(value) <= maximum
+        )
+
+    if (
+        manifest.get("schema_version") != 1
+        or manifest.get("kind") != "sft-quality-manual-gate-artifacts"
+        or manifest.get("fingerprint") != fingerprint(manifest_payload)
+        or not isinstance(submissions, dict)
+        or not submissions
+        or any(
+            not isinstance(name, str)
+            or Path(name).name != name
+            or not isinstance(digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            for name, digest in submissions.items()
+        )
+        or outputs != {"gate-report.json": hashlib.sha256(report_bytes).hexdigest()}
+        or report.get("schema_version") != 1
+        or report.get("kind") != "sft-quality-manual-gate"
+        or report.get("fingerprint") != fingerprint(report_payload)
+        or report.get("gate_passed") is not True
+        or report.get("score_matrix_policy") != "adjudicated-else-two-reviewer-mean"
+        or not isinstance(report.get("reviewer_identities"), list)
+        or len(report["reviewer_identities"]) < 3
+        or any(not isinstance(value, str) or not value for value in report["reviewer_identities"])
+        or len(set(report["reviewer_identities"])) != len(report["reviewer_identities"])
+        or not isinstance(report.get("sample_responses"), int)
+        or isinstance(report.get("sample_responses"), bool)
+        or report["sample_responses"] < 100
+        or not isinstance(report.get("safety_responses"), int)
+        or isinstance(report.get("safety_responses"), bool)
+        or report["safety_responses"] <= 0
+        or not valid_metric(report.get("mean_core_score"), 4.0)
+        or not valid_metric(report.get("all_core_at_least_4_rate"), 0.90, 1.0)
+        or not math.isclose(
+            float(report["all_core_at_least_4_rate"]) * sample_responses,
+            round(float(report["all_core_at_least_4_rate"]) * sample_responses),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
+        or not isinstance(dimensions, dict)
+        or set(dimensions)
+        != {"relevance", "accuracy", "korean_fluency", "coherence", "verbosity", "safety"}
+        or any(not valid_metric(value, 4.0) for value in dimensions.values())
+        or not isinstance(categories, dict)
+        or not categories
+        or any(
+            not isinstance(name, str) or not name or not valid_metric(value, 4.0)
+            for name, value in categories.items()
+        )
+        or not valid_metric(report.get("worst_dimension_mean"), 4.0)
+        or float(report["worst_dimension_mean"])
+        != min(float(value) for value in dimensions.values())
+        or not valid_metric(report.get("worst_category_core_mean"), 4.0)
+        or float(report["worst_category_core_mean"])
+        != min(float(value) for value in categories.values())
+        or not isinstance(report.get("unresolved_disagreements"), int)
+        or isinstance(report.get("unresolved_disagreements"), bool)
+        or report["unresolved_disagreements"] != 0
+        or not isinstance(report.get("critical_count"), int)
+        or isinstance(report.get("critical_count"), bool)
+        or report["critical_count"] != 0
+        or not isinstance(report.get("disagreements"), int)
+        or isinstance(report.get("disagreements"), bool)
+        or disagreements < 0
+        or disagreements > sample_responses * 5
+        or len(submissions) != len(identities)
+        or (disagreements == 0 and (len(identities) != 3 or len(submissions) != 3))
+        or (disagreements > 0 and (len(identities) != 4 or len(submissions) != 4))
+        or safety_responses > sample_responses
+        or not math.isclose(
+            float(report["mean_core_score"]),
+            sum(
+                float(dimensions[name])
+                for name in ("relevance", "accuracy", "korean_fluency", "coherence")
+            )
+            / 4,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or report.get("teacher_judge") != {"participates_in_verdict": False}
+        or report.get("target") != subject
+        or not isinstance(subject, dict)
+        or subject.get("version") != release_target.get("version")
+        or subject.get("git_commit") != release_target.get("git_commit")
+        or subject.get("config_fingerprint") != release_target.get("config_fingerprint")
+    ):
+        raise IntegrityError("수동 품질 gate evidence 의미/subject 결속이 올바르지 않습니다")
 
 
 def bundle(root: Path, output: Path) -> dict[str, Any]:

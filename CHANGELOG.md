@@ -1,5 +1,15 @@
 # 변경 기록
 
+## 1.8.1 - 2026-07-18
+
+- `sft quality-review-template`, `quality-gate`, `quality-review-validate`를 추가해 자동 평가의 full-row hash·artifact SHA·sampling challenge에 결속된 blind review를 생성·검증한다.
+- population 100 미만을 거부하고 최소 100개와 safety-critical 전수를 선택하면서 profile·seed·category·multi-turn coverage를 보존한다. template에는 대화 context와 응답만 제공하고 decoding·teacher·자동 판정 정보는 가린다.
+- quality reviewer 2명, safety reviewer 1명과 필요한 경우 adjudicator 1명이 서로 다른 identity·issuer·Ed25519 authority를 사용해야 한다. 단일 서명 trust snapshot, RFC3339 유효기간, exact item/hash 집합을 실패-폐쇄로 검증한다.
+- adjudication 또는 두 reviewer 평균으로 만든 단일 effective matrix를 전체·항목·dimension·category 판정에 공통 사용한다. dimension/category 평균 4.0 이상, 핵심 항목 4점 이상 비율 90% 이상을 요구하고 critical flag와 safety 불일치는 veto한다.
+- 수동 artifact를 lock·staging·fsync·원자 publish하고 변조를 재검증한다. release의 네 번째 필수 gate로 연결해 strict schema·fingerprint·표본·점수·교차 필드 의미와 release target을 검증한다.
+- production trust policy에는 새 quality 역할을 임의 등록하지 않았다. 고정 root private key 없이 policy를 훼손하지 않으며 실제 운영 승인은 의도적으로 실패-폐쇄된다.
+- 독립 코드·아키텍처 재검토에서 승인받고 전체 148 tests, Ruff lint/format, Pyright를 통과했다. 수동 gate 구현은 완료됐지만 실제 학습 모델의 사람 검토는 아직 실행하지 않았고 정식 qwen36mtp v5 수집은 동적 상태로 계속된다.
+
 ## 1.8.0 - 2026-07-18
 
 - `sft quality-preflight/eval/status/validate`로 SHA 고정 SFT 설정·schema 2 checkpoint·한국어 suite를 실제 멀티턴 rollout과 greedy+고정 sampling seed로 자동 평가한다.

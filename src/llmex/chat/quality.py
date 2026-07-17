@@ -353,6 +353,7 @@ def _rollout(
                 "seed": seed,
                 "turn_index": turn_index,
                 "user": turn.user,
+                "review_context": [message.model_dump() for message in history],
                 "prompt_token_ids": prompt_ids,
                 "response": text,
                 "response_token_ids": output,
@@ -663,6 +664,11 @@ def _quality_material(config: SFTQualityConfig) -> tuple[bytes, bytes, dict[str,
         raise
     except (OSError, RuntimeError, TypeError, ValueError) as exc:
         raise IntegrityError(f"quality evaluation 초기화에 실패했습니다: {exc}") from exc
+
+
+def derive_quality_material(config: SFTQualityConfig) -> tuple[bytes, bytes, dict[str, object]]:
+    """현재 고정 입력에서 자동 quality artifact의 canonical bytes를 재유도한다."""
+    return _quality_material(config)
 
 
 def validate_quality(config: SFTQualityConfig) -> dict[str, object]:

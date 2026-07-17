@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.8.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 결정적 SFT mix와 실제 SFT preflight에 더해 SHA-256으로 고정한 SFT 설정·checkpoint·한국어 품질 suite를 실제 멀티턴 rollout으로 평가하는 자동 품질 gate를 제공한다. 정식 v5 teacher 수집과 혼합 SFT, 1.8.1 수동 품질 검토, 독립 안전·법무·공개 배포 승인은 아직 진행 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
+LLMEX 1.8.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 결정적 SFT mix와 자동 대화 품질 gate에 더해 최소 100개 blind response를 독립 서명 검토하는 수동 품질 gate를 제공한다. 정식 v5 teacher 수집과 혼합 SFT, 실제 모델 대상 사람 검토, 독립 법무·공개 배포 승인은 아직 진행 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
 
 ## 빠른 시작
 
@@ -12,6 +12,9 @@ uv run llmex run create --config configs/model/smoke.yaml --kind model --dry-run
 uv run llmex train smoke --config configs/training/smoke.yaml --dry-run
 uv run llmex sft preflight --config configs/sft/smoke.yaml --no-measure-baseline
 uv run llmex sft quality-preflight --config <quality-config.yaml>
+uv run llmex sft quality-review-template --config <quality-config.yaml>
+uv run llmex sft quality-gate --help
+uv run llmex sft quality-review-validate --help
 uv run llmex sft train --config configs/sft/smoke.yaml --dry-run
 uv run llmex sft --help
 uv run llmex distill --help

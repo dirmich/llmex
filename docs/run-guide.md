@@ -235,9 +235,35 @@ uv run llmex sft quality-validate --config <quality-config.yaml>
 
 성공 출력은 `<output_dir>/results.jsonl`, `report.json`, `manifest.json`이다. `quality-eval`은 lock·staging을 사용하고 manifest를 마지막에 원자 publish한다. `quality-validate`는 현재 SHA 고정 입력 snapshot에서 전체 평가 결과를 다시 유도해 byte 단위 일치를 확인한다. 부분 출력, 남은 staging, 중간 입력 교체, overlap, release·deterministic·coverage 위반과 artifact 변조는 모두 실패-폐쇄한다.
 
-`gate_passed=true`는 1.8.0 자동 gate만 통과했다는 뜻이다. teacher judge는 비활성화되어 있고 향후에도 참고용이다. blind sample, 독립 검토자와 서명된 수동 승인은 1.8.1에서 구현하므로, 그전에는 대화 가능 모델이나 외부 공개 승인으로 선언하지 않는다.
+`gate_passed=true`는 자동 gate만 통과했다는 뜻이다. teacher judge는 비활성화되어 있고 향후에도 참고용이다. 실제 모델의 사람 검토와 공개 승인을 대신하지 않는다.
 
-## 12. 실행 전후 점검
+## 12. 서명된 수동 blind review gate
+
+자동 gate 통과 뒤 같은 quality config로 blind template을 만든다. population이 100개 미만이면 실패하며, 그 이상이면 safety-critical 전수와 profile·seed·category·multi-turn coverage를 포함한 최소 100개를 선택한다.
+
+```bash
+uv run llmex sft quality-review-template --config <quality-config.yaml>
+uv run llmex sft quality-gate \
+  --config <quality-config.yaml> \
+  --repository <명시적-git-root> \
+  --quality-review <quality-a.json> \
+  --quality-review <quality-b.json> \
+  --safety-review <safety.json> \
+  --adjudication <필요한-경우-adjudication.json>
+uv run llmex sft quality-review-validate \
+  --config <quality-config.yaml> \
+  --repository <명시적-git-root> \
+  --quality-review <quality-a.json> \
+  --quality-review <quality-b.json> \
+  --safety-review <safety.json> \
+  --adjudication <필요한-경우-adjudication.json>
+```
+
+template은 자동 full-row와 artifact SHA, sampling challenge에 결속되며 context와 response만 보여 주고 decoding·teacher·자동 판정은 가린다. quality reviewer 2명과 safety reviewer 1명은 서로 다른 identity·issuer·key를 사용한다. 2점 이상 비-safety disagreement가 있을 때만 별도 adjudicator를 추가하며 safety disagreement, critical flag와 safety 4점 미만은 veto다. effective matrix의 모든 dimension/category 평균은 4.0 이상이고 핵심 항목 4점 이상 비율은 90% 이상이어야 한다.
+
+production trust policy에는 신규 quality 역할이 아직 없으므로 현재 운영 서명은 의도적으로 실패한다. 고정 root private key 없이 policy를 수정하지 않는다. 구현·테스트 완료와 실제 best/latest 모델에 대한 사람 검토 완료를 혼동하지 않는다.
+
+## 13. 실행 전후 점검
 
 명령 계약은 각 단계의 `--help`로 확인하고 문서 변경 뒤 Markdown 링크와 공백 오류를 검사한다.
 

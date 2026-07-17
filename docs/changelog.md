@@ -1,5 +1,15 @@
 # 변경 기록
 
+## 1.8.1 - 2026-07-18
+
+- 자동 full-row·artifact SHA·sampling challenge에 결속된 `quality-review-template`, `quality-gate`, `quality-review-validate`를 추가했다.
+- 최소 100개와 safety-critical 전수, profile/seed/category/multi-turn coverage를 결정적으로 선택하고 context·response 외 decoding/teacher/자동 판정 정보를 blind 처리한다.
+- 독립 quality 2명·safety 1명·필요 adjudicator의 identity·issuer·key 분리, 서명·만료·단일 trust context를 검증한다.
+- 단일 effective matrix로 전체·항목·dimension·category를 계산해 dimension/category 4.0 이상과 핵심 90%를 요구하며 critical 및 safety disagreement를 veto한다.
+- 원자 publish·변조 검증과 release 네 번째 필수 gate의 strict schema·fingerprint·점수·교차 의미·target 결속을 구현했다.
+- production trust policy에는 신규 quality 역할을 등록하지 않아 root private key 없는 운영 승인은 실패-폐쇄된다. 실제 모델 사람 검토는 미실행이며 정식 v5 수집 상태는 `distill status`로 확인한다.
+- 독립 재검토 승인과 전체 148 tests, Ruff, Pyright 통과를 확인했다.
+
 ## 1.8.0 - 2026-07-18
 
 - `sft quality-preflight/eval/status/validate`로 SHA 고정 SFT 설정·schema 2 checkpoint·한국어 suite의 실제 멀티턴 자동 품질 gate를 추가했다.

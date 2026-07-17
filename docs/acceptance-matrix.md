@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.8.0, frozen sync | 통과 가능 |
+| 버전·lock | 1.8.1, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -10,9 +10,9 @@
 | 보안·경계 | secret·경로·`0.ref` 감사 | 통과 가능 |
 | 귀속 | NOTICE와 source schema | 로컬 계약 통과 |
 | 자동 대화 품질 | SHA 고정 suite·checkpoint, 실제 rollout, decoding matrix, 재유도 artifact | 구현 통과, 실제 SFT별 실행 필요 |
-| 수동 대화 품질 | blind review, 응답 hash, 독립 검토자·안전 승인 | 1.8.1 대기 |
+| 수동 대화 품질 | 최소 100 blind review, full-row/응답 hash, 독립 서명 quality·safety 검토 | 구현 통과, 실제 모델 사람 검토 필요 |
 | 장기 baseline | 전체 corpus/train/eval | 외부 대기 |
 | 법적 판단 | 독립 법무 승인 | 외부 대기 |
 | 공개 | 책임자·대상·채널 승인 | 외부 대기 |
 
-자동 대화 품질의 `gate_passed=true`는 수동 품질·법무·공개 승인을 대신하지 않는다. 현재 stop condition은 로컬 영역 통과와 외부 영역의 실패 상태가 자동 검증되는 것이다.
+자동 대화 품질의 `gate_passed=true`나 수동 gate 구현 완료는 실제 모델 사람 검토·법무·공개 승인을 대신하지 않는다. production trust policy에는 신규 quality 역할이 등록되지 않았으므로 root private key로 적법하게 정책을 갱신하고 승인 evidence를 발급하기 전에는 release가 의도적으로 실패-폐쇄된다.
