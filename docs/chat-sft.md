@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
+LLMEX 1.9.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -29,8 +29,12 @@ uv run llmex sft validate-mix --help
 - 동일 source+prompt 중복과 heldout prompt 중복은 정렬된 hash 순서로 결정적으로 하나만 남긴다.
 - prompt token과 생성 reserve 합 또는 전체 chat token이 `max_seq_len`을 넘으면 제외하고 사유별 수를 manifest에 기록한다.
 - teacher export manifest SHA, train/heldout SHA·행 수, inventory/config/accepted spool fingerprint와 tokenizer manifest SHA를 고정한다.
+- 공개·teacher의 train/heldout 전체에서 모든 assistant turn을 먼저 검사한다. 주민번호·휴대전화·이메일·secret built-in 규칙은 설정으로 제거할 수 없고, 65,536자를 넘는 assistant content도 실패-폐쇄로 제외한다.
+- 추가 민감 패턴은 이름이 필수이며 최대 256자의 고정 폭 안전 부분집합만 허용한다. 그룹·교대·lookaround·backreference·중괄호·반복 quantifier는 ReDoS 방지를 위해 설정 검증에서 거부한다.
 - 내부 전용 teacher license가 포함되면 mix manifest, SFT checkpoint와 heldout 평가에 `redistribution_allowed=false`, `release_gate=blocked`가 계승된다.
-- 부분 출력, 동시 실행, 변조된 manifest와 미완료 staging은 자동 복구·덮어쓰기 대신 실패-폐쇄한다.
+- 출력 parent의 고유 lock과 sibling staging을 사용하고 세 파일이 완성·fsync된 디렉터리를 한 번에 교체한다. 부분 출력, 동시 실행, 변조된 manifest와 미완료 staging은 자동 복구·덮어쓰기 대신 실패-폐쇄한다.
+
+공개 instruction 원본은 임시 디렉터리에 의존하지 않도록 `data/chat/public/korean-instruction-v1`에 보존한다. Git에는 대용량 데이터가 아니라 이 경로와 검증 계약만 기록한다. 고정 원천은 `CarrotAI/ko-instruction-dataset` revision `5c0e2c0180b50400e401dd0b296043f18fc6cb3f`, Apache-2.0이며 train/heldout은 6,204/649행이다. SHA-256은 각각 `68e9a90e2f58288e135a00f4a86905273341771f7c266b19656e029ca8783c0f`, `735871877d8cbc518faee3f62b7f90f7940acd5ffd0d96a9ce0e0c71370d503b`다. `source/`에는 원본, 라이선스, revision, URL, provenance와 checksums를 함께 둔다.
 
 정식 v5 export가 완료된 뒤 실제 teacher manifest SHA를 pin한 mix config와 별도 pilot/full SFT config를 작성한다. exact canonical prompt 검사는 의미가 같은 바꿔쓰기까지 판정하지 않으므로 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사 대상이다.
 
@@ -126,6 +130,8 @@ loader는 schema 2 전용 재개 상태의 필수 키, optimizer parameter group
 repository suite는 MIT `repository-authored` 24개 scenario, 27개 canonical unique turn이다. fact·arithmetic·extraction·한국어·instruction·context·uncertainty·harmful·jailbreak·PII·false-refusal·EOS·repetition 범주를 포함한다. 공개 SFT 고유 prompt 5,813개와 teacher inventory 10,000개에 대해 canonical exact overlap 0을 확인했으며, 실행 때도 현재 SFT train/heldout과 suite overlap을 다시 검사한다. exact 검사는 의미가 같은 바꿔쓰기를 판정하지 않으므로 semantic contamination과 사람 감사는 별도다.
 
 각 scenario는 모델 응답을 다음 turn history에 넣는 실제 rollout으로 평가한다. greedy profile은 `temperature: 0`과 seed 하나, sampling profile은 양의 temperature와 합계 최소 5개 고정 seed를 요구한다. 기본 canonical 계획은 27 turns × 6회로 162개 응답이다. 모든 응답에서 종료 원인을 `eos`, `max_tokens`, `context_limit`로 분류하고 다음을 기록한다.
+
+suite의 `must_match_any`와 `must_not_match` 정규식은 최대 1,024자로 제한한다. 상위 교대, 비반복 그룹, 단일 wildcard와 공백·고정 반복은 지원하지만 중첩 반복, 반복 내부 교대, 인접하거나 서로 겹치는 다중 가변 반복, backreference와 lookaround는 설정 로드 시 거부한다. 실제 검색은 응답 앞 65,536자에만 수행하고 이를 넘는 출력은 unsafe·PII·secret으로 실패-폐쇄한다.
 
 - 고정 heldout subset의 assistant target-token 가중 NLL·PPL·target token 수
 - exact/normalized/regex correctness, harmful refusal, benign false-refusal

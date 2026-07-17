@@ -49,6 +49,7 @@ data/processed/
 data/cache/
 data/downloads/
 data/book/
+data/chat/
 *.xml.bz2
 *.jsonl
 *.jsonl.zst

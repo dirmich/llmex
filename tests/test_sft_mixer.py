@@ -4,6 +4,7 @@ import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import cast
 
 import pytest
 import yaml
@@ -194,6 +195,241 @@ def _fixture(tmp_path: Path) -> tuple[SFTMixConfig, int]:
     )
 
 
+def _rows(path: Path) -> list[dict[str, object]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def _refresh_teacher_binding(config: SFTMixConfig) -> SFTMixConfig:
+    teacher = json.loads(config.teacher_manifest.read_text(encoding="utf-8"))
+    teacher["counts"] = {
+        "train": len(_rows(config.teacher_train_data)),
+        "heldout": len(_rows(config.teacher_heldout_data)),
+    }
+    teacher["sha256"] = {
+        "train": sha256_file(config.teacher_train_data),
+        "heldout": sha256_file(config.teacher_heldout_data),
+    }
+    config.teacher_manifest.write_text(json.dumps(teacher, sort_keys=True), encoding="utf-8")
+    return config.model_copy(
+        update={"expected_teacher_manifest_sha256": sha256_file(config.teacher_manifest)}
+    )
+
+
+def test_mix는_assistant_민감_출력만_선필터하고_집계만_공개한다(tmp_path: Path) -> None:
+    config, _ = _fixture(tmp_path)
+    public = "Apache-2.0"
+    internal = "LicenseRef-LLMEX-Internal-Distillation"
+    prompt_only_value = "문의 본문 user@example.com, 010-1234-5678, 900101-1234567"
+    leaked_email = "private.person@example.com입니다"
+    leaked_phone = "010-9876-5432입니다"
+    leaked_id = "900101-1234567입니다"
+    leaked_credential = "api_key=TopSecretValue123입니다"
+    leaked_extra = "계좌 123-456-123456"
+
+    public_train = _rows(config.public_train_data)
+    prompt_only = _row(
+        "pt-safe-prompt",
+        "train",
+        prompt_only_value,
+        "민감 문자열을 반복하지 않는 안전한 답변",
+        public,
+        "source-prompt-only",
+    )
+    multi_turn = _row(
+        "pt-email",
+        "train",
+        "첫 질문",
+        "최종 안전 답변",
+        public,
+        "source-email",
+    )
+    multi_turn["messages"] = [
+        {"role": "system", "content": "system@example.com을 반복하지 마세요"},
+        {"role": "user", "content": "첫 질문"},
+        {"role": "assistant", "content": f"이전 답변 {leaked_email}"},
+        {"role": "user", "content": "두 번째 질문"},
+        {"role": "assistant", "content": "최종 안전 답변"},
+    ]
+    multi_basis = {key: multi_turn[key] for key in ("id", "messages", "provenance", "split")}
+    multi_turn["sha256"] = fingerprint(multi_basis)
+    public_train.extend(
+        [
+            prompt_only,
+            multi_turn,
+            _row(
+                "pt-extra",
+                "train",
+                "추가 규칙 질문",
+                leaked_extra,
+                public,
+                "source-extra",
+            ),
+            _row(
+                "pt-filter-order",
+                "train",
+                "아주 긴 민감 질문 " * 100,
+                leaked_credential,
+                public,
+                "source-filter-order",
+            ),
+            _row(
+                "pt-safe-reserved",
+                "train",
+                "민감 heldout와 source만 같은 안전한 질문",
+                "안전한 train 답변",
+                public,
+                "source-sensitive-heldout",
+            ),
+            _row(
+                "pt-safe-length-reserved",
+                "train",
+                "길이 제한 heldout와 source만 같은 안전한 질문",
+                "안전한 길이 제한 train 답변",
+                public,
+                "source-length-heldout",
+            ),
+            _row(
+                "pt-secret-boundary",
+                "train",
+                "secret 경계 오탐 질문",
+                "notsecret=abcdefgh 및 xapi_key=abcdefgh는 일반 문자열입니다",
+                public,
+                "source-secret-boundary",
+            ),
+        ]
+    )
+    _write(config.public_train_data, public_train)
+    public_heldout = _rows(config.public_heldout_data)
+    public_heldout.append(
+        _row(
+            "ph-phone",
+            "heldout",
+            "전화 출력 질문",
+            leaked_phone,
+            public,
+            "source-sensitive-heldout",
+        )
+    )
+    public_heldout.append(
+        _row(
+            "ph-scan-limit",
+            "heldout",
+            "assistant 검색 길이 제한 질문",
+            "가" * 65_537,
+            public,
+            "source-length-heldout",
+        )
+    )
+    _write(config.public_heldout_data, public_heldout)
+
+    teacher_train = _rows(config.teacher_train_data)
+    teacher_train.append(
+        _row(
+            "tt-id",
+            "train",
+            "식별자 출력 질문",
+            leaked_id,
+            internal,
+            "source-id",
+        )
+    )
+    _write(config.teacher_train_data, teacher_train)
+    teacher_heldout = _rows(config.teacher_heldout_data)
+    teacher_heldout.append(
+        _row(
+            "th-secret",
+            "heldout",
+            "비밀 출력 질문",
+            leaked_credential,
+            internal,
+            "source-secret",
+        )
+    )
+    _write(config.teacher_heldout_data, teacher_heldout)
+    raw_config = _refresh_teacher_binding(config).model_dump(mode="json")
+    raw_config["extra_sensitive_output_patterns"] = [
+        {"name": "bank-account", "pattern": r"\b\d\d\d-\d\d\d-\d\d\d\d\d\d\b"}
+    ]
+    config = SFTMixConfig.model_validate(raw_config)
+
+    preflight = preflight_mix(config)
+    counts = preflight["sensitive_output_filter"]
+    assert counts == {
+        "total": 7,
+        "by_source": {"public": 5, "teacher": 2},
+        "by_split": {"heldout": 3, "train": 4},
+        "by_rule": {
+            "api-key-secret-assignment": 2,
+            "assistant-content-length-limit": 1,
+            "bank-account": 1,
+            "email-address": 1,
+            "korean-mobile-phone": 1,
+            "korean-resident-registration-number": 1,
+        },
+    }
+    selection = cast(dict[str, object], preflight["selection"])
+    excluded = cast(dict[str, int], selection["excluded"])
+    assert excluded["sensitive_assistant_output"] == 7
+    assert excluded["prompt_too_long"] == 2
+
+    result = prepare_mix(config)
+    assert result["reused"] is False
+    manifest_text = (config.output_dir / "manifest.json").read_text(encoding="utf-8")
+    public_result = (config.output_dir / "train.jsonl").read_text(encoding="utf-8")
+    assert prompt_only_value in public_result
+    assert "민감 heldout와 source만 같은 안전한 질문" in public_result
+    assert "길이 제한 heldout와 source만 같은 안전한 질문" in public_result
+    assert "notsecret=abcdefgh 및 xapi_key=abcdefgh" in public_result
+    for leaked in (leaked_email, leaked_phone, leaked_id, leaked_credential, leaked_extra):
+        assert leaked not in manifest_text
+        assert leaked not in json.dumps(preflight, ensure_ascii=False)
+
+    yaml_path = tmp_path / "sensitive-mix.yaml"
+    yaml_path.write_text(
+        yaml.safe_dump(config.model_dump(mode="json"), allow_unicode=True), encoding="utf-8"
+    )
+    cli = CliRunner().invoke(app, ["sft", "preflight-mix", "--config", str(yaml_path)])
+    assert cli.exit_code == 0
+    assert '"total": 7' in cli.stdout
+    for leaked in (leaked_email, leaked_phone, leaked_id, leaked_credential, leaked_extra):
+        assert leaked not in cli.stdout
+
+
+@pytest.mark.parametrize(
+    "rules",
+    [
+        [{"name": "invalid-regex", "pattern": "["}],
+        [{"name": "catastrophic-backtracking", "pattern": "(a+)+$"}],
+        [{"name": "too-long", "pattern": "a" * 257}],
+        [
+            {"name": "same-name", "pattern": "foo"},
+            {"name": "same-name", "pattern": "bar"},
+        ],
+        [
+            {"name": "first-rule", "pattern": "foo"},
+            {"name": "second-rule", "pattern": "foo"},
+        ],
+        [{"name": "email-address", "pattern": "foo"}],
+        [{"name": "assistant-content-length-limit", "pattern": "foo"}],
+        [
+            {
+                "name": "builtin-copy",
+                "pattern": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+            }
+        ],
+        [{"name": "valid-name", "pattern": "foo", "unknown": True}],
+    ],
+)
+def test_mix_추가_민감_정규식은_strict하고_중복될_수_없다(
+    tmp_path: Path, rules: list[dict[str, object]]
+) -> None:
+    config, _ = _fixture(tmp_path)
+    raw = config.model_dump(mode="json")
+    raw["extra_sensitive_output_patterns"] = rules
+    with pytest.raises(ValueError):
+        SFTMixConfig.model_validate(raw)
+
+
 def test_mix는_split_누출_중복_길이를_제외하고_release를_계승한다(tmp_path: Path) -> None:
     config, _ = _fixture(tmp_path)
     preflight = preflight_mix(config)
@@ -290,6 +526,9 @@ def test_prepare_mix는_동시_실행과_부분_publish를_실패_폐쇄한다(
     with ThreadPoolExecutor(max_workers=2) as pool:
         first = pool.submit(prepare_mix, config)
         assert entered.wait(timeout=5)
+        lock_name, staging_prefix = mixer._publish_names(config)
+        assert (config.output_dir.parent / lock_name).is_file()
+        assert not config.output_dir.exists()
         second = pool.submit(prepare_mix, config)
         try:
             second_result: dict[str, object] | None = second.result(timeout=5)
@@ -305,26 +544,33 @@ def test_prepare_mix는_동시_실행과_부분_publish를_실패_폐쇄한다(
     assert isinstance(second_error, ConflictError)
     assert isinstance(second_error, LlmexError)
     assert validate_mix(config)["status"] == "ok"
-    assert not list(config.output_dir.glob(".sft-mix-staging-*"))
+    assert not list(config.output_dir.parent.glob(f"{staging_prefix}*"))
+    assert not (config.output_dir / ".sft-mix.lock").exists()
 
     for name in ("train.jsonl", "heldout.jsonl", "manifest.json"):
         (config.output_dir / name).unlink()
+    config.output_dir.rmdir()
     original_replace = mixer.os.replace
 
-    def fail_manifest_publish(source: str | Path, destination: str | Path) -> None:
-        if Path(destination).name == "manifest.json":
-            raise FileNotFoundError("의도한 manifest publish 중단")
+    def fail_directory_publish(source: str | Path, destination: str | Path) -> None:
+        if Path(destination) == config.output_dir:
+            raise FileNotFoundError("의도한 directory publish 중단")
         original_replace(source, destination)
 
-    monkeypatch.setattr(mixer.os, "replace", fail_manifest_publish)
+    monkeypatch.setattr(mixer.os, "replace", fail_directory_publish)
     with pytest.raises(IntegrityError, match="publish"):
         prepare_mix(config)
-    with pytest.raises(ConflictError, match="부분 SFT mix"):
+    assert not config.output_dir.exists()
+    assert not list(config.output_dir.parent.glob(f"{staging_prefix}*"))
+
+    monkeypatch.setattr(mixer.os, "replace", original_replace)
+    stale = config.output_dir.parent / f"{staging_prefix}stale"
+    stale.mkdir()
+    with pytest.raises(ConflictError, match="staging"):
         prepare_mix(config)
-    assert (config.output_dir / "train.jsonl").is_file()
-    assert (config.output_dir / "heldout.jsonl").is_file()
-    assert not (config.output_dir / "manifest.json").exists()
-    assert not list(config.output_dir.glob(".sft-mix-staging-*"))
+    stale.rmdir()
+    assert prepare_mix(config)["reused"] is False
+    assert prepare_mix(config)["reused"] is True
 
 
 def test_runtime은_prompt와_source_cross_split을_차단한다(tmp_path: Path) -> None:

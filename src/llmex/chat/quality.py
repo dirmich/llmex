@@ -32,6 +32,11 @@ from llmex.errors import ConfigError, ConflictError, InputError, IntegrityError,
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.locking import exclusive_run_lock
 from llmex.model import GenerationConfig
+from llmex.sensitive import (
+    SENSITIVE_OUTPUT_SCAN_MAX_CHARS,
+    has_builtin_sensitive_output,
+    validate_safe_assertion_pattern,
+)
 from llmex.tokenizer.core import SPECIAL_IDS
 from llmex.train.checkpoint import (
     SFT_CHECKPOINT_REQUIRED_STATE,
@@ -57,10 +62,7 @@ class QualityTurn(StrictModel):
         if any(not value for value in values):
             raise ValueError("quality assertion regex는 빌 수 없습니다")
         for value in values:
-            try:
-                re.compile(value)
-            except re.error as exc:
-                raise ValueError(f"올바르지 않은 quality assertion regex: {value}") from exc
+            validate_safe_assertion_pattern(value)
         return values
 
     @model_validator(mode="after")
@@ -243,12 +245,14 @@ _REFUSAL = re.compile(r"(?:도와드릴 수 없|제공할 수 없|거절|안전(
 def response_metrics(
     text: str, tokens: list[int], turn: QualityTurn, config: SFTQualityConfig
 ) -> dict[str, object]:
+    scan_limit_exceeded = len(text) > SENSITIVE_OUTPUT_SCAN_MAX_CHARS
+    scan_text = text[:SENSITIVE_OUTPUT_SCAN_MAX_CHARS]
     normalized = _normalize(text)
-    refusal = bool(_REFUSAL.search(text))
+    refusal = bool(_REFUSAL.search(scan_text))
     positive = not turn.must_match_any or any(
-        re.search(pattern, text) for pattern in turn.must_match_any
+        re.search(pattern, scan_text) for pattern in turn.must_match_any
     )
-    negative = not any(re.search(pattern, text) for pattern in turn.must_not_match)
+    negative = not any(re.search(pattern, scan_text) for pattern in turn.must_not_match)
     exact = turn.exact_answer is None or text.strip() == turn.exact_answer
     normalized_exact = turn.normalized_answer is None or normalized == _normalize(
         turn.normalized_answer
@@ -260,9 +264,19 @@ def response_metrics(
         for character in text
         if unicodedata.category(character).startswith("C") and character not in "\n\t"
     )
-    unsafe = any(re.search(pattern, text) for pattern in config.unsafe_patterns)
-    pii = any(re.search(pattern, text) for pattern in config.pii_patterns)
-    secret = any(re.search(pattern, text) for pattern in config.secret_patterns)
+    unsafe = scan_limit_exceeded or any(
+        re.search(pattern, scan_text) for pattern in config.unsafe_patterns
+    )
+    pii = (
+        scan_limit_exceeded
+        or has_builtin_sensitive_output(scan_text, category="pii")
+        or any(re.search(pattern, scan_text) for pattern in config.pii_patterns)
+    )
+    secret = (
+        scan_limit_exceeded
+        or has_builtin_sensitive_output(scan_text, category="secret")
+        or any(re.search(pattern, scan_text) for pattern in config.secret_patterns)
+    )
     return {
         "empty": not bool(text.strip()),
         "unicode_valid": controls == 0,
@@ -637,6 +651,11 @@ def _paths(config: SFTQualityConfig) -> tuple[Path, Path, Path]:
     )
 
 
+def _publish_names(config: SFTQualityConfig) -> tuple[str, str]:
+    identity = fingerprint({"output_dir": str(config.output_dir.resolve(strict=False))})[:24]
+    return f".quality-eval-{identity}.lock", f".quality-eval-{identity}-staging-"
+
+
 def _quality_material(config: SFTQualityConfig) -> tuple[bytes, bytes, dict[str, object]]:
     try:
         with _preserve_runtime_state():
@@ -702,19 +721,21 @@ def validate_quality(config: SFTQualityConfig) -> dict[str, object]:
 
 
 def quality_eval(config: SFTQualityConfig) -> dict[str, object]:
+    parent = config.output_dir.parent
+    lock_name, staging_prefix = _publish_names(config)
     try:
-        with exclusive_run_lock(
-            config.output_dir, filename=".quality-eval.lock", label="quality evaluation"
-        ):
+        with exclusive_run_lock(parent, filename=lock_name, label="quality evaluation"):
             paths = _paths(config)
-            existing = [path.exists() for path in paths]
-            if any(existing):
+            if config.output_dir.exists():
+                if not config.output_dir.is_dir():
+                    raise ConflictError("quality evaluation 출력 경로가 디렉터리가 아닙니다")
+                existing = [path.exists() for path in paths]
                 if not all(existing):
                     raise ConflictError("부분 quality evaluation 출력은 덮어쓸 수 없습니다")
                 return {**validate_quality(config), "reused": True}
-            if any(config.output_dir.glob(".quality-staging-*")):
+            if any(parent.glob(f"{staging_prefix}*")):
                 raise ConflictError("미완료 quality evaluation staging이 발견되었습니다")
-            staging = Path(tempfile.mkdtemp(prefix=".quality-staging-", dir=config.output_dir))
+            staging = Path(tempfile.mkdtemp(prefix=staging_prefix, dir=parent))
             try:
                 results_bytes, report_bytes, manifest = _quality_material(config)
                 staged = [staging / path.name for path in paths]
@@ -724,13 +745,17 @@ def quality_eval(config: SFTQualityConfig) -> dict[str, object]:
                     path.write_bytes(content)
                     with path.open("rb") as stream:
                         os.fsync(stream.fileno())
-                for source, destination in zip(staged, paths, strict=True):
-                    os.replace(source, destination)
-                directory = os.open(config.output_dir, os.O_RDONLY)
+                staging_descriptor = os.open(staging, os.O_RDONLY)
                 try:
-                    os.fsync(directory)
+                    os.fsync(staging_descriptor)
                 finally:
-                    os.close(directory)
+                    os.close(staging_descriptor)
+                os.replace(staging, config.output_dir)
+                parent_descriptor = os.open(parent, os.O_RDONLY)
+                try:
+                    os.fsync(parent_descriptor)
+                finally:
+                    os.close(parent_descriptor)
             finally:
                 shutil.rmtree(staging, ignore_errors=True)
             return {**validate_quality(config), "reused": False}

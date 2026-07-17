@@ -1,8 +1,15 @@
 # LLMEX 개발 TODO
 
-## 1.9.0 실습 교재 완료 및 정식 teacher 수집 진행
+## 1.9.1 민감 출력 선필터 완료 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] 공개 데이터 영구 경로에 Apache-2.0 원본·revision·provenance·SHA와 train 6,204/heldout 649행 보존
+- [x] 공개·teacher train/heldout의 모든 assistant turn에 완화 불가 주민번호·휴대전화·이메일·secret 선필터
+- [x] 한국어 접미 경계 탐지, secret 식별자 substring 오탐 방지와 65,536자 초과 실패-폐쇄
+- [x] 추가 정규식 256자 고정 폭 안전 부분집합과 ReDoS 구문 설정 단계 거부
+- [x] parent 고유 lock·sibling staging·fsync·단일 directory 교체와 실패 시 부분 출력 0
+- [x] 전체 159 tests, Ruff, format, Pyright, diff 검사 통과
 
 - [x] 교재 README와 00~15장, 총 17개 Markdown 작성
 - [x] 각 장의 11개 공통 학습 섹션과 실제 코드·설정·CLI 연결

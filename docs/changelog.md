@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.9.1 - 2026-07-18
+
+- 공개·teacher train/heldout의 모든 assistant turn에 완화 불가능한 주민번호·휴대전화·이메일·secret built-in 선필터를 추가했다.
+- 한국어 접미 탐지와 식별자 substring 오탐 방지, 65,536자 초과 실패-폐쇄, 원문을 노출하지 않는 source/split/rule 집계를 구현했다.
+- 추가 민감/품질 패턴은 256자 고정 폭 안전 부분집합만 허용한다. 품질 suite assertion은 기존 표현력을 유지하면서 중첩·인접 모호 반복, backreference, lookaround와 `{,m}` 우회를 거부하고 예약 규칙 이름 충돌도 설정 단계에서 차단한다.
+- SFT mix와 자동 quality 산출물을 parent 고유 lock과 sibling staging에서 만든 뒤 완성 디렉터리 하나로 원자 publish한다.
+- Apache-2.0 공개 instruction 6,204/649행과 고정 revision·원본·provenance·SHA를 `data/chat/public/korean-instruction-v1`에 보존했다.
+- 전체 테스트, Ruff, Pyright, 실패 주입·경계·ReDoS probe를 통과하고 독립 재검토를 수행했다. 정식 teacher 수집과 실제 SFT는 계속 진행 중이다.
+
 ## 1.9.0 - 2026-07-18
 
 - README와 00~15장, 총 17개 Markdown으로 된 [수학 기반 이론·Python 실습 교재](book/README.md)를 추가했다. 모든 장은 11개 공통 학습 섹션을 가지며 실제 코드·설정·CLI를 현재 권위로 사용한다.

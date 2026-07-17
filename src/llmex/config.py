@@ -18,6 +18,14 @@ from pydantic import (
 )
 
 from llmex.errors import ConfigError
+from llmex.sensitive import (
+    BUILTIN_PII_PATTERNS,
+    BUILTIN_SECRET_PATTERNS,
+    BUILTIN_SENSITIVE_OUTPUT_PATTERNS,
+    BUILTIN_SENSITIVE_OUTPUT_RULE_NAMES,
+    SENSITIVE_OUTPUT_LENGTH_RULE_NAME,
+    validate_safe_extra_pattern,
+)
 
 
 class StrictModel(BaseModel):
@@ -264,6 +272,19 @@ class SFTConfig(StrictModel):
         return self
 
 
+class SensitiveOutputRegex(StrictModel):
+    """SFT mix built-in 차단 규칙에 추가할 이름 있는 정규식."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    pattern: str = Field(min_length=1)
+
+    @field_validator("pattern")
+    @classmethod
+    def validate_pattern(cls, value: str) -> str:
+        validate_safe_extra_pattern(value)
+        return value
+
+
 class SFTMixConfig(StrictModel):
     """공개·teacher 대화 데이터를 비누출 split으로 혼합하는 설정."""
 
@@ -281,6 +302,9 @@ class SFTMixConfig(StrictModel):
     allowed_licenses: list[str] = Field(min_length=1)
     max_seq_len: int = Field(default=1_024, gt=2)
     generation_reserve_tokens: int = Field(default=128, gt=0)
+    extra_sensitive_output_patterns: list[SensitiveOutputRegex] = Field(
+        default_factory=lambda: list[SensitiveOutputRegex]()
+    )
 
     @model_validator(mode="after")
     def validate_mix(self) -> "SFTMixConfig":
@@ -288,6 +312,13 @@ class SFTMixConfig(StrictModel):
             raise ValueError("generation_reserve_tokens는 max_seq_len보다 작아야 합니다")
         if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
             raise ValueError("allowed_licenses는 중복될 수 없습니다")
+        names = [rule.name for rule in self.extra_sensitive_output_patterns]
+        patterns = [rule.pattern for rule in self.extra_sensitive_output_patterns]
+        reserved_names = BUILTIN_SENSITIVE_OUTPUT_RULE_NAMES | {SENSITIVE_OUTPUT_LENGTH_RULE_NAME}
+        if len(names) != len(set(names)) or set(names) & reserved_names:
+            raise ValueError("민감 출력 추가 정규식 이름은 built-in과 중복될 수 없습니다")
+        if len(patterns) != len(set(patterns)) or set(patterns) & BUILTIN_SENSITIVE_OUTPUT_PATTERNS:
+            raise ValueError("민감 출력 추가 정규식은 서로 또는 built-in과 중복될 수 없습니다")
         return self
 
 
@@ -338,12 +369,8 @@ class SFTQualityConfig(StrictModel):
     thresholds: SFTQualityThresholds = SFTQualityThresholds()
     category_thresholds: dict[str, SFTQualityThresholds] = Field(default_factory=dict)
     unsafe_patterns: list[str] = ["자살 방법", "폭탄 제조", "주민등록번호"]
-    pii_patterns: list[str] = [
-        r"\b\d{6}-?[1-4]\d{6}\b",
-        r"\b01[016789]-?\d{3,4}-?\d{4}\b",
-        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
-    ]
-    secret_patterns: list[str] = [r"(?i)(?:api[_ -]?key|secret)\s*[:=]\s*[A-Za-z0-9_-]{8,}"]
+    pii_patterns: list[str] = Field(default_factory=lambda: list(BUILTIN_PII_PATTERNS))
+    secret_patterns: list[str] = Field(default_factory=lambda: list(BUILTIN_SECRET_PATTERNS))
 
     @model_validator(mode="after")
     def validate_quality(self) -> "SFTQualityConfig":
@@ -364,10 +391,8 @@ class SFTQualityConfig(StrictModel):
         ):
             raise ValueError("category threshold 이름이 올바르지 않습니다")
         for pattern in [*self.unsafe_patterns, *self.pii_patterns, *self.secret_patterns]:
-            try:
-                re.compile(pattern)
-            except re.error as exc:
-                raise ValueError(f"올바르지 않은 quality 정규식: {pattern}") from exc
+            if pattern not in BUILTIN_SENSITIVE_OUTPUT_PATTERNS:
+                validate_safe_extra_pattern(pattern)
         return self
 
 

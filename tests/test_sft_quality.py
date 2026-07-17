@@ -237,6 +237,34 @@ def test_quality_metrics_golden_refusal_PII_반복_구분을_계산한다(tmp_pa
     assert metrics["distinct_2"] == pytest.approx(2 / 5)
     assert metrics["max_repeated_token_run"] == 1
 
+    empty_configured_patterns = config.model_copy(
+        update={"pii_patterns": [], "secret_patterns": []}
+    )
+    builtin_metrics = response_metrics(
+        "연락처 010-1234-5678, mail@example.com, api_key=abcdefgh",
+        [1],
+        harmful,
+        empty_configured_patterns,
+    )
+    assert builtin_metrics["pii"] is True
+    assert builtin_metrics["secret"] is True
+
+    bounded_metrics = response_metrics(
+        "가" * 65_537,
+        [1],
+        harmful,
+        empty_configured_patterns,
+    )
+    assert bounded_metrics["unsafe"] is True
+    assert bounded_metrics["pii"] is True
+    assert bounded_metrics["secret"] is True
+
+    for field in ("unsafe_patterns", "pii_patterns", "secret_patterns"):
+        invalid = config.model_dump(mode="json")
+        invalid[field] = ["(a+)+$"]
+        with pytest.raises(ValueError):
+            SFTQualityConfig.model_validate(invalid)
+
     for n in (2, 3, 4):
         pattern = list(range(1, n + 1))
         twice = response_metrics("반복", pattern * 2, harmful, config)
@@ -260,6 +288,63 @@ def test_quality_metrics_golden_refusal_PII_반복_구분을_계산한다(tmp_pa
     assert _termination_reason(18, [7, 8], 4, 20) == "context_limit"
     with pytest.raises(IntegrityError, match="중단"):
         _termination_reason(10, [7], 2, 20)
+
+
+def test_quality_assertion_regex는_기존_suite를_허용하고_비선형_구조를_거부한다() -> None:
+    normal_patterns = [
+        "기억|해오름",
+        r"닫아 (?:주시겠|주세요|주실)",
+        r'\{\s*"answer"\s*:\s*7\s*\}',
+        r"먼저 .*칼",
+        r"\d{6}-?[1-4]\d{6}",
+        r"(?i)(?:api[_ -]?key|secret)\s*[:=]",
+    ]
+    for pattern in normal_patterns:
+        QualityTurn(
+            user="정상 복합 패턴",
+            must_match_any=[pattern],
+            benign=True,
+            human_rubric="정상 패턴을 허용한다.",
+        )
+
+    malicious_patterns = [
+        r"(a+)+$",
+        r"(a|aa)+$",
+        r"(a+)\1",
+        r"a(?=b)",
+        r"a*a*a*a*a*a*b",
+        r"a*aa*aa*aa*b",
+        r"(a{,3})+$",
+        r"(?:a|aa)(?:a|aa)b",
+    ]
+    for pattern in malicious_patterns:
+        with pytest.raises(ValueError):
+            QualityTurn(
+                user="악성 패턴",
+                must_match_any=[pattern],
+                benign=True,
+                human_rubric="비선형 패턴을 거부한다.",
+            )
+
+    suite_path = Path("data/evaluation/ko-chat-quality-v1.jsonl")
+    for line in suite_path.read_text(encoding="utf-8").splitlines():
+        QualityScenario.model_validate(json.loads(line))
+
+    probe = QualityTurn(
+        user="bounded probe",
+        must_not_match=[r"먼저 .*칼"],
+        expects_refusal=True,
+        human_rubric="bounded scan으로 완료한다.",
+    )
+    config = SFTQualityConfig.model_construct(
+        unsafe_patterns=["위험"],
+        pii_patterns=[],
+        secret_patterns=[],
+    )
+    metrics = response_metrics("a" * 65_537, [1], probe, config)
+    assert metrics["unsafe"] is True
+    assert metrics["pii"] is True
+    assert metrics["secret"] is True
 
 
 def test_quality_eval_E2E는_multiturn_seed_loss_release와_artifact를_결속한다(
@@ -327,8 +412,9 @@ def test_quality_eval은_concurrent_partial_SHA_CLI를_실패_폐쇄한다(
     with pytest.raises(IntegrityError, match="suite SHA"):
         preflight_quality(config.model_copy(update={"expected_suite_sha256": "0" * 64}))
 
-    stale = config.output_dir / ".quality-staging-crash"
-    stale.mkdir(parents=True)
+    lock_name, staging_prefix = quality._publish_names(config)
+    stale = config.output_dir.parent / f"{staging_prefix}crash"
+    stale.mkdir()
     with pytest.raises(ConflictError, match="staging"):
         quality_eval(config)
     stale.rmdir()
@@ -346,6 +432,8 @@ def test_quality_eval은_concurrent_partial_SHA_CLI를_실패_폐쇄한다(
     with ThreadPoolExecutor(max_workers=2) as pool:
         first = pool.submit(quality_eval, config)
         assert entered.wait(timeout=5)
+        assert (config.output_dir.parent / lock_name).is_file()
+        assert not config.output_dir.exists()
         second = pool.submit(quality_eval, config)
         with pytest.raises(ConflictError):
             second.result(timeout=5)
@@ -355,6 +443,25 @@ def test_quality_eval은_concurrent_partial_SHA_CLI를_실패_폐쇄한다(
     (config.output_dir / "manifest.json").unlink()
     with pytest.raises(ConflictError, match="부분 quality"):
         quality_eval(config)
+
+    (config.output_dir / "results.jsonl").unlink()
+    (config.output_dir / "report.json").unlink()
+    config.output_dir.rmdir()
+    original_replace = quality.os.replace
+
+    def fail_directory_publish(source: str | Path, destination: str | Path) -> None:
+        if Path(destination) == config.output_dir:
+            raise FileNotFoundError("의도한 quality directory publish 중단")
+        original_replace(source, destination)
+
+    monkeypatch.setattr(quality.os, "replace", fail_directory_publish)
+    with pytest.raises(IntegrityError, match="publish"):
+        quality_eval(config)
+    assert not config.output_dir.exists()
+    assert not list(config.output_dir.parent.glob(f"{staging_prefix}*"))
+    monkeypatch.setattr(quality.os, "replace", original_replace)
+    assert quality_eval(config)["reused"] is False
+    assert quality_eval(config)["reused"] is True
 
     cli_config = tmp_path / "quality.yaml"
     cli_config.write_text(

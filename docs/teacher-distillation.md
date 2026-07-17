@@ -1,6 +1,6 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.9.0의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 현재 정식 실행은 `configs/distill/qwen36mtp-10k.yaml`, teacher는 `http://localhost:8081/v1`의 `qwen36mtp`, run은 `runs/distill/qwen36mtp-10k-v5`다. v5 30건 pilot은 전체 단계를 통과했고 정식 inventory 10,000건 수집은 진행 중이다. 변하는 완료 건수는 문서에 고정하지 않고 `distill status`로 확인한다.
+LLMEX 1.9.1의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 현재 정식 실행은 `configs/distill/qwen36mtp-10k.yaml`, teacher는 `http://localhost:8081/v1`의 `qwen36mtp`, run은 `runs/distill/qwen36mtp-10k-v5`다. v5 30건 pilot은 전체 단계를 통과했고 정식 inventory 10,000건 수집은 진행 중이다. 변하는 완료 건수는 문서에 고정하지 않고 `distill status`로 확인한다.
 
 teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation` 내부 전용이다. export manifest는 `redistribution_allowed=false`, `release_gate=blocked`를 강제한다. 수집 성공이나 휴리스틱 필터 통과는 최종 안전성·법무·공개 승인이 아니다.
 

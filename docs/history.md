@@ -1,5 +1,28 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.1 SFT 민감 출력 선필터와 원자 산출물 강화
+
+### 학습 데이터 민감 출력 차단
+
+- 공개·teacher의 train/heldout 전체에서 마지막 응답만이 아니라 모든 assistant turn을 길이 gate보다 먼저 검사한다. 주민등록번호, 한국 휴대전화, 이메일과 API key/secret 할당 built-in 규칙은 설정으로 완화하거나 덮어쓸 수 없다.
+- ASCII 숫자·이메일 경계를 명시해 `010-1234-5678은`, `mail@example.com으로`처럼 한국어 조사가 붙은 출력도 탐지한다. 반대로 `notsecret`와 `xapi_key` 같은 더 긴 식별자 내부 substring은 secret으로 오탐하지 않는다.
+- assistant content가 65,536자를 넘으면 정규식을 실행하지 않고 전용 길이 규칙으로 실패-폐쇄 제외한다. 외부 artifact에는 원문이나 검출 문자열을 남기지 않고 source·split·규칙별 건수만 기록한다.
+- 이름 있는 추가 패턴은 최대 256자의 고정 폭 안전 부분집합으로 제한했다. 그룹, 교대, lookaround, backreference, 중괄호와 반복 quantifier를 설정 검증에서 거부해 `(a+)+$` 같은 ReDoS 입력이 실행 경로에 도달하지 못한다. 예약된 길이 규칙 이름도 사용자 규칙이 재사용할 수 없다.
+- 자동 품질 평가도 같은 완화 불가 PII/secret built-in을 재사용하고 사용자 unsafe/PII/secret 패턴에 같은 안전 부분집합 검증을 적용한다. suite assertion은 기존 공백·교대 표현을 보존하되 중첩 반복, 반복된 교대, 인접·모호 다중 반복, backreference, lookaround와 `{,m}` 우회를 거부한다.
+
+### 원자 publish와 실제 데이터 보존
+
+- SFT mix와 자동 quality 세 파일은 출력 parent의 경로별 고유 lock, sibling staging, 파일·staging directory fsync를 거친 뒤 완성된 디렉터리 하나를 단일 `os.replace`로 publish한다. 교체 실패 시 출력 디렉터리나 부분 파일을 남기지 않으며 stale staging·부분 출력·동시 실행은 실패-폐쇄한다.
+- 임시 `/tmp`에 있던 공개 instruction을 `data/chat/public/korean-instruction-v1`로 보존했다. 원천은 Apache-2.0 `CarrotAI/ko-instruction-dataset` revision `5c0e2c0180b50400e401dd0b296043f18fc6cb3f`이며 원본·라이선스·URL·provenance·checksums와 변환 manifest를 함께 유지한다.
+- 공개 변환 결과는 train 6,204행 SHA-256 `68e9a90e2f58288e135a00f4a86905273341771f7c266b19656e029ca8783c0f`, heldout 649행 SHA-256 `735871877d8cbc518faee3f62b7f90f7940acd5ffd0d96a9ce0e0c71370d503b`로 원래 변환물과 일치했다. 대용량 data는 Git에서 제외하고 문서와 실행 config만 추적한다.
+- `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 attribution 보존, split 누출·개인정보 실패 즉시 중단, 공개 전 개인정보 검토 원칙을 적용했다. 실제 저장소와 최신 사용자 지시를 권위로 유지했다.
+
+### 검증과 진행 상태
+
+- 한국어 접미 직접 probe, secret 오탐 probe, ReDoS 설정 거부, 전 assistant turn·source/split 집계, publish 실패 주입과 동시 실행·stale·reuse 회귀를 추가했다.
+- 전체 159 tests, Ruff lint/format, Pyright strict와 `git diff --check`를 통과했다. 독립 code review는 `APPROVE`, architecture review는 `CLEAR`였으며 한국어 경계, ReDoS, 원자 publish와 예약 이름 계약을 직접 probe했다.
+- 정식 qwen36mtp v5 10k 수집은 계속 진행 중이다. 완료 수는 고정하지 않으며 `uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml`로 확인한다. 완료 후 export/validate·mix·baseline preflight·pilot·fresh full SFT·자동/수동 품질 순서를 유지한다.
+
 ## 2026-07-18 · 1.9.0 수학 기반 이론·Python 실습 교재
 
 ### 교재 구성과 권위 경계

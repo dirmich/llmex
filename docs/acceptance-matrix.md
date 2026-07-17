@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.9.0, frozen sync | 통과 가능 |
+| 버전·lock | 1.9.1, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -11,6 +11,7 @@
 | 귀속 | NOTICE와 source schema | 로컬 계약 통과 |
 | 자동 대화 품질 | SHA 고정 suite·checkpoint, 실제 rollout, decoding matrix, 재유도 artifact | 구현 통과, 실제 SFT별 실행 필요 |
 | 수동 대화 품질 | 최소 100 blind review, full-row/응답 hash, 독립 서명 quality·safety 검토 | 구현 통과, 실제 모델 사람 검토 필요 |
+| SFT 민감 출력 | built-in 완화 불가, 안전한 추가 규칙, 전 assistant turn 선필터, 원자 directory publish | 구현 통과, 실제 mix별 집계 확인 필요 |
 | 장기 baseline | 전체 corpus/train/eval | 외부 대기 |
 | 법적 판단 | 독립 법무 승인 | 외부 대기 |
 | 공개 | 책임자·대상·채널 승인 | 외부 대기 |

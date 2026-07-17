@@ -19,6 +19,11 @@ from llmex.config import SFTMixConfig
 from llmex.errors import ConflictError, InputError, IntegrityError, LlmexError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.locking import exclusive_run_lock
+from llmex.sensitive import (
+    BUILTIN_SENSITIVE_OUTPUT_RULES,
+    SENSITIVE_OUTPUT_LENGTH_RULE_NAME,
+    matched_sensitive_output_rules,
+)
 from llmex.tokenizer.core import load_tokenizer
 
 _INTERNAL_LICENSE = "LicenseRef-LLMEX-Internal-Distillation"
@@ -184,8 +189,34 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
         raise InputError("tokenizer manifest가 없습니다")
 
     excluded: Counter[str] = Counter()
-    valid: list[_Candidate] = []
+    sensitive_by_source: Counter[str] = Counter({"public": 0, "teacher": 0})
+    sensitive_by_split: Counter[str] = Counter({"train": 0, "heldout": 0})
+    sensitive_by_rule: Counter[str] = Counter(
+        {rule.name: 0 for rule in BUILTIN_SENSITIVE_OUTPUT_RULES}
+    )
+    sensitive_by_rule[SENSITIVE_OUTPUT_LENGTH_RULE_NAME] = 0
+    sensitive_by_rule.update({rule.name: 0 for rule in config.extra_sensitive_output_patterns})
+    extra_sensitive_rules = tuple(
+        (rule.name, rule.pattern) for rule in config.extra_sensitive_output_patterns
+    )
+    sensitive_valid: list[_Candidate] = []
     for candidate in candidates:
+        matched: set[str] = set()
+        for message in candidate.row.messages:
+            if message.role == "assistant":
+                matched.update(
+                    matched_sensitive_output_rules(message.content, extra_sensitive_rules)
+                )
+        if matched:
+            excluded["sensitive_assistant_output"] += 1
+            sensitive_by_source[candidate.origin.split("-", maxsplit=1)[0]] += 1
+            sensitive_by_split[candidate.row.split] += 1
+            sensitive_by_rule.update(matched)
+        else:
+            sensitive_valid.append(candidate)
+
+    valid: list[_Candidate] = []
+    for candidate in sensitive_valid:
         messages = tuple(candidate.row.messages)
         prompt_tokens = 1 + len(
             tokenizer.encode(render_chat(messages[:-1], add_generation_prompt=True)).ids
@@ -198,8 +229,12 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
         else:
             valid.append(candidate)
 
-    all_heldout_prompts = {item.prompt_sha256 for item in candidates if item.row.split == "heldout"}
-    all_heldout_sources = {item.source_key for item in candidates if item.row.split == "heldout"}
+    all_heldout_prompts = {
+        item.prompt_sha256 for item in sensitive_valid if item.row.split == "heldout"
+    }
+    all_heldout_sources = {
+        item.source_key for item in sensitive_valid if item.row.split == "heldout"
+    }
     heldout_by_prompt: dict[str, list[_Candidate]] = {}
     for candidate in valid:
         if candidate.row.split == "heldout":
@@ -278,6 +313,12 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
             "selected_heldout": len(heldout_rows),
             "excluded": dict(sorted(excluded.items())),
         },
+        "sensitive_output_filter": {
+            "total": excluded["sensitive_assistant_output"],
+            "by_source": dict(sorted(sensitive_by_source.items())),
+            "by_split": dict(sorted(sensitive_by_split.items())),
+            "by_rule": dict(sorted(sensitive_by_rule.items())),
+        },
         "distribution": _distribution(selected),
         "outputs": outputs,
         "prompt_overlap": 0,
@@ -295,6 +336,11 @@ def _paths(config: SFTMixConfig) -> tuple[Path, Path, Path]:
         config.output_dir / "heldout.jsonl",
         config.output_dir / "manifest.json",
     )
+
+
+def _publish_names(config: SFTMixConfig) -> tuple[str, str]:
+    identity = fingerprint({"output_dir": str(config.output_dir.resolve(strict=False))})[:24]
+    return f".sft-mix-{identity}.lock", f".sft-mix-{identity}-staging-"
 
 
 def _safe_material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
@@ -342,18 +388,22 @@ def validate_mix(config: SFTMixConfig) -> dict[str, object]:
 
 
 def prepare_mix(config: SFTMixConfig) -> dict[str, object]:
+    parent = config.output_dir.parent
+    lock_name, staging_prefix = _publish_names(config)
     try:
-        with exclusive_run_lock(config.output_dir, filename=".sft-mix.lock", label="SFT mix"):
+        with exclusive_run_lock(parent, filename=lock_name, label="SFT mix"):
             train_path, heldout_path, manifest_path = _paths(config)
-            existing = [path.exists() for path in (train_path, heldout_path, manifest_path)]
-            if any(existing):
+            if config.output_dir.exists():
+                if not config.output_dir.is_dir():
+                    raise ConflictError("SFT mix 출력 경로가 디렉터리가 아닙니다")
+                existing = [path.exists() for path in (train_path, heldout_path, manifest_path)]
                 if not all(existing):
                     raise ConflictError("부분 SFT mix 출력은 자동 덮어쓸 수 없습니다")
                 return {**validate_mix(config), "reused": True}
-            if any(config.output_dir.glob(".sft-mix-staging-*")):
+            if any(parent.glob(f"{staging_prefix}*")):
                 raise ConflictError("미완료 SFT mix staging이 발견되었습니다")
 
-            staging = Path(tempfile.mkdtemp(prefix=".sft-mix-staging-", dir=config.output_dir))
+            staging = Path(tempfile.mkdtemp(prefix=staging_prefix, dir=parent))
             try:
                 train_bytes, heldout_bytes, manifest = _safe_material(config)
                 staged_train = staging / "train.jsonl"
@@ -369,14 +419,17 @@ def prepare_mix(config: SFTMixConfig) -> dict[str, object]:
                 for path in (staged_train, staged_heldout, staged_manifest):
                     with path.open("rb") as stream:
                         os.fsync(stream.fileno())
-                os.replace(staged_train, train_path)
-                os.replace(staged_heldout, heldout_path)
-                os.replace(staged_manifest, manifest_path)
-                directory = os.open(config.output_dir, os.O_RDONLY)
+                staging_descriptor = os.open(staging, os.O_RDONLY)
                 try:
-                    os.fsync(directory)
+                    os.fsync(staging_descriptor)
                 finally:
-                    os.close(directory)
+                    os.close(staging_descriptor)
+                os.replace(staging, config.output_dir)
+                parent_descriptor = os.open(parent, os.O_RDONLY)
+                try:
+                    os.fsync(parent_descriptor)
+                finally:
+                    os.close(parent_descriptor)
                 return {**validate_mix(config), "reused": False}
             finally:
                 shutil.rmtree(staging, ignore_errors=True)
@@ -392,6 +445,7 @@ def preflight_mix(config: SFTMixConfig) -> dict[str, object]:
         "schema_version": 1,
         "status": "ok",
         "selection": manifest["selection"],
+        "sensitive_output_filter": manifest["sensitive_output_filter"],
         "redistribution_allowed": manifest["redistribution_allowed"],
         "release_gate": manifest["release_gate"],
     }
