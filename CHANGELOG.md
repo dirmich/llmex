@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.7.0 - 2026-07-17
+
+- 공개 instruction 자체의 train/heldout canonical prompt overlap 152개와 공개 train·teacher heldout overlap 658개(공개 train 879행 영향)를 실측해 단순 concat을 금지했다.
+- `sft prepare-mix/preflight-mix/status-mix/validate-mix`로 teacher manifest SHA와 입력을 고정하고 heldout prompt·원천 우선 격리, tokenizer 길이 gate와 결정적 출력을 구현했다.
+- mix 출력을 배타 lock·staging·fsync·원자 publish로 보호하고 내부 teacher 라이선스의 release blocked를 SFT checkpoint와 평가까지 계승한다.
+- SFT runtime이 canonical prompt·원천 overlap과 모든 학습 truncation을 실패-폐쇄로 거부하면서 기존 source manifest 없는 checkpoint 재개 호환성을 유지한다.
+- 독립 리뷰의 최초 HIGH 3건과 MEDIUM 지적, 추가 HIGH 지적을 모두 수정해 승인받고 전체 133 tests, Ruff와 Pyright를 통과했다.
+
 ## 1.6.1 - 2026-07-17
 
 - v3 초반 5건 결과를 근거로 안전 중단하고 v3/v4 산출물을 보존한 채 별도 pilot에서 prompt와 copy filter를 교정했다.

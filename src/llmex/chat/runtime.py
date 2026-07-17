@@ -47,7 +47,71 @@ def _datasets(config: SFTConfig) -> tuple[ChatDataset, ChatDataset]:
     overlap = {item.sha256 for item in train.examples} & {item.sha256 for item in heldout.examples}
     if overlap:
         raise IntegrityError("train/heldout 대화 hash 누출을 발견했습니다")
+    prompt_overlap = {item.prompt_sha256 for item in train.examples} & {
+        item.prompt_sha256 for item in heldout.examples
+    }
+    if prompt_overlap:
+        raise IntegrityError("train/heldout final-user prompt 누출을 발견했습니다")
+    train_sources = {item.source_key for item in train.examples}
+    heldout_sources = {item.source_key for item in heldout.examples}
+    if train_sources & heldout_sources:
+        raise IntegrityError("train/heldout provenance source identity 누출을 발견했습니다")
     return train, heldout
+
+
+def _release_policy(
+    config: SFTConfig, train: ChatDataset, heldout: ChatDataset
+) -> dict[str, object]:
+    internal = "LicenseRef-LLMEX-Internal-Distillation" in set(train.licenses + heldout.licenses)
+    if config.source_manifest is None:
+        return {
+            "redistribution_allowed": not internal,
+            "release_gate": "blocked" if internal else "not_blocked",
+            "source_manifest_sha256": fingerprint({"source_manifest": None}),
+        }
+    try:
+        source_manifest_bytes = config.source_manifest.read_bytes()
+        source_manifest_sha256 = hashlib.sha256(source_manifest_bytes).hexdigest()
+        if source_manifest_sha256 != config.expected_source_manifest_sha256:
+            raise ValueError("source manifest checksum")
+        value = json.loads(source_manifest_bytes)
+        outputs = value["outputs"]
+        length_gate = value["length_gate"]
+        mix_max_seq_len = length_gate["max_seq_len"]
+        generation_reserve = length_gate["generation_reserve_tokens"]
+        current_tokenizer_sha = sha256_file(config.tokenizer_dir / "tokenizer-manifest.json")
+        if (
+            value.get("schema_version") != 1
+            or value.get("kind") != "sft-public-teacher-mix"
+            or value.get("fingerprint")
+            != fingerprint({key: item for key, item in value.items() if key != "fingerprint"})
+            or outputs["train"]["sha256"] != train.file_sha256
+            or outputs["heldout"]["sha256"] != heldout.file_sha256
+            or value.get("tokenizer_manifest_sha256") != current_tokenizer_sha
+            or not isinstance(mix_max_seq_len, int)
+            or isinstance(mix_max_seq_len, bool)
+            or mix_max_seq_len <= 2
+            or not isinstance(generation_reserve, int)
+            or isinstance(generation_reserve, bool)
+            or generation_reserve <= 0
+            or config.sequence_length < mix_max_seq_len
+            or config.model.max_seq_len < mix_max_seq_len
+            or config.max_new_tokens > generation_reserve
+            or not isinstance(value.get("redistribution_allowed"), bool)
+            or value.get("release_gate") not in {"blocked", "not_blocked"}
+        ):
+            raise ValueError("manifest binding")
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise IntegrityError("SFT source manifest 결속이 올바르지 않습니다") from exc
+    if internal and (
+        value["redistribution_allowed"] is not False or value["release_gate"] != "blocked"
+    ):
+        raise IntegrityError("내부 teacher 데이터의 release gate가 차단되지 않았습니다")
+    return {
+        "redistribution_allowed": value["redistribution_allowed"],
+        "release_gate": value["release_gate"],
+        "source_manifest_sha256": source_manifest_sha256,
+    }
 
 
 def _fingerprints(
@@ -55,10 +119,15 @@ def _fingerprints(
     train: ChatDataset,
     heldout: ChatDataset,
     base_provenance: Mapping[str, object],
+    release_policy: Mapping[str, object],
 ) -> dict[str, str]:
     manifest = config.tokenizer_dir / "tokenizer-manifest.json"
-    return {
-        "config": fingerprint(config.model_dump(mode="json", exclude={"max_steps"})),
+    config_value = config.model_dump(mode="json", exclude={"max_steps"})
+    if config.source_manifest is None:
+        config_value.pop("source_manifest", None)
+        config_value.pop("expected_source_manifest_sha256", None)
+    result = {
+        "config": fingerprint(config_value),
         "model": fingerprint(config.model.model_dump(mode="json")),
         "tokenizer": sha256_file(manifest),
         "train": train.fingerprint,
@@ -66,6 +135,9 @@ def _fingerprints(
         "base_checkpoint_sha256": str(base_provenance["sha256"]),
         "base_checkpoint_provenance": fingerprint(base_provenance),
     }
+    if config.source_manifest is not None or release_policy["release_gate"] == "blocked":
+        result["release_policy"] = fingerprint(release_policy)
+    return result
 
 
 def _load_base(path: Path | None) -> tuple[dict[str, torch.Tensor] | None, dict[str, object]]:
@@ -312,9 +384,15 @@ class SFTTrainer:
         if self.tokenizer.get_vocab_size() != config.model.vocab_size:
             raise IntegrityError("모델 vocab_size와 tokenizer가 다릅니다")
         self.train_data, self.heldout_data = _datasets(config)
+        self._validate_runtime_lengths()
+        self.release_policy = _release_policy(config, self.train_data, self.heldout_data)
         base_state, self.base_checkpoint_provenance = _load_base(config.base_checkpoint)
         self.fingerprints = _fingerprints(
-            config, self.train_data, self.heldout_data, self.base_checkpoint_provenance
+            config,
+            self.train_data,
+            self.heldout_data,
+            self.base_checkpoint_provenance,
+            self.release_policy,
         )
         self.model = CausalLM(config.model).to(self.device)
         if base_state is not None:
@@ -346,6 +424,33 @@ class SFTTrainer:
         self.validation_batches_seen = 0
         self.run_dir = config.run_dir
 
+    def _validate_runtime_lengths(self) -> None:
+        for dataset_name, dataset in (
+            ("train", self.train_data),
+            ("heldout", self.heldout_data),
+        ):
+            for example in dataset.examples:
+                full_length = len(
+                    tokenize_chat(self.tokenizer, example.messages, max_length=10**9).input_ids
+                )
+                if full_length > self.config.sequence_length:
+                    raise IntegrityError(
+                        "SFT 현재 tokenizer sequence 길이가 설정을 초과합니다: "
+                        f"{dataset_name}:{example.id}={full_length}>{self.config.sequence_length}"
+                    )
+                prompt_length = 1 + len(
+                    self.tokenizer.encode(
+                        render_chat(example.messages[:-1], add_generation_prompt=True)
+                    ).ids
+                )
+                generated_length = prompt_length + self.config.max_new_tokens
+                if generated_length > self.config.model.max_seq_len:
+                    raise IntegrityError(
+                        "SFT generation prompt와 max_new_tokens가 "
+                        "model sequence 계약을 초과합니다: "
+                        f"{dataset_name}:{example.id}={generated_length}"
+                    )
+
     def _payload(self) -> dict[str, object]:
         return {
             "schema_version": 2,
@@ -367,6 +472,8 @@ class SFTTrainer:
             "validation_sampler": self.validation_sampler.state_dict(),
             "rng": rng_state(),
             "precision": self.precision,
+            "redistribution_allowed": self.release_policy["redistribution_allowed"],
+            "release_gate": self.release_policy["release_gate"],
         }
 
     def save(self, *, best: bool = False) -> Path:
@@ -389,6 +496,17 @@ class SFTTrainer:
                 "SFT checkpoint 실제 precision이 현재 실행과 다릅니다: "
                 f"기대={self.precision}, 실제={checkpoint.get('precision')}"
             )
+        policy_required = (
+            self.config.source_manifest is not None
+            or self.release_policy["release_gate"] == "blocked"
+        )
+        policy_present = "redistribution_allowed" in checkpoint or "release_gate" in checkpoint
+        if (policy_required or policy_present) and (
+            checkpoint.get("redistribution_allowed")
+            != self.release_policy["redistribution_allowed"]
+            or checkpoint.get("release_gate") != self.release_policy["release_gate"]
+        ):
+            raise IntegrityError("SFT checkpoint release gate가 현재 데이터와 다릅니다")
         best_loss = checkpoint.get("best_validation_loss")
         if (
             not isinstance(best_loss, (int, float))
@@ -530,6 +648,7 @@ class SFTTrainer:
                 "heldout_file_sha256": self.heldout_data.file_sha256,
                 "licenses": sorted(set(self.train_data.licenses + self.heldout_data.licenses)),
                 "base_checkpoint": self.base_checkpoint_provenance,
+                **self.release_policy,
             },
         )
         last_loss = math.nan
@@ -624,7 +743,7 @@ def train_sft(config: SFTConfig, *, resume: Path | None = None) -> dict[str, obj
 
 def _load_sft(
     config: SFTConfig, checkpoint: Path
-) -> tuple[CausalLM, Any, ChatDataset, dict[str, str]]:
+) -> tuple[CausalLM, Any, ChatDataset, dict[str, str], dict[str, object]]:
     trainer = SFTTrainer(config)
     trainer.resume(checkpoint)
     return (
@@ -632,6 +751,7 @@ def _load_sft(
         trainer.tokenizer,
         trainer.heldout_data,
         trainer.fingerprints,
+        trainer.release_policy,
     )
 
 
@@ -653,7 +773,7 @@ def _generated(
 
 
 def generate_chat(config: SFTConfig, checkpoint: Path, prompt: str) -> dict[str, object]:
-    model, tokenizer, _, fingerprints = _load_sft(config, checkpoint)
+    model, tokenizer, _, fingerprints, release_policy = _load_sft(config, checkpoint)
     generated, text = _generated(model, tokenizer, (Message(role="user", content=prompt),), config)
     return {
         "prompt": prompt,
@@ -661,11 +781,12 @@ def generate_chat(config: SFTConfig, checkpoint: Path, prompt: str) -> dict[str,
         "token_ids": generated,
         "eos_reached": SPECIAL_IDS["<eos>"] in generated,
         "fingerprints": fingerprints,
+        **release_policy,
     }
 
 
 def evaluate_chat(config: SFTConfig, checkpoint: Path) -> dict[str, object]:
-    model, tokenizer, heldout, fingerprints = _load_sft(config, checkpoint)
+    model, tokenizer, heldout, fingerprints, release_policy = _load_sft(config, checkpoint)
     examples = list(heldout.examples[: config.max_eval_examples])
     losses: list[float] = []
     rows: list[dict[str, object]] = []
@@ -709,6 +830,7 @@ def evaluate_chat(config: SFTConfig, checkpoint: Path) -> dict[str, object]:
         },
         "rows": rows,
         "fingerprints": fingerprints,
+        **release_policy,
     }
     payload["fingerprint"] = fingerprint(payload)
     write_json(config.run_dir / "heldout-evaluation.json", payload)

@@ -181,12 +181,31 @@ uv run llmex distill validate --config configs/distill/qwen36mtp-10k.yaml
 ```
 
 v3 초반 5건은 accepted/rejected 1/4라 안전 중단·보존했고, v4/v4b 교정 뒤 v5 30건 pilot은
-accepted 28건(93.3%)으로 prepare부터 validate까지 통과했다. 현재 `runs/distill/qwen36mtp-10k-v5`는
-preflight와 10,000건 inventory 준비까지 통과했으며 실제 수집은 pending 10,000이다. pilot 처리율
-단순 환산은 약 11.3시간이지만 변동될 수 있다. collect 완료 전에는 정식 export/validate를 완료로 기록하지 않는다.
+accepted 28건(93.3%)으로 prepare부터 validate까지 통과했다. 정식 `runs/distill/qwen36mtp-10k-v5`는
+현재 수집 중이므로 변하는 completed 수를 문서에 고정하지 않고 위 `distill status` 명령으로 확인한다.
+collect 완료 전에는 정식 export/validate를 완료로 기록하지 않는다.
 상세 설정, 재개, 보안과 내부 전용 라이선스 경계는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)를 따른다.
 
-## 10. 실행 전후 점검
+## 10. 공개·teacher SFT mix 준비
+
+공개 데이터 자체 train/heldout 사이에 canonical prompt 152개가 겹치고, 공개 train과 teacher heldout
+사이에도 658개 고유 prompt가 겹쳐 공개 train 879행이 영향을 받는다. 따라서 JSONL을 직접 이어 붙이지 않는다.
+정식 export와 `distill validate` 완료 뒤 teacher `manifest.json`의 SHA-256을 새 mix config에 고정하고
+다음 명령 계약으로 heldout prompt·원천, tokenizer 길이와 입력 결속을 검증한다.
+
+```bash
+uv run llmex sft preflight-mix --help
+uv run llmex sft prepare-mix --help
+uv run llmex sft status-mix --help
+uv run llmex sft validate-mix --help
+```
+
+실제 mix config와 pilot/full SFT config는 export가 완료되어 경로와 manifest SHA가 확정된 뒤 만든다.
+순서는 `preflight-mix → prepare-mix → validate-mix → 별도 pilot → fresh full`이다. mix manifest의
+`prompt_overlap=0`, `source_sha256_overlap=0`, `release_gate=blocked`를 확인하기 전에는 학습하지 않는다.
+canonical exact prompt 검사는 semantic paraphrase 누출을 판정하지 않으므로 contamination과 수동 감사를 후속 수행한다.
+
+## 11. 실행 전후 점검
 
 명령 계약은 각 단계의 `--help`로 확인하고 문서 변경 뒤 Markdown 링크와 공백 오류를 검사한다.
 
@@ -198,6 +217,7 @@ uv run llmex train --help
 uv run llmex eval --help
 uv run llmex generate --help
 uv run llmex benchmark --help
+uv run llmex sft --help
 uv run llmex distill --help
 git diff --check -- docs/
 ```

@@ -1,6 +1,8 @@
 """엄격한 JSONL chat loader와 provenance/license/hash 검증."""
 
+import hashlib
 import json
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -75,6 +77,9 @@ class ChatExample:
     split: str
     messages: tuple[Message, ...]
     sha256: str
+    prompt_sha256: str
+    source_sha256: str | None
+    source_key: str
 
 
 @dataclass(frozen=True)
@@ -83,6 +88,34 @@ class ChatDataset:
     file_sha256: str
     fingerprint: str
     licenses: tuple[str, ...]
+
+
+def canonical_final_user_prompt(messages: tuple[Message, ...] | list[Message]) -> str:
+    """마지막 user turn을 Unicode·공백 정규화한 split 결속 문자열로 만든다."""
+
+    for message in reversed(messages):
+        if message.role == "user":
+            normalized = unicodedata.normalize(
+                "NFC", unicodedata.normalize("NFKC", message.content)
+            )
+            return " ".join(normalized.split())
+    raise IntegrityError("대화에 final-user prompt가 없습니다")
+
+
+def final_user_prompt_sha256(messages: tuple[Message, ...] | list[Message]) -> str:
+    return hashlib.sha256(canonical_final_user_prompt(messages).encode("utf-8")).hexdigest()
+
+
+def provenance_source_key(provenance: Provenance) -> str:
+    """실제 source SHA가 없을 때도 동일 upstream source를 안정적으로 결속한다."""
+
+    return provenance.source_sha256 or fingerprint(
+        {
+            "dataset": provenance.dataset,
+            "source": provenance.source,
+            "source_id": provenance.source_id,
+        }
+    )
 
 
 def load_chat_jsonl(path: Path, *, split: str, allowed_licenses: set[str]) -> ChatDataset:
@@ -108,7 +141,18 @@ def load_chat_jsonl(path: Path, *, split: str, allowed_licenses: set[str]) -> Ch
                     raise IntegrityError(f"중복 chat id: {row.id}")
                 ids.add(row.id)
                 licenses.add(row.provenance.license)
-                examples.append(ChatExample(row.id, row.split, tuple(row.messages), row.sha256))
+                messages = tuple(row.messages)
+                examples.append(
+                    ChatExample(
+                        row.id,
+                        row.split,
+                        messages,
+                        row.sha256,
+                        final_user_prompt_sha256(messages),
+                        row.provenance.source_sha256,
+                        provenance_source_key(row.provenance),
+                    )
+                )
     except (json.JSONDecodeError, ValidationError) as exc:
         raise IntegrityError(f"chat JSONL schema 검증 실패: {path}: {exc}") from exc
     if not examples:

@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.6.1 teacher v5 pilot 완료 및 정식 10k 수집 대기
+## 1.7.0 비누출 SFT mix 완료 및 정식 teacher 수집 진행
 
 ### 완료
 
@@ -45,6 +45,14 @@
 - [x] v5 pilot 122.0626초, 0.245775 RPS, 요청당 4.069초, 응답 길이 67/226.0/357자
 - [x] v5 pilot export train/heldout 25/3, overlap 0, release blocked
 - [x] 정식 v5 10k inventory·config fingerprint 고정과 preflight 통과
+- [x] 공개 train/heldout canonical prompt overlap 152개 실측
+- [x] 공개 train·teacher heldout overlap 658개와 영향 공개 train 879행 실측, 단순 concat 금지
+- [x] `sft prepare-mix/preflight-mix/status-mix/validate-mix`와 `sft-mix` 설정 schema
+- [x] teacher/source manifest SHA 고정, heldout prompt·원천 우선 격리와 결정적 중복 제거
+- [x] tokenizer prompt+generation reserve·전체 chat 길이 gate와 runtime 전 데이터 truncation 실패-폐쇄
+- [x] mix 배타 lock·staging·fsync·원자 publish, 부분 출력·변조 거부
+- [x] 내부 teacher release blocked를 SFT checkpoint·평가에 계승하고 legacy resume 유지
+- [x] 독립 리뷰 HIGH 3건+MEDIUM 및 추가 HIGH 수정 후 승인, 전체 133 tests·Ruff·Pyright 통과
 - [x] 독립 재검토 승인과 최종 전체 129 tests, Ruff lint/format, Pyright, 참조 코드 checksum·diff 검사
 
 ### 후속 전체 평가 대기
@@ -56,11 +64,14 @@
 ### 다음 계획
 
 1. [x] SFT engine 강화
-2. [ ] 정식 v5 run에서 teacher 10k 실제 collect/resume(현재 pending 10,000, 단순 환산 약 11.3시간)
-3. [ ] current spool export/validate
-4. [ ] 공개 instruction + teacher 혼합 SFT
-5. [ ] 대화/EOS/repetition/safety/manual gate
-6. [ ] GGUF 변환과 llama.cpp parity
+2. [ ] 정식 v5 run에서 teacher 10k collect/resume 완료 여부를 `distill status`로 확인
+3. [ ] current spool export/validate 뒤 teacher manifest SHA-256 고정
+4. [ ] 실제 export 경로를 사용하는 mix config와 pilot/full SFT config 작성
+5. [ ] preflight-mix → prepare-mix → validate-mix와 별도 pilot 실행
+6. [ ] pilot gate 통과 뒤 fresh full SFT와 best/latest 비교
+7. [ ] 대화/EOS/repetition/safety/manual gate
+8. [ ] semantic paraphrase contamination·수동 감사와 step-0 loss 평가 설계
+9. [ ] GGUF 변환과 llama.cpp parity
 
 ## G003 한국어 대화 학습 경로 (1.5.0)
 

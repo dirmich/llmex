@@ -226,6 +226,8 @@ class SFTConfig(StrictModel):
     tokenizer_dir: YamlPath
     train_data: YamlPath
     heldout_data: YamlPath
+    source_manifest: YamlPath | None = None
+    expected_source_manifest_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     run_dir: YamlPath
     allowed_licenses: list[str] = Field(min_length=1)
     base_checkpoint: YamlPath | None = None
@@ -253,6 +255,37 @@ class SFTConfig(StrictModel):
             raise ValueError("sequence_length는 model.max_seq_len 이하여야 합니다")
         if self.optimizer.warmup_steps > self.max_steps:
             raise ValueError("warmup_steps는 max_steps 이하여야 합니다")
+        if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
+            raise ValueError("allowed_licenses는 중복될 수 없습니다")
+        if (self.source_manifest is None) != (self.expected_source_manifest_sha256 is None):
+            raise ValueError(
+                "source_manifest와 expected_source_manifest_sha256는 함께 지정해야 합니다"
+            )
+        return self
+
+
+class SFTMixConfig(StrictModel):
+    """공개·teacher 대화 데이터를 비누출 split으로 혼합하는 설정."""
+
+    schema_version: Literal[1] = 1
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    tokenizer_dir: YamlPath
+    public_train_data: YamlPath
+    public_heldout_data: YamlPath
+    teacher_train_data: YamlPath
+    teacher_heldout_data: YamlPath
+    teacher_manifest: YamlPath
+    expected_teacher_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    output_dir: YamlPath
+    allowed_licenses: list[str] = Field(min_length=1)
+    max_seq_len: int = Field(default=1_024, gt=2)
+    generation_reserve_tokens: int = Field(default=128, gt=0)
+
+    @model_validator(mode="after")
+    def validate_mix(self) -> "SFTMixConfig":
+        if self.generation_reserve_tokens >= self.max_seq_len:
+            raise ValueError("generation_reserve_tokens는 max_seq_len보다 작아야 합니다")
         if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
             raise ValueError("allowed_licenses는 중복될 수 없습니다")
         return self

@@ -1,5 +1,27 @@
 # 구현 이력
 
+## 2026-07-17 · 1.7.0 공개·teacher 비누출 SFT mix
+
+### 실측한 concat 차단 근거
+
+- 공개 instruction만 비교해도 train/heldout 사이 canonical final-user prompt 152개가 겹쳤다.
+- 정식 v5 inventory와 함께 비교하면 공개 train과 teacher heldout이 658개 고유 prompt에서 겹치며 공개 train 879행이 영향을 받았다. 행 전체 hash만 다른 데이터를 직접 concat하면 heldout 질문이 학습에 들어가므로 단순 병합을 금지했다.
+- `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 attribution 손실·split 누출·checkpoint 복구 실패 즉시 중단 품질 gate를 구현 근거로 삼았다.
+
+### 구현과 검증
+
+- `llmex sft prepare-mix/preflight-mix/status-mix/validate-mix`를 추가했다. teacher export manifest의 예상 SHA-256과 source JSONL·tokenizer manifest를 고정하고 현재 입력에서 출력을 다시 유도해 변조와 stale 출력을 거부한다.
+- heldout prompt와 provenance source를 train보다 우선해 격리하고 source+prompt 중복을 결정적으로 제거한다. prompt에 생성 reserve를 더한 길이와 전체 chat 길이가 tokenizer 한도를 넘으면 제외하며, SFT runtime도 canonical prompt·원천 overlap과 모든 학습 truncation을 실패-폐쇄로 거부한다.
+- 배타 lock, 임시 staging, 파일·디렉터리 fsync와 원자 publish를 적용했다. 부분 출력이나 미완료 staging은 자동 덮어쓰지 않는다.
+- 내부 전용 teacher 데이터가 포함되면 `redistribution_allowed=false`, `release_gate=blocked`를 mix manifest, SFT checkpoint와 heldout 평가에 계승한다. source manifest가 없던 기존 SFT checkpoint의 재개 호환성은 유지했다.
+- 독립 리뷰에서 최초 HIGH 3건과 MEDIUM 지적, 추가 HIGH 지적을 수정한 뒤 최종 승인을 받았다. 전체 133 tests와 Ruff, Pyright를 통과했다.
+
+### 진행 중인 정식 v5와 다음 순서
+
+- 정식 v5 teacher 수집은 진행 중이므로 변하는 completed 수를 이력에 고정하지 않는다. `uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml`로 현재 상태를 확인한다.
+- 수집 완료 뒤 export/validate를 통과시키고 생성된 teacher `manifest.json`의 SHA-256을 mix config의 `expected_teacher_manifest_sha256`에 고정한다. 그 다음 실제 경로와 base checkpoint를 사용하는 mix, pilot, full config를 각각 만들고 preflight-mix → prepare-mix → validate-mix → pilot → full 순서로 실행한다.
+- step-0 loss의 별도 비교 평가는 아직 설계 대기이며 canonical exact prompt 검사로 잡지 못하는 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사에서 판정한다.
+
 ## 2026-07-17 · 1.6.1 teacher pilot 교정과 정식 v5 준비
 
 ### 안전 중단과 세대별 보존

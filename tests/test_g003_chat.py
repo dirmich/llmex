@@ -15,7 +15,7 @@ from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
-from llmex.train.checkpoint import load_checkpoint
+from llmex.train.checkpoint import load_checkpoint, save_checkpoint
 
 
 def _tokenizer(path: Path) -> int:
@@ -47,6 +47,7 @@ def _row(
         "source": "local-test",
         "license": license_name,
         "collected_at": "2026-07-11",
+        "source_id": identifier,
     }
     basis = {"id": identifier, "messages": messages, "provenance": provenance, "split": split}
     return {"schema_version": 1, **basis, "sha256": fingerprint(basis)}
@@ -84,7 +85,7 @@ def _config(tmp_path: Path, *, max_steps: int = 1) -> SFTConfig:
         model=ModelConfig(
             name="chat-tiny",
             vocab_size=vocab,
-            max_seq_len=64,
+            max_seq_len=72,
             n_layers=1,
             d_model=16,
             n_heads=2,
@@ -98,7 +99,7 @@ def _config(tmp_path: Path, *, max_steps: int = 1) -> SFTConfig:
         run_dir=tmp_path / "run",
         allowed_licenses=["CC-BY-4.0"],
         device="cpu",
-        sequence_length=48,
+        sequence_length=56,
         micro_batch_size=1,
         max_steps=max_steps,
         validation_interval=1,
@@ -177,6 +178,13 @@ def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
     )
     assert best_payload["step"] == 1
     assert best_payload["best_validation_loss"] == result["best_validation_loss"]
+    legacy_payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    legacy_payload.pop("redistribution_allowed")
+    legacy_payload.pop("release_gate")
+    legacy_checkpoint = save_checkpoint(tmp_path / "legacy-checkpoints", legacy_payload, step=1)
+    legacy = SFTTrainer(config)
+    legacy.resume(legacy_checkpoint)
+    assert legacy.step == 1
     resumed_config = config.model_copy(update={"max_steps": 2})
     resumed = SFTTrainer(resumed_config)
     resumed.resume(config.run_dir / "checkpoints/latest.pt")

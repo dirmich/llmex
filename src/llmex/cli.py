@@ -17,6 +17,7 @@ from llmex.config import (
     ModelConfig,
     PipelineConfig,
     SFTConfig,
+    SFTMixConfig,
     StrictModel,
     TokenizerConfig,
     TrainingConfig,
@@ -136,6 +137,7 @@ class ConfigKind(StrEnum):
     EVALUATION = "evaluation"
     PIPELINE = "pipeline"
     SFT = "sft"
+    SFT_MIX = "sft-mix"
     DISTILLATION = "distillation"
 
 
@@ -152,6 +154,8 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return PipelineConfig
     if kind is ConfigKind.SFT:
         return SFTConfig
+    if kind is ConfigKind.SFT_MIX:
+        return SFTMixConfig
     if kind is ConfigKind.DISTILLATION:
         return DistillationConfig
     return ModelConfig
@@ -221,6 +225,47 @@ def distill_validate(config_path: Annotated[Path, typer.Option("--config")]) -> 
 
 def _sft_config(path: Path) -> SFTConfig:
     return load_yaml(path, SFTConfig)
+
+
+def _sft_mix_call(config_path: Path, action: str) -> None:
+    try:
+        config = load_yaml(config_path, SFTMixConfig)
+        from llmex.chat.mixer import preflight_mix, prepare_mix, status_mix, validate_mix
+
+        operations = {
+            "prepare": prepare_mix,
+            "preflight": preflight_mix,
+            "status": status_mix,
+            "validate": validate_mix,
+        }
+        result = operations[action](config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@sft_app.command("prepare-mix")
+def sft_prepare_mix(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """공개·teacher 데이터를 split 비누출 JSONL로 결정적 혼합합니다."""
+    _sft_mix_call(config_path, "prepare")
+
+
+@sft_app.command("preflight-mix")
+def sft_preflight_mix(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """입력·teacher manifest·길이 gate를 출력 생성 없이 검증합니다."""
+    _sft_mix_call(config_path, "preflight")
+
+
+@sft_app.command("status-mix")
+def sft_status_mix(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """혼합 출력의 pending/ready 상태와 결속을 확인합니다."""
+    _sft_mix_call(config_path, "status")
+
+
+@sft_app.command("validate-mix")
+def sft_validate_mix(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """혼합 출력을 현재 입력과 재유도해 실패-폐쇄 검증합니다."""
+    _sft_mix_call(config_path, "validate")
 
 
 def _sft_train(config_path: Path, resume: Path | None, dry_run: bool) -> None:
