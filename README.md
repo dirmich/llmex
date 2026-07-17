@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.9.3은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 결정적 SFT mix는 assistant 민감 출력을 학습 전에 차단하고 공개 원행과 teacher 파생행의 provenance를 정확히 결속하며, 새 SFT는 존재하지 않는 전용 run 디렉터리에서만 시작하도록 강제한다. 자동·수동 대화 품질 gate와 현재 구현을 처음부터 재현하는 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 정식 v5 teacher 수집과 혼합 SFT, 실제 모델 대상 사람 검토, 독립 법무·공개 배포 승인은 아직 진행 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
+LLMEX 1.9.4는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 결정적 SFT mix는 assistant 민감 출력을 학습 전에 차단하고 공개 원행과 teacher 파생행의 provenance를 정확히 결속하며, 새 SFT는 존재하지 않는 전용 run 디렉터리에서만 시작하도록 강제한다. 검증된 token은 상한이 있는 연속 cache에서 재사용해 학습 중 반복 tokenization을 제거한다. 자동·수동 대화 품질 gate와 현재 구현을 처음부터 재현하는 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 정식 v5 teacher 수집과 혼합 SFT, 실제 모델 대상 사람 검토, 독립 법무·공개 배포 승인은 아직 진행 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
 
 ## 빠른 시작
 

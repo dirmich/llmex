@@ -1,5 +1,25 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.4 상한 결속 SFT token cache
+
+### 반복 tokenization 제거
+
+- 기존 runtime은 trainer 초기화에서 모든 train/heldout 대화의 길이를 tokenization한 뒤 학습·validation batch마다 같은 대화를 다시 tokenization했다. 이제 1차 pass에서 기존 전체 길이·assistant target·generation prompt gate를 그대로 수행하고 input/label 전체 SHA-256을 임시 결속한다.
+- 영속 cache는 train/heldout split마다 연속 int32 input, 연속 int32 label, int64 offsets 하나로 구성한다. 데이터 행 수와 무관하게 tensor 6개와 cache wrapper 2개만 유지하며 sampler index 순서로 필요한 구간만 long batch에 복사·패딩한다.
+- 2차 tokenization의 길이와 input/label SHA가 1차와 완전히 같을 때만 정확한 크기의 buffer를 채운다. 동일 길이 token 변조, train/heldout cache 오결속과 외부 dataset batch 요청은 sampler 진행 전에 실패-폐쇄한다.
+
+### 메모리 상한과 실제 실측
+
+- input·label storage와 split별 `(rows+1)` offsets를 모두 합친 persistent bytes를 Python 정수로 계산한다. 완화 불가 128 MiB를 넘으면 연속 buffer 할당을 한 번도 하지 않으며, preflight에 split/total 행·token·세 storage byte, dtype, tensor 수와 cap을 기록한다.
+- 실제 public 6,853행 + v5 pilot teacher 28행의 검증된 mix 4,732행에서 train 3,091,998 token, heldout 343,623 token, 합계 3,435,621 token과 27,522,840 bytes를 기록했다. CPU preflight는 28.88초, 최대 RSS 3,062,108 KiB였다.
+- 같은 실제 cache의 첫 4행을 100회 조립한 micro benchmark는 cached 0.00696초, 재-tokenization 0.38310초로 batch 준비가 약 55배 빨랐다. 이는 model forward/backward를 포함하지 않는 준비 구간 수치다.
+
+### 검증과 독립 검토
+
+- 기존 `_batch`와 cached tensor의 input/label/PAD/-100 exact equality, 학습 중 tokenization 0회, 2-pass 동일 길이 변조 거부, cap 초과 allocation·sampler 0회, train/heldout 분리와 continuous/resume bitwise 결정성을 회귀로 고정했다.
+- 전체 165 tests, Ruff lint/format, Pyright strict와 `git diff --check`를 통과했다. 독립 리뷰의 행별 Python tuple 메모리 증폭과 행별 tensor allocator MEDIUM을 연속 buffer로 폐쇄한 뒤 최종 `APPROVE`를 받았다.
+- 정식 qwen36mtp v5 수집은 계속 진행 중이다. 완료된 정식 mix의 token cache 통계와 CUDA pilot step 시간을 다시 측정해 full 예산을 확정한다.
+
 ## 2026-07-18 · 1.9.3 fresh SFT 실행 경계
 
 ### 새 학습과 재개의 권한 분리

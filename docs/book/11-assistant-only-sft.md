@@ -105,6 +105,16 @@ L_{generation\ prompt}+max\_new\_tokens\le model.max\_seq\_len
 
 이 검사가 없으면 학습은 성공했는데 실제 대화 생성은 context limit에 즉시 걸릴 수 있다.
 
+검증을 마친 token을 매 batch에서 다시 BPE 처리할 필요는 없다. LLMEX는 1차 tokenization에서 길이·generation gate와 input/label SHA-256을 계산하고, offset을 포함한 정확한 persistent byte가 완화 불가 128 MiB 이내인지 먼저 확인한다. 통과한 경우에만 train/heldout 각각에 연속 int32 input, int32 label, int64 offset tensor를 할당한다. 2차 tokenization 값이 1차 SHA와 같아야 buffer를 채우므로 두 pass 사이의 동일 길이 값 변경도 차단한다.
+
+```text
+train cache   = input int32 + label int32 + offsets int64
+heldout cache = input int32 + label int32 + offsets int64
+총 영속 tensor 객체 = 6
+```
+
+batch에서는 sampler index의 offset 구간만 long으로 복사하고 PAD와 `-100`을 채운다. 따라서 기존 token/label tensor와 정확히 같으면서 학습·validation 중 BPE 재실행은 0회다. `sft preflight`의 `token_cache`에서 split별 행·token·byte, dtype, tensor 수와 cap을 확인한다.
+
 ### 4. Target-token 가중 accumulation
 
 micro-batch마다 assistant token 수가 다르다. batch loss를 단순 평균하면 짧은 답변과 긴 답변이 같은 비중을 갖는다. LLMEX는 각 micro-batch의 target 수 \(n_i\)로 가중한다.
@@ -169,12 +179,13 @@ checkpoint의 전체 fingerprint와 상태를 복원한 `sft resume`만 기존 r
 3. 고정 role prefix와 BOS/EOS를 정의한다.
 4. assistant content/EOS만 target으로 두는 tokenizer를 만든다.
 5. 모든 행에 target token이 있고 길이 계약을 만족하는지 초기화 때 검사한다.
-6. 결정적 sampler와 seed/RNG 설정을 만든다.
-7. target-token 가중 accumulation, gradient clipping, finite 검사를 구현한다.
-8. validation을 같은 방식의 token 가중 NLL/PPL로 계산한다.
-9. 전체 상태와 fingerprint를 checkpoint에 저장하고 strict restore한다.
-10. source manifest와 release 정책을 checkpoint와 평가까지 계승한다.
-11. 새 train은 미존재 run 디렉터리를 원자 선점하고 strict resume만 기존 run을 사용한다.
+6. 2-pass SHA 결속과 연속 compact buffer·hard cap으로 검증 token을 cache한다.
+7. 결정적 sampler와 seed/RNG 설정을 만든다.
+8. target-token 가중 accumulation, gradient clipping, finite 검사를 구현한다.
+9. validation을 같은 방식의 token 가중 NLL/PPL로 계산한다.
+10. 전체 상태와 fingerprint를 checkpoint에 저장하고 strict restore한다.
+11. source manifest와 release 정책을 checkpoint와 평가까지 계승한다.
+12. 새 train은 미존재 run 디렉터리를 원자 선점하고 strict resume만 기존 run을 사용한다.
 
 ## 실제 명령
 
@@ -275,6 +286,7 @@ uv run pyright
 - [ ] assistant content와 EOS만 target인가?
 - [ ] train/heldout row·prompt·source overlap이 0인가?
 - [ ] 모든 행이 sequence/generation 길이 계약을 만족하는가?
+- [ ] token cache의 2-pass SHA, offset 포함 byte와 128 MiB cap을 확인했는가?
 - [ ] accumulation이 target token 수로 가중되는가?
 - [ ] loss, gradient norm, checkpoint tensor가 finite인가?
 - [ ] sampler와 RNG를 checkpoint에 저장하는가?

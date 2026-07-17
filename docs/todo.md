@@ -1,8 +1,15 @@
 # LLMEX 개발 TODO
 
-## 1.9.3 fresh SFT 실행 경계 완료 및 정식 teacher 수집 진행
+## 1.9.4 SFT token cache 완료 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] train/heldout 검증 token을 split별 연속 int32 input/label과 int64 offsets로 cache
+- [x] 전체 길이·generation gate 1차 검증과 2차 token/label SHA-256 동일성 결속
+- [x] offset 포함 persistent storage 128 MiB 완화 불가 상한과 cap 초과 할당·sampler 0회
+- [x] 학습·validation 재-tokenization 0, 기존 batch tensor·resume 결정성 동일
+- [x] 실제 pilot 4,732행·3,435,621 token·27,522,840 bytes, preflight 통과
+- [x] 전체 165 tests, Ruff, format, Pyright, diff 검사와 독립 APPROVE
 
 - [x] 새 `sft train`의 기존 빈/비어있지 않은/완료 run 디렉터리 실패-폐쇄
 - [x] trainer 생성 전 선검사와 실제 `mkdir` 시점 경합 안전 원자 선점

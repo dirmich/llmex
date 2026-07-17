@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.4 - 2026-07-18
+
+- 검증된 train/heldout token을 split별 연속 int32 input/label과 int64 offsets, 총 6개 tensor에 cache해 학습·validation 반복 tokenization을 제거했다.
+- 1차 길이·generation 검증의 input/label SHA와 2차 buffer fill 값을 결속해 동일 길이 token 변조도 실패-폐쇄한다.
+- offsets를 포함한 persistent storage에 완화 불가 128 MiB 상한을 적용하고 preflight에 split·total 행/token/byte·dtype·tensor 수를 노출한다.
+- 실제 pilot mix 4,732행·3,435,621 token·27,522,840 bytes preflight와 batch 준비 약 55배 micro benchmark를 기록했다.
+- 전체 165 tests, Ruff, Pyright와 두 차례 메모리 MEDIUM을 폐쇄한 독립 재검토 `APPROVE`를 통과했다.
+
 ## 1.9.3 - 2026-07-18
 
 - 새 `sft train`이 빈 디렉터리를 포함한 모든 기존 run 경로를 실패-폐쇄하고 과거 파일·checkpoint를 보존하도록 했다.

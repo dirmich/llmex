@@ -7,7 +7,8 @@ import json
 import math
 import os
 import random
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -15,7 +16,7 @@ import numpy as np
 import torch
 
 from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
-from llmex.chat.template import render_chat, tokenize_chat
+from llmex.chat.template import TokenizedChat, render_chat, tokenize_chat
 from llmex.config import SFTConfig
 from llmex.data.io import write_json
 from llmex.errors import ConflictError, IntegrityError, LlmexError
@@ -38,6 +39,18 @@ from llmex.train.runtime import (
     resolve_precision,
     seed_everything,
 )
+
+SFT_TOKEN_CACHE_MAX_BYTES = 128 * 1024 * 1024
+_CACHE_DTYPE = torch.int32
+_CACHE_ELEMENT_BYTES = 4
+_OFFSET_ELEMENT_BYTES = 8
+
+
+@dataclass(frozen=True)
+class _TokenizedSplitCache:
+    input_ids: torch.Tensor
+    labels: torch.Tensor
+    offsets: torch.Tensor
 
 
 def _datasets(config: SFTConfig) -> tuple[ChatDataset, ChatDataset]:
@@ -210,13 +223,50 @@ def _batch(
     encoded = [
         tokenize_chat(tokenizer, example.messages, max_length=max_length) for example in examples
     ]
+    return _batch_tokenized(encoded)
+
+
+def _batch_tokenized(
+    encoded: Sequence[TokenizedChat],
+) -> tuple[torch.Tensor, torch.Tensor]:
     width = max(len(item.input_ids) for item in encoded)
-    inputs, labels = [], []
-    for item in encoded:
-        padding = width - len(item.input_ids)
-        inputs.append(list(item.input_ids) + [SPECIAL_IDS["<pad>"]] * padding)
-        labels.append(list(item.labels) + [-100] * padding)
-    return torch.tensor(inputs, dtype=torch.long), torch.tensor(labels, dtype=torch.long)
+    inputs = torch.full((len(encoded), width), SPECIAL_IDS["<pad>"], dtype=torch.long)
+    labels = torch.full((len(encoded), width), -100, dtype=torch.long)
+    for index, item in enumerate(encoded):
+        length = len(item.input_ids)
+        inputs[index, :length] = torch.as_tensor(item.input_ids, dtype=torch.long)
+        labels[index, :length] = torch.as_tensor(item.labels, dtype=torch.long)
+    return inputs, labels
+
+
+def _batch_cached(
+    cache: _TokenizedSplitCache, indices: Sequence[int]
+) -> tuple[torch.Tensor, torch.Tensor]:
+    boundaries = [(int(cache.offsets[index]), int(cache.offsets[index + 1])) for index in indices]
+    width = max(end - start for start, end in boundaries)
+    inputs = torch.full((len(indices), width), SPECIAL_IDS["<pad>"], dtype=torch.long)
+    labels = torch.full((len(indices), width), -100, dtype=torch.long)
+    for row, (start, end) in enumerate(boundaries):
+        length = end - start
+        inputs[row, :length] = cache.input_ids[start:end]
+        labels[row, :length] = cache.labels[start:end]
+    return inputs, labels
+
+
+def _allocate_split_cache(rows: int, tokens: int) -> _TokenizedSplitCache:
+    return _TokenizedSplitCache(
+        input_ids=torch.empty(tokens, dtype=_CACHE_DTYPE),
+        labels=torch.empty(tokens, dtype=_CACHE_DTYPE),
+        offsets=torch.empty(rows + 1, dtype=torch.int64),
+    )
+
+
+def _tokenized_digest(encoded: TokenizedChat) -> bytes:
+    digest = hashlib.sha256()
+    digest.update(np.asarray(encoded.input_ids, dtype="<i8").tobytes())
+    digest.update(b"\x00labels\x00")
+    digest.update(np.asarray(encoded.labels, dtype="<i8").tobytes())
+    return digest.digest()
 
 
 def _expected_sampler_state(
@@ -389,7 +439,11 @@ class SFTTrainer:
         if self.tokenizer.get_vocab_size() != config.model.vocab_size:
             raise IntegrityError("모델 vocab_size와 tokenizer가 다릅니다")
         self.train_data, self.heldout_data = _datasets(config)
-        self._validate_runtime_lengths()
+        (
+            self.train_tokenized,
+            self.heldout_tokenized,
+            self.token_cache_stats,
+        ) = self._validate_runtime_lengths()
         self.release_policy = _release_policy(config, self.train_data, self.heldout_data)
         base_state, self.base_checkpoint_provenance = _load_base(config.base_checkpoint)
         self.fingerprints = _fingerprints(
@@ -430,15 +484,25 @@ class SFTTrainer:
         self.run_dir = config.run_dir
         self._resumed = False
 
-    def _validate_runtime_lengths(self) -> None:
-        for dataset_name, dataset in (
+    def _validate_runtime_lengths(
+        self,
+    ) -> tuple[
+        _TokenizedSplitCache,
+        _TokenizedSplitCache,
+        dict[str, object],
+    ]:
+        datasets = (
             ("train", self.train_data),
             ("heldout", self.heldout_data),
-        ):
+        )
+        split_stats: dict[str, dict[str, int]] = {}
+        split_digests: dict[str, list[bytes]] = {}
+        for dataset_name, dataset in datasets:
+            split_tokens = 0
+            digests: list[bytes] = []
             for example in dataset.examples:
-                full_length = len(
-                    tokenize_chat(self.tokenizer, example.messages, max_length=10**9).input_ids
-                )
+                encoded = tokenize_chat(self.tokenizer, example.messages, max_length=10**9)
+                full_length = len(encoded.input_ids)
                 if full_length > self.config.sequence_length:
                     raise IntegrityError(
                         "SFT 현재 tokenizer sequence 길이가 설정을 초과합니다: "
@@ -456,6 +520,77 @@ class SFTTrainer:
                         "model sequence 계약을 초과합니다: "
                         f"{dataset_name}:{example.id}={generated_length}"
                     )
+                split_tokens += full_length
+                digests.append(_tokenized_digest(encoded))
+            rows = len(dataset.examples)
+            input_bytes = split_tokens * _CACHE_ELEMENT_BYTES
+            label_bytes = split_tokens * _CACHE_ELEMENT_BYTES
+            offset_bytes = (rows + 1) * _OFFSET_ELEMENT_BYTES
+            split_stats[dataset_name] = {
+                "rows": rows,
+                "tokens": split_tokens,
+                "input_bytes": input_bytes,
+                "label_bytes": label_bytes,
+                "offset_bytes": offset_bytes,
+                "bytes": input_bytes + label_bytes + offset_bytes,
+            }
+            split_digests[dataset_name] = digests
+
+        total_stats = {
+            key: sum(item[key] for item in split_stats.values())
+            for key in (
+                "rows",
+                "tokens",
+                "input_bytes",
+                "label_bytes",
+                "offset_bytes",
+                "bytes",
+            )
+        }
+        if total_stats["bytes"] > SFT_TOKEN_CACHE_MAX_BYTES:
+            raise IntegrityError(
+                "SFT token cache가 완화 불가능 메모리 상한을 초과합니다: "
+                f"필요={total_stats['bytes']}>{SFT_TOKEN_CACHE_MAX_BYTES} bytes"
+            )
+
+        caches: list[_TokenizedSplitCache] = []
+        for dataset_name, dataset in datasets:
+            stats = split_stats[dataset_name]
+            cache = _allocate_split_cache(stats["rows"], stats["tokens"])
+            cache.offsets[0] = 0
+            cursor = 0
+            for row, example in enumerate(dataset.examples):
+                encoded = tokenize_chat(self.tokenizer, example.messages, max_length=10**9)
+                length = len(encoded.input_ids)
+                end = cursor + length
+                if (
+                    len(encoded.labels) != length
+                    or end > stats["tokens"]
+                    or _tokenized_digest(encoded) != split_digests[dataset_name][row]
+                ):
+                    raise IntegrityError(
+                        "SFT token cache 2차 tokenization 값이 1차 검증과 다릅니다"
+                    )
+                cache.input_ids[cursor:end] = torch.as_tensor(encoded.input_ids, dtype=_CACHE_DTYPE)
+                cache.labels[cursor:end] = torch.as_tensor(encoded.labels, dtype=_CACHE_DTYPE)
+                cache.offsets[row + 1] = end
+                cursor = end
+            if cursor != stats["tokens"]:
+                raise IntegrityError("SFT token cache 2차 tokenization 길이가 1차 검증과 다릅니다")
+            caches.append(cache)
+
+        return (
+            caches[0],
+            caches[1],
+            {
+                **split_stats,
+                "total": total_stats,
+                "cap_bytes": SFT_TOKEN_CACHE_MAX_BYTES,
+                "storage_dtype": "int32",
+                "offset_dtype": "int64",
+                "persistent_tensor_objects": len(caches) * 3,
+            },
+        )
 
     def _payload(self) -> dict[str, object]:
         return {
@@ -618,8 +753,13 @@ class SFTTrainer:
     def _next_batch(
         self, dataset: ChatDataset, sampler: DeterministicBatchSampler
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        examples = [dataset.examples[index] for index in sampler.next()]
-        inputs, labels = _batch(self.tokenizer, examples, self.config.sequence_length)
+        if dataset is self.train_data:
+            cache = self.train_tokenized
+        elif dataset is self.heldout_data:
+            cache = self.heldout_tokenized
+        else:
+            raise IntegrityError("SFT trainer에 결속되지 않은 dataset batch 요청입니다")
+        inputs, labels = _batch_cached(cache, sampler.next())
         return inputs.to(self.device), labels.to(self.device)
 
     def validate(self) -> float:
@@ -812,6 +952,7 @@ def preflight_sft(config: SFTConfig, *, measure_baseline: bool = False) -> dict[
                 "file_sha256": trainer.heldout_data.file_sha256,
             },
             "fingerprints": trainer.fingerprints,
+            "token_cache": trainer.token_cache_stats,
             "base_checkpoint": trainer.base_checkpoint_provenance,
             "redistribution_allowed": trainer.release_policy["redistribution_allowed"],
             "release_gate": trainer.release_policy["release_gate"],

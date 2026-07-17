@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.3은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, fresh SFT 실행 경계, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
+LLMEX 1.9.4는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, fresh SFT 실행 경계, 상한이 있는 token cache, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -56,9 +56,14 @@ uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
 - train/heldout 행 수, dataset fingerprint와 파일 SHA-256, 전체 학습 fingerprint
 - base checkpoint SHA·schema·kind·step과 원 학습 provenance
 - `redistribution_allowed`, `release_gate`와 예상 유효 batch 크기
+- token cache의 train/heldout/total 행·token·input/label/offset byte, 저장 dtype, 영속 tensor 수와 128 MiB 상한
 - baseline 선택 여부와, 측정한 경우 고정 validation subset의 target-token 가중 step-0 loss·perplexity·target token 수
 
 baseline은 매 학습 validation과 같은 seed·고정 subset을 사용한다. 측정 전후 run 디렉터리와 파일, validation sampler·누적 batch 수, Python/NumPy/PyTorch RNG, 모델 train/eval mode, deterministic algorithms enabled·warn-only와 cuDNN benchmark 상태는 바뀌지 않는다. 입력·base·device·precision·길이·초기화 또는 비유한 loss 오류는 성공처럼 축소하지 않고 해당 오류 코드로 실패-폐쇄한다.
+
+trainer는 전체 길이와 generation gate를 검사하는 1차 tokenization의 input/label SHA-256을 임시 보존한다. offset을 포함한 영속 cache 크기가 128 MiB 이하일 때만 split별 연속 int32 input/label과 int64 offsets, 총 6개 tensor를 정확한 크기로 할당한다. 2차 tokenization 값이 1차 SHA와 같을 때만 buffer를 채운다. 이후 학습·validation은 sampler index로 cache를 조회해 long tensor로 패딩하므로 반복 tokenization이 없다. cap 초과나 동일 길이 값 변조는 cache 할당·sampler 진행 전에 실패한다.
+
+실제 public+v5 pilot mix preflight는 4,732행, 3,435,621 token, 영속 storage 27,522,840 bytes로 통과했다. CPU 실행은 28.88초, 최대 RSS 3,062,108 KiB였으며 4행 batch 100회 micro benchmark에서 cache batch 준비 0.00696초, 기존 재-tokenization 경로 0.38310초로 약 55배였다. 이는 batch 준비만의 수치이며 GPU 학습 전체 속도 향상을 같은 배수로 해석하지 않는다.
 
 ## 시작 checkpoint 선택
 

@@ -8,12 +8,13 @@ import numpy as np
 import pytest
 import torch
 import yaml
+from tokenizers import Tokenizer
 from tokenizers.trainers import BpeTrainer
 from typer.testing import CliRunner
 
 from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
 from llmex.chat.runtime import SFTTrainer, evaluate_chat, generate_chat, preflight_sft
-from llmex.chat.template import tokenize_chat
+from llmex.chat.template import TokenizedChat, tokenize_chat
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
 from llmex.errors import ConfigError, ConflictError, InputError, IntegrityError
@@ -190,6 +191,27 @@ def test_sft_preflight_baseline은_결정적이고_상태와_파일을_남기지
     heldout = cast(dict[str, object], first["heldout"])
     assert train["rows"] == 2
     assert heldout["rows"] == 1
+    cache = cast(dict[str, object], first["token_cache"])
+    cache_train = cast(dict[str, int], cache["train"])
+    cache_heldout = cast(dict[str, int], cache["heldout"])
+    cache_total = cast(dict[str, int], cache["total"])
+    assert cache["storage_dtype"] == "int32"
+    assert cache["offset_dtype"] == "int64"
+    assert cache["persistent_tensor_objects"] == 6
+    assert cache_train["rows"] == 2
+    assert cache_heldout["rows"] == 1
+    assert cache_total["rows"] == 3
+    assert cache_total["tokens"] == cache_train["tokens"] + cache_heldout["tokens"]
+    for split in (cache_train, cache_heldout):
+        assert split["input_bytes"] == split["tokens"] * 4
+        assert split["label_bytes"] == split["tokens"] * 4
+        assert split["offset_bytes"] == (split["rows"] + 1) * 8
+        assert split["bytes"] == (
+            split["input_bytes"] + split["label_bytes"] + split["offset_bytes"]
+        )
+    for key in ("input_bytes", "label_bytes", "offset_bytes", "bytes"):
+        assert cache_total[key] == cache_train[key] + cache_heldout[key]
+    assert cache_total["bytes"] <= cast(int, cache["cap_bytes"])
     assert first["expected_effective_batch_size"] == 1
     assert first["baseline_measured"] is True
     baseline = cast(dict[str, float | int], first["baseline"])
@@ -424,6 +446,143 @@ def test_sft_gradient_accumulation_matches_large_batch(tmp_path: Path) -> None:
         accumulated_trainer.model.parameters(), large_batch_trainer.model.parameters(), strict=True
     ):
         assert torch.allclose(accumulated_parameter, large_parameter, atol=1e-6, rtol=1e-6)
+
+
+def test_sft는_초기_검증_tokenization을_cache하고_학습에서_재사용한다(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import llmex.chat.runtime as runtime
+
+    config = _config(tmp_path)
+    original = runtime.tokenize_chat
+    calls: list[tuple[tuple[Message, ...], int]] = []
+
+    def counted_tokenize_chat(
+        tokenizer: Tokenizer,
+        messages: tuple[Message, ...],
+        *,
+        max_length: int,
+    ) -> TokenizedChat:
+        calls.append((messages, max_length))
+        return original(tokenizer, messages, max_length=max_length)
+
+    monkeypatch.setattr(runtime, "tokenize_chat", counted_tokenize_chat)
+    trainer = SFTTrainer(config)
+    expected_calls = 2 * (len(trainer.train_data.examples) + len(trainer.heldout_data.examples))
+    assert len(calls) == expected_calls
+    assert all(max_length == 10**9 for _messages, max_length in calls)
+    assert trainer.train_tokenized is not trainer.heldout_tokenized
+    persistent_tensors: list[torch.Tensor] = []
+    for cache, dataset in (
+        (trainer.train_tokenized, trainer.train_data),
+        (trainer.heldout_tokenized, trainer.heldout_data),
+    ):
+        persistent_tensors.extend((cache.input_ids, cache.labels, cache.offsets))
+        assert cache.input_ids.dtype == torch.int32
+        assert cache.labels.dtype == torch.int32
+        assert cache.offsets.dtype == torch.int64
+        assert cache.input_ids.device.type == "cpu"
+        assert cache.labels.device.type == "cpu"
+        assert cache.offsets.device.type == "cpu"
+        assert cache.input_ids.is_contiguous()
+        assert cache.labels.is_contiguous()
+        assert cache.offsets.is_contiguous()
+        assert cache.offsets.tolist()[0] == 0
+        assert cache.offsets.tolist()[-1] == cache.input_ids.numel()
+        for index, example in enumerate(dataset.examples):
+            source = original(trainer.tokenizer, example.messages, max_length=10**9)
+            start = int(cache.offsets[index])
+            end = int(cache.offsets[index + 1])
+            assert cache.input_ids[start:end].tolist() == list(source.input_ids)
+            assert cache.labels[start:end].tolist() == list(source.labels)
+            assert end - start <= config.sequence_length
+            assert bool(torch.any(cache.labels[start + 1 : end] != -100))
+    assert len({id(tensor) for tensor in persistent_tensors}) == 6
+
+    indices = [1, 0]
+    cached_batch = runtime._batch_cached(trainer.train_tokenized, indices)
+    monkeypatch.setattr(runtime, "tokenize_chat", original)
+    original_batch = runtime._batch(
+        trainer.tokenizer,
+        [trainer.train_data.examples[index] for index in indices],
+        config.sequence_length,
+    )
+    monkeypatch.setattr(runtime, "tokenize_chat", counted_tokenize_chat)
+    assert torch.equal(cached_batch[0], original_batch[0])
+    assert torch.equal(cached_batch[1], original_batch[1])
+
+    fingerprints = dict(trainer.fingerprints)
+    assert trainer.run()["step"] == config.max_steps
+    assert len(calls) == expected_calls
+    assert trainer.fingerprints == fingerprints
+
+
+def test_sft_token_cache는_hard_cap_초과를_sampler전에_거부한다(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import llmex.chat.runtime as runtime
+
+    next_calls = 0
+    original_next = runtime.DeterministicBatchSampler.next
+    allocation_calls = 0
+    original_allocate = runtime._allocate_split_cache
+
+    def counted_next(sampler: DeterministicBatchSampler) -> list[int]:
+        nonlocal next_calls
+        next_calls += 1
+        return original_next(sampler)
+
+    def counted_allocate(rows: int, tokens: int) -> runtime._TokenizedSplitCache:
+        nonlocal allocation_calls
+        allocation_calls += 1
+        return original_allocate(rows, tokens)
+
+    monkeypatch.setattr(runtime, "SFT_TOKEN_CACHE_MAX_BYTES", 1)
+    monkeypatch.setattr(runtime, "_allocate_split_cache", counted_allocate)
+    monkeypatch.setattr(runtime.DeterministicBatchSampler, "next", counted_next)
+    with pytest.raises(IntegrityError, match=r"token cache.*메모리 상한"):
+        SFTTrainer(_config(tmp_path))
+    assert allocation_calls == 0
+    assert next_calls == 0
+
+
+def test_sft_token_cache는_같은_길이의_2차_token_변조를_거부한다(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import llmex.chat.runtime as runtime
+
+    original = runtime.tokenize_chat
+    rows = 3
+    calls = 0
+    next_calls = 0
+    original_next = runtime.DeterministicBatchSampler.next
+
+    def mutable_tokenize_chat(
+        tokenizer: Tokenizer,
+        messages: tuple[Message, ...],
+        *,
+        max_length: int,
+    ) -> TokenizedChat:
+        nonlocal calls
+        calls += 1
+        encoded = original(tokenizer, messages, max_length=max_length)
+        if calls == rows + 1:
+            changed = list(encoded.input_ids)
+            changed[1] += 1
+            return TokenizedChat(tuple(changed), encoded.labels)
+        return encoded
+
+    def counted_next(sampler: DeterministicBatchSampler) -> list[int]:
+        nonlocal next_calls
+        next_calls += 1
+        return original_next(sampler)
+
+    monkeypatch.setattr(runtime, "tokenize_chat", mutable_tokenize_chat)
+    monkeypatch.setattr(runtime.DeterministicBatchSampler, "next", counted_next)
+    with pytest.raises(IntegrityError, match=r"2차 tokenization 값.*1차 검증"):
+        SFTTrainer(_config(tmp_path))
+    assert calls == rows + 1
+    assert next_calls == 0
 
 
 def test_sft_continuous_and_resume_are_deterministic(tmp_path: Path) -> None:

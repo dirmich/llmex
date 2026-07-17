@@ -218,6 +218,8 @@ uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
 run 디렉터리나 파일을 만들지 않고 sampler·RNG·model mode와 deterministic enabled/warn-only·cuDNN 상태를
 보존하며 오류는 실패-폐쇄한다. pilot 뒤 같은 heldout과 평가 설정으로 step-0 결과와 비교한다.
 
+preflight의 `token_cache`에는 split별 rows/tokens/input_bytes/label_bytes/offset_bytes와 total bytes, int32/int64 dtype, 영속 tensor 6개와 완화 불가 128 MiB cap이 나온다. 1차 길이·generation 검증 token SHA와 2차 연속 buffer fill 값이 같아야 하며, 학습·validation은 이 cache를 사용해 반복 tokenization을 하지 않는다. cap 초과는 buffer 할당과 sampler 진행 전에 실패한다.
+
 새 `sft train`은 빈 디렉터리를 포함해 이미 존재하는 `run_dir`를 거부한다. pilot과 full은 같은 100k `latest` base checkpoint를 지정하되 서로 다른 미존재 run 디렉터리를 사용한다. full은 pilot checkpoint를 base나 resume 대상으로 사용하지 않는다. 중단된 동일 run만 `sft resume`으로 이어간다.
 
 ```bash
