@@ -18,7 +18,7 @@ from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
 from llmex.chat.template import render_chat, tokenize_chat
 from llmex.config import SFTConfig
 from llmex.data.io import write_json
-from llmex.errors import IntegrityError, LlmexError
+from llmex.errors import ConflictError, IntegrityError, LlmexError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.model import CausalLM, GenerationConfig
 from llmex.tokenizer.core import SPECIAL_IDS, load_tokenizer
@@ -57,6 +57,11 @@ def _datasets(config: SFTConfig) -> tuple[ChatDataset, ChatDataset]:
     if train_sources & heldout_sources:
         raise IntegrityError("train/heldout provenance source identity 누출을 발견했습니다")
     return train, heldout
+
+
+def _require_fresh_run_dir(run_dir: Path) -> None:
+    if run_dir.exists():
+        raise ConflictError("새 SFT 학습 run_dir는 존재하지 않는 별도 경로여야 합니다")
 
 
 def _release_policy(
@@ -423,6 +428,7 @@ class SFTTrainer:
         self.best_validation_loss = math.inf
         self.validation_batches_seen = 0
         self.run_dir = config.run_dir
+        self._resumed = False
 
     def _validate_runtime_lengths(self) -> None:
         for dataset_name, dataset in (
@@ -595,11 +601,13 @@ class SFTTrainer:
             required_state=SFT_CHECKPOINT_REQUIRED_STATE,
         )
         self._restore(checkpoint)
+        self._resumed = True
 
     def restore_checkpoint(self, checkpoint: Mapping[str, Any]) -> None:
         """경로 외부에서 strict 검증을 마친 checkpoint snapshot을 복원한다."""
 
         self._restore(checkpoint)
+        self._resumed = True
 
     def _metric(self, event: dict[str, object]) -> None:
         with (self.run_dir / "metrics.jsonl").open("a", encoding="utf-8") as stream:
@@ -661,7 +669,16 @@ class SFTTrainer:
         target_step = self.config.max_steps
         if stop_after_steps is not None:
             target_step = min(target_step, self.step + stop_after_steps)
-        self.run_dir.mkdir(parents=True, exist_ok=True)
+        if self._resumed:
+            self.run_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            _require_fresh_run_dir(self.run_dir)
+            try:
+                self.run_dir.mkdir(parents=True, exist_ok=False)
+            except FileExistsError as exc:
+                raise ConflictError(
+                    "새 SFT 학습 run_dir는 존재하지 않는 별도 경로여야 합니다"
+                ) from exc
         write_json(self.run_dir / "resolved-config.json", self.config.model_dump(mode="json"))
         write_json(
             self.run_dir / "data-manifest.json",
@@ -759,6 +776,8 @@ class SFTTrainer:
 
 
 def train_sft(config: SFTConfig, *, resume: Path | None = None) -> dict[str, object]:
+    if resume is None:
+        _require_fresh_run_dir(config.run_dir)
     trainer = SFTTrainer(config)
     if resume is not None:
         trainer.resume(resume)

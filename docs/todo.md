@@ -1,8 +1,14 @@
 # LLMEX 개발 TODO
 
-## 1.9.2 행별 원천 결속 완료 및 정식 teacher 수집 진행
+## 1.9.3 fresh SFT 실행 경계 완료 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] 새 `sft train`의 기존 빈/비어있지 않은/완료 run 디렉터리 실패-폐쇄
+- [x] trainer 생성 전 선검사와 실제 `mkdir` 시점 경합 안전 원자 선점
+- [x] 기존 사용자 파일·checkpoint 무변경과 strict resume 전용 기존 run 연속 기록
+- [x] 동일 baseline base에서 pilot/full 별도 fresh run 시작 회귀
+- [x] 전체 162 tests, Ruff, format, Pyright, diff 검사 통과
 
 - [x] source SHA → 명시 source ID → 입력 원행 SHA의 source identity 우선순위
 - [x] 기존 provenance를 덮어쓰지 않는 mix 출력 원행 SHA/ID 계승

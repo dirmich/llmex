@@ -16,7 +16,7 @@ from llmex.chat.runtime import SFTTrainer, evaluate_chat, generate_chat, preflig
 from llmex.chat.template import tokenize_chat
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
-from llmex.errors import ConfigError, InputError, IntegrityError
+from llmex.errors import ConfigError, ConflictError, InputError, IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
 from llmex.train.checkpoint import load_checkpoint, save_checkpoint
@@ -446,6 +446,76 @@ def test_sft_continuous_and_resume_are_deterministic(tmp_path: Path) -> None:
         continuous_trainer.model.parameters(), resumed_trainer.model.parameters(), strict=True
     ):
         assert torch.equal(continuous_parameter, resumed_parameter)
+
+
+def test_sft_fresh_run은_기존_run_dir를_거부하고_resume만_계속_사용한다(
+    tmp_path: Path,
+) -> None:
+    empty = _config(tmp_path / "empty")
+    empty.run_dir.mkdir(parents=True)
+    with pytest.raises(ConflictError, match="존재하지 않는 별도 경로"):
+        SFTTrainer(empty).run()
+    assert not list(empty.run_dir.iterdir())
+
+    nonempty = _config(tmp_path / "nonempty")
+    nonempty.run_dir.mkdir(parents=True)
+    sentinel = nonempty.run_dir / "사용자-파일.txt"
+    sentinel.write_text("보존", encoding="utf-8")
+    with pytest.raises(ConflictError, match="존재하지 않는 별도 경로"):
+        SFTTrainer(nonempty).run()
+    assert sentinel.read_text(encoding="utf-8") == "보존"
+    assert list(nonempty.run_dir.iterdir()) == [sentinel]
+
+    staged = _config(tmp_path / "staged-fresh", max_steps=2)
+    first = SFTTrainer(staged)
+    first.run(stop_after_steps=1)
+    checkpoint = staged.run_dir / "checkpoints/latest.pt"
+    before = checkpoint.read_bytes()
+    with pytest.raises(ConflictError, match="존재하지 않는 별도 경로"):
+        SFTTrainer(staged).run()
+    assert checkpoint.read_bytes() == before
+
+    resumed = SFTTrainer(staged)
+    resumed.resume(checkpoint)
+    assert resumed.run()["step"] == 2
+
+    config_path = tmp_path / "fresh-contract.yaml"
+    config_path.write_text(
+        yaml.safe_dump(staged.model_dump(mode="json"), allow_unicode=True), encoding="utf-8"
+    )
+    runner = CliRunner()
+    fresh_cli = runner.invoke(app, ["sft", "train", "--config", str(config_path)])
+    assert fresh_cli.exit_code != 0
+    assert "존재하지 않는 별도 경로" in fresh_cli.stderr
+    resume_cli = runner.invoke(app, ["sft", "resume", "--config", str(config_path)])
+    assert resume_cli.exit_code == 0
+
+
+def test_sft_pilot과_full은_동일_base에서_서로_다른_fresh_run을_시작한다(
+    tmp_path: Path,
+) -> None:
+    baseline_config = _config(tmp_path / "baseline")
+    baseline = SFTTrainer(baseline_config)
+    for parameter in baseline.model.parameters():
+        parameter.data.fill_(0.0625)
+    base_checkpoint = baseline.save()
+    expected_sha = sha256_file(base_checkpoint)
+
+    pilot_config = baseline_config.model_copy(
+        update={"base_checkpoint": base_checkpoint, "run_dir": tmp_path / "pilot-run"}
+    )
+    full_config = baseline_config.model_copy(
+        update={"base_checkpoint": base_checkpoint, "run_dir": tmp_path / "full-run"}
+    )
+    assert SFTTrainer(pilot_config).run()["step"] == 1
+    assert SFTTrainer(full_config).run()["step"] == 1
+    assert pilot_config.run_dir != full_config.run_dir
+    for config in (pilot_config, full_config):
+        manifest = json.loads((config.run_dir / "data-manifest.json").read_text())
+        assert manifest["base_checkpoint"]["sha256"] == expected_sha
+
+    with pytest.raises(ConflictError, match="존재하지 않는 별도 경로"):
+        SFTTrainer(pilot_config).run()
 
 
 def test_sft_validation_uses_same_fixed_subset_every_time(tmp_path: Path) -> None:

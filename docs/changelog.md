@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.3 - 2026-07-18
+
+- 새 `sft train`이 빈 디렉터리를 포함한 모든 기존 run 경로를 실패-폐쇄하고 과거 파일·checkpoint를 보존하도록 했다.
+- trainer 초기화 전 선검사와 쓰기 직전 배타 `mkdir`로 동시 fresh 실행에서 정확히 하나만 경로를 선점한다.
+- strict checkpoint 복원에 성공한 resume/restore만 기존 run을 이어가며, 동일 baseline에서 pilot/full 별도 fresh run을 시작하는 계약을 회귀로 고정했다.
+- 실행 가이드와 모듈별 SFT 교재에 pilot/full 분리, 약 3 epoch step 계산과 중단 복구 명령을 동기화했다.
+- 전체 162 tests, Ruff, Pyright와 독립 2-thread 경합 재검토 `APPROVE`를 통과했다.
+
 ## 1.9.2 - 2026-07-18
 
 - 공개 행에 source identity가 없을 때 dataset/source 전체를 하나로 묶던 혼합 결함을 교정했다. `source_sha256 → 명시 source_id → 검증된 입력 행 SHA` 순서로 원행을 결속한다.

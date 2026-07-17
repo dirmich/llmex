@@ -218,6 +218,18 @@ uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
 run 디렉터리나 파일을 만들지 않고 sampler·RNG·model mode와 deterministic enabled/warn-only·cuDNN 상태를
 보존하며 오류는 실패-폐쇄한다. pilot 뒤 같은 heldout과 평가 설정으로 step-0 결과와 비교한다.
 
+새 `sft train`은 빈 디렉터리를 포함해 이미 존재하는 `run_dir`를 거부한다. pilot과 full은 같은 100k `latest` base checkpoint를 지정하되 서로 다른 미존재 run 디렉터리를 사용한다. full은 pilot checkpoint를 base나 resume 대상으로 사용하지 않는다. 중단된 동일 run만 `sft resume`으로 이어간다.
+
+```bash
+test ! -e runs/sft-qwen36mtp-v5-pilot
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-pilot.yaml
+
+test ! -e runs/sft-qwen36mtp-v5-full
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-full.yaml
+```
+
+최종 mix train 행 수가 `N`, micro batch가 4, accumulation이 16이면 full의 약 3 epoch 시작값은 `ceil(3 × floor(N / 4) / 16)` step이다. sampler가 epoch tail을 버리므로 정확히 3 epoch라고 표현하지 않으며, pilot의 실제 step 시간과 GPU 사용률로 최종 예산을 확정한다.
+
 ## 11. 자동 대화 품질 gate
 
 pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite SHA-256을 먼저 고정한다. suite는 repository의 `data/evaluation/ko-chat-quality-v1.jsonl`이며 MIT 24 scenarios·27 unique turns다. 공개 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다. 품질 설정 파일에는 `SFTQualityConfig`의 모든 필드와 SHA를 기록하고 SFT 설정은 `deterministic: true`로 유지한다.

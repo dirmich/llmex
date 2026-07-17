@@ -1,5 +1,25 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.3 fresh SFT 실행 경계
+
+### 새 학습과 재개의 권한 분리
+
+- `sft train`과 public `train_sft(..., resume=None)`은 trainer를 초기화하기 전에 `run_dir`가 존재하는지 검사한다. 빈 디렉터리, 사용자 파일이 있는 디렉터리, pilot·완료 run을 모두 실패-폐쇄해 과거 산출물을 덮어쓰지 않는다.
+- 직접 `SFTTrainer.run()`을 호출하는 경로도 쓰기 직전에 같은 검사를 반복하고 `mkdir(parents=True, exist_ok=False)`로 경합 승자를 원자적으로 결정한다. 독립 2-thread probe에서 정확히 한 run만 성공하고 다른 하나는 쓰기 전에 `ConflictError`로 종료했다.
+- checkpoint의 전체 fingerprint·optimizer·scheduler·sampler·RNG·precision·release 상태를 strict 복원한 `resume` 또는 `restore_checkpoint`만 기존 run 디렉터리에 계속 기록할 권한을 얻는다. 복원 실패는 이 권한을 만들지 않는다.
+- 외부 base checkpoint에서 새 run을 만드는 기존 기능은 유지한다. pilot과 full은 동일한 100k `latest` SHA에 결속하되 서로 다른 미존재 run 디렉터리에서 각각 step 0부터 시작하며, full은 pilot checkpoint를 이어받지 않는다.
+
+### 정식 학습 계획과 교재 동기화
+
+- `docs/chat-sft.md`, `docs/run-guide.md`와 모듈별 교재 11장에 fresh train/resume 명령 경계와 pilot/full 분리를 추가했다.
+- 최종 mix train 행 수 `N`, micro batch 4, accumulation 16의 약 3 epoch 시작값을 `ceil(3 × floor(N / 4) / 16)`으로 기록했다. sampler가 epoch tail을 버리므로 정확한 3 epoch로 주장하지 않고 pilot 실측 시간·loss·GPU 사용률로 full 예산을 확정한다.
+- 정식 qwen36mtp v5 수집은 계속 진행 중이며 GPU는 teacher에만 사용한다. 완료 후 export/validate와 실제 mix 행 수를 확정해야 production pilot/full YAML을 만들 수 있다.
+
+### 검증
+
+- 기존 빈/비어있지 않은/완료 run 거부와 파일 byte 보존, CLI train 실패/resume 성공, 외부 checkpoint에서 서로 다른 fresh pilot/full 시작, preflight 무출력을 회귀로 고정했다.
+- 전체 162 tests, Ruff lint/format, Pyright strict와 `git diff --check`를 통과했다. 독립 code review는 19개 표적 테스트와 별도 2-thread 경합 probe 후 HIGH/MEDIUM 없이 `APPROVE`했다.
+
 ## 2026-07-18 · 1.9.2 공개 원행과 teacher provenance 결속 교정
 
 ### 실제 혼합 사전검증에서 발견한 원행 붕괴
