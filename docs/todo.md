@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.9.6 SFT checkpoint 중복 저장 제거 및 정식 teacher 수집 진행
+## 1.9.7 정식 teacher·mix·100-step pilot 완료
 
 ### 완료
 
@@ -133,13 +133,13 @@
 ### 다음 계획
 
 1. [x] SFT engine 강화
-2. [ ] 정식 v5 run에서 teacher 10k collect/resume 완료 여부를 `distill status`로 확인
-3. [ ] current spool export/validate 뒤 teacher manifest SHA-256 고정
-4. [ ] 실제 export 경로를 사용하는 mix config와 pilot/full SFT config 작성
-5. [ ] preflight-mix → prepare-mix → validate-mix 통과
-6. [ ] `sft preflight --measure-baseline`으로 step-0 기준선과 실제 초기화 검증
-7. [ ] 별도 pilot 뒤 같은 heldout·설정으로 step-0 대비 평가
-8. [ ] pilot gate 통과 뒤 fresh full SFT와 best/latest 비교
+2. [x] 정식 v5 10k collect 완료: accepted 9,712/rejected 288
+3. [x] export/validate와 teacher manifest SHA-256 고정
+4. [x] 실제 export 경로를 사용하는 mix·pilot SFT config 작성
+5. [x] preflight-mix → prepare-mix → validate-mix 통과
+6. [x] `sft preflight --measure-baseline` step-0 loss 2.895133/PPL 18.0859
+7. [x] 100-step pilot validation loss 2.392192/PPL 10.9374, safety 통과·EOS/반복 실패
+8. [ ] fresh full SFT와 best/latest 비교 후 자동 품질 gate 통과
 9. [x] SHA 고정 대화/EOS/repetition/safety 자동 gate 구현
 10. [x] 1.8.1 수동 blind review·응답 hash 결속·독립 승인 gate 구현
 11. [ ] 실제 best/latest에 자동·수동 gate 실행 및 semantic paraphrase contamination 감사

@@ -1,6 +1,6 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.9.6의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 현재 정식 실행은 `configs/distill/qwen36mtp-10k.yaml`, teacher는 `http://localhost:8081/v1`의 `qwen36mtp`, run은 `runs/distill/qwen36mtp-10k-v5`다. v5 30건 pilot은 전체 단계를 통과했고 정식 inventory 10,000건 수집은 진행 중이다. 변하는 완료 건수는 문서에 고정하지 않고 `distill status`로 확인한다.
+LLMEX 1.9.7의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이다.
 
 teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation` 내부 전용이다. export manifest는 `redistribution_allowed=false`, `release_gate=blocked`를 강제한다. 수집 성공이나 휴리스틱 필터 통과는 최종 안전성·법무·공개 승인이 아니다.
 
@@ -83,7 +83,7 @@ uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml
 - inventory SHA-256: `b6a02b20b76f698a7b292b54faf5c46c65fce246ff2cd79a21be99274bc42ea1`
 - inventory fingerprint: `46248ba32985f7102a4d401dfa019c43884011c7fb080014d6888e8e20593e7b`
 - config fingerprint: `4a3eea14ca4a5bf43eea8c0302043a13da8ea848f4c757b6375637363417bb9d`
-- 현재 status: 정식 수집 진행 중이며 completed/pending/progress는 아래 `distill status` 명령으로 확인
+- 최종 status: completed 10,000, accepted 9,712, rejected 288, pending 0
 - pilot 실효 RPS 단순 환산 예상 시간: 약 11.3시간. 실제 시간은 teacher 부하, 응답 길이와 retry에 따라 달라질 수 있다.
 
 upstream heldout 630건은 distill heldout에 그대로 보존한다. 나머지는 seed 기반 결정적 분할을 사용하며 train과 heldout의 prompt 및 upstream source가 겹치면 중단한다.
@@ -144,7 +144,7 @@ uv run llmex sft status-mix --help
 uv run llmex sft validate-mix --help
 ```
 
-실제 mix config와 pilot/full config는 export manifest SHA가 확정된 뒤 작성한다. exact canonical prompt가 아닌 semantic paraphrase 누출은 contamination 검사와 수동 감사에서 별도로 판정한다.
+정식 teacher manifest SHA는 `6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d`다. `configs/sft/qwen36mtp-v5-mix.yaml`의 재유도 검증 결과는 train 8,746/heldout 1,498행, mix manifest SHA `278dbc6684943d30f7ea5b3590a5619d59bb9ea21aff31bb53057cdc4a4c164c`다. exact canonical prompt가 아닌 semantic paraphrase 누출은 contamination 검사와 수동 감사에서 별도로 판정한다.
 
 ## 네트워크·비밀정보 안전 경계
 
@@ -159,8 +159,7 @@ uv run llmex sft validate-mix --help
 
 저장소 외부 운영 참고 문서 `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 확정 결정, 품질 gate와 100M baseline 이후 순서를 참고했다. 실패 run과 산출물을 덮어쓰지 않고 별도 세대로 보존하며 secret이나 개인 절대경로는 기록하지 않는다.
 
-1. 현재 정식 v5 run에서 실제 10,000건을 `collect`/`resume`한다.
-2. 완료 뒤 `export`와 `validate`를 통과시키고 manifest·checksum·거부 사유 분포를 보존한다.
-3. teacher manifest SHA를 pin한 mix config와 별도 pilot/full SFT config를 작성한다.
-4. `preflight-mix → prepare-mix → validate-mix`를 통과한 뒤 100k latest base에서 별도 pilot을 실행한다.
-5. pilot gate 통과 뒤 fresh full SFT를 실행하고 자동 대화 품질 gate를 통과시킨 뒤 1.8.1의 최소 100개 blind template으로 독립 quality·safety 사람 검토를 실행한다. 수동 gate 코드는 구현됐지만 실제 모델 검토는 아직 미실행이다. step-0 loss 별도 평가는 아직 설계 대기다.
+1. 완료된 정식 export와 mix manifest SHA를 변경하지 않는다.
+2. EOS·반복 smoke에 실패한 100-step pilot을 full 결과로 오인하지 않는다.
+3. 동일 100k latest에서 fresh full SFT를 수행하고 best/latest를 비교한다.
+4. 자동 대화 품질 gate 통과 뒤 최소 100개 blind template으로 독립 quality·safety 사람 검토를 실행한다. 수동 gate 코드는 구현됐지만 실제 모델 검토는 아직 미실행이다.

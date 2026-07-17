@@ -1,5 +1,20 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.7 정식 teacher·mix·100-step pilot
+
+### 정식 증류와 비누출 혼합 완료
+
+- `qwen36mtp-10k-v5` inventory 10,000건을 모두 처리해 accepted 9,712/rejected 288, pending/incomplete 0으로 마감했다. 거부는 finish reason 68, length 217, prompt copy 3건이다.
+- export train 8,213/heldout 1,488행, canonical response duplicate 11건을 기록했다. `distill validate`는 current spool에서 byte를 다시 유도해 prompt/source overlap 0, 내부 전용 release blocked를 확인했다. teacher manifest SHA-256은 `6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d`다.
+- 공개+teacher 16,554개 입력을 결정적으로 필터링해 train 8,746/heldout 1,498행을 만들었다. mix 재유도 검증과 release blocked를 확인했고 manifest SHA-256은 `278dbc6684943d30f7ea5b3590a5619d59bb9ea21aff31bb53057cdc4a4c164c`다.
+
+### 100M latest 기반 실제 CUDA pilot
+
+- `configs/sft/qwen36mtp-v5-pilot.yaml`은 baseline 100k latest SHA `dae1b01b...e53b33`, mix manifest SHA와 CUDA bf16, sequence 1,024, micro batch 4, accumulation 16을 고정한다. preflight는 87,804,672 parameters와 10,244행·3,539,593 token·28,398,712-byte 연속 cache를 검증했다.
+- step-0 고정 heldout 21,342 target tokens는 loss 2.895133/PPL 18.0859였다. fresh 100-step pilot은 final train loss 2.220718, best/final validation loss 2.392192/PPL 10.9374로 개선됐고 best/latest/final SHA가 일치했다.
+- 100개 heldout 생성 smoke는 assistant NLL 2.482867/PPL 11.9756, safety 통과였지만 EOS와 repetition은 실패했다. 반복·환각 응답이 다수이므로 대화 가능으로 승인하지 않고 약 3 epoch fresh full SFT와 자동·수동 품질 gate를 계속한다.
+- teacher export와 공개+teacher mix 재유도 검증, 두 SFT 설정 검증, 전체 `166 passed`, Ruff lint/69파일 format, Pyright strict 오류 0, release audit와 `git diff --check`를 통과했다.
+
 ## 2026-07-18 · 1.9.6 SFT step별 단일 checkpoint 저장
 
 ### 중복 대용량 쓰기 제거

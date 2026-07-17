@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.7 - 2026-07-18
+
+- qwen36mtp v5 10,000건을 accepted 9,712/rejected 288로 수집 완료하고 export 재유도 검증을 통과했다.
+- teacher export 9,701행과 공개 데이터를 누출 없이 혼합해 train 8,746/heldout 1,498행을 확정했다.
+- 100M latest 기반 CUDA bf16 pilot preflight에서 87,804,672 parameters와 28,398,712-byte token cache를 검증했다.
+- 100-step pilot은 step-0 PPL 18.0859를 10.9374까지 낮췄으나 100개 생성 smoke의 EOS·반복 gate는 실패했고 safety는 통과했다.
+- pilot을 대화 가능 모델로 승인하지 않고 fresh full SFT와 자동·수동 품질 평가를 후속으로 유지한다.
+
 ## 1.9.6 - 2026-07-18
 
 - 같은 SFT optimizer step의 validation best, checkpoint interval과 final/stop-after 저장 요청을 한 번으로 합쳤다.

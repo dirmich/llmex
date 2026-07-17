@@ -1,0 +1,16 @@
+schema_version: 1
+name: qwen36mtp-v5-public-teacher-mix
+seed: 42
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+public_train_data: data/chat/public/korean-instruction-v1/data/train.jsonl
+public_heldout_data: data/chat/public/korean-instruction-v1/data/heldout.jsonl
+teacher_train_data: runs/distill/qwen36mtp-10k-v5/export/train.jsonl
+teacher_heldout_data: runs/distill/qwen36mtp-10k-v5/export/heldout.jsonl
+teacher_manifest: runs/distill/qwen36mtp-10k-v5/export/manifest.json
+expected_teacher_manifest_sha256: 6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d
+output_dir: data/chat/ko-public-teacher-v5
+allowed_licenses:
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Distillation
+max_seq_len: 1024
+generation_reserve_tokens: 128

@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.6는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, fresh SFT 실행 경계, 상한이 있는 token cache, step별 단일 checkpoint 저장, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
+LLMEX 1.9.7은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 v5 export와 mix 검증, 100M latest 기반 100-step pilot을 완료했지만 pilot은 EOS·반복 smoke를 통과하지 못했다. 이는 fresh full SFT와 실제 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -39,7 +39,7 @@ uv run llmex sft validate-mix --help
 
 실제 공개 6,853행과 v5 30건 pilot export 사전검증에서 identity 보정 전에는 coarse dataset URL 하나가 heldout source로 예약되어 `input_rows=6,881` 중 train이 25행만 남았다. 보정 후에는 동일 입력에서 `selected_train=4,257`, `selected_heldout=475`가 남고 `heldout_source_from_train` 대량 오제외가 사라졌다. 남은 제외는 길이, 민감 출력, prompt 누출과 실제 source+prompt 중복 규칙에 따른다. 이 pilot 수치는 정식 10k mix의 최종 행 수가 아니다.
 
-정식 v5 export가 완료된 뒤 실제 teacher manifest SHA를 pin한 mix config와 별도 pilot/full SFT config를 작성한다. exact canonical prompt 검사는 의미가 같은 바꿔쓰기까지 판정하지 않으므로 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사 대상이다.
+정식 설정은 `configs/sft/qwen36mtp-v5-mix.yaml`이며 teacher manifest SHA `6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d`를 고정한다. 재유도 검증된 출력은 `data/chat/ko-public-teacher-v5`의 train 8,746/heldout 1,498행이고 mix manifest SHA는 `278dbc6684943d30f7ea5b3590a5619d59bb9ea21aff31bb53057cdc4a4c164c`다. exact canonical prompt 검사는 의미가 같은 바꿔쓰기까지 판정하지 않으므로 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사 대상이다.
 
 ## 실제 SFT preflight와 step-0 baseline
 
@@ -63,7 +63,7 @@ baseline은 매 학습 validation과 같은 seed·고정 subset을 사용한다.
 
 trainer는 전체 길이와 generation gate를 검사하는 1차 tokenization의 input/label SHA-256을 임시 보존한다. offset을 포함한 영속 cache 크기가 128 MiB 이하일 때만 split별 연속 int32 input/label과 int64 offsets, 총 6개 tensor를 정확한 크기로 할당한다. 2차 tokenization 값이 1차 SHA와 같을 때만 buffer를 채운다. 이후 학습·validation은 sampler index로 cache를 조회해 long tensor로 패딩하므로 반복 tokenization이 없다. cap 초과나 동일 길이 값 변조는 cache 할당·sampler 진행 전에 실패한다.
 
-실제 public+v5 pilot mix preflight는 4,732행, 3,435,621 token, 영속 storage 27,522,840 bytes로 통과했다. CPU 실행은 28.88초, 최대 RSS 3,062,108 KiB였으며 4행 batch 100회 micro benchmark에서 cache batch 준비 0.00696초, 기존 재-tokenization 경로 0.38310초로 약 55배였다. 이는 batch 준비만의 수치이며 GPU 학습 전체 속도 향상을 같은 배수로 해석하지 않는다.
+정식 mix preflight는 10,244행, 3,539,593 token, 영속 storage 28,398,712 bytes로 128 MiB 상한을 통과했다. pilot step-0 고정 heldout subset은 21,342 target tokens, loss 2.895133/PPL 18.0859였다. 100-step CUDA bf16 결과는 best/final validation loss 2.392192/PPL 10.9374이고 100개 생성 smoke는 safety 통과, EOS·repetition 실패였다. 이 pilot은 full 진행 근거이지 대화 가능 판정이 아니다.
 
 ## 시작 checkpoint 선택
 

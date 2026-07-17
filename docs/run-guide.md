@@ -180,10 +180,10 @@ uv run llmex distill export --config configs/distill/qwen36mtp-10k.yaml
 uv run llmex distill validate --config configs/distill/qwen36mtp-10k.yaml
 ```
 
-v3 초반 5건은 accepted/rejected 1/4라 안전 중단·보존했고, v4/v4b 교정 뒤 v5 30건 pilot은
-accepted 28건(93.3%)으로 prepare부터 validate까지 통과했다. 정식 `runs/distill/qwen36mtp-10k-v5`는
-현재 수집 중이므로 변하는 completed 수를 문서에 고정하지 않고 위 `distill status` 명령으로 확인한다.
-collect 완료 전에는 정식 export/validate를 완료로 기록하지 않는다.
+v3 초반 5건은 accepted/rejected 1/4라 안전 중단·보존했고, v4/v4b 교정 뒤 정식
+`runs/distill/qwen36mtp-10k-v5`는 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했다.
+export는 train 8,213/heldout 1,488행이며 `distill validate`의 prompt/source overlap은 0이다.
+teacher manifest SHA는 `6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d`다.
 상세 설정, 재개, 보안과 내부 전용 라이선스 경계는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)를 따른다.
 
 ## 10. 공개·teacher SFT mix 준비
@@ -200,17 +200,17 @@ uv run llmex sft status-mix --help
 uv run llmex sft validate-mix --help
 ```
 
-실제 mix config와 pilot/full SFT config는 export가 완료되어 경로와 manifest SHA가 확정된 뒤 만든다.
+실제 mix config는 `configs/sft/qwen36mtp-v5-mix.yaml`, pilot은 `configs/sft/qwen36mtp-v5-pilot.yaml`이다.
 순서는 `preflight-mix → prepare-mix → validate-mix → SFT baseline preflight → 별도 pilot → fresh full`이다. mix manifest의
 `prompt_overlap=0`, `source_sha256_overlap=0`, `release_gate=blocked`를 확인하기 전에는 학습하지 않는다.
 canonical exact prompt 검사는 semantic paraphrase 누출을 판정하지 않으므로 contamination과 수동 감사를 후속 수행한다.
 
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
-export 완료 후 새로 만드는 실제 pilot config로 바꾼다.
+정식 pilot config를 사용한다.
 
 ```bash
-uv run llmex sft preflight --config configs/sft/smoke.yaml --no-measure-baseline
-uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-pilot.yaml --no-measure-baseline
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-pilot.yaml --measure-baseline
 ```
 
 두 명령 모두 실제 data/tokenizer/source manifest/release/길이/base/device/precision과 모델·optimizer 초기화를
