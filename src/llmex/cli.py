@@ -540,6 +540,21 @@ def training_run(
     _training_command(config_path, None, dry_run)
 
 
+@train_app.command("audit")
+def training_audit(
+    config_path: Annotated[Path, typer.Option("--config")],
+) -> None:
+    """완료 step/latest/best checkpoint의 무결성과 모델 유한성을 감사합니다."""
+    try:
+        config = load_yaml(config_path, TrainingConfig)
+        from llmex.train.checkpoint import audit_checkpoints
+
+        result = audit_checkpoints(config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
 @train_app.command("resume")
 def training_resume(
     config_path: Annotated[Path, typer.Option("--config")],

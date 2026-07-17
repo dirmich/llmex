@@ -118,9 +118,22 @@ uv run llmex train resume --config configs/training/smoke.yaml \
 또는 `max_steps`를 늘린 별도 설정을 검증할 때 사용한다. 장기 CUDA 학습은 smoke와 평가가 통과한
 뒤 `uv run llmex train run --config configs/training/baseline-100m.yaml`로 시작한다.
 
-## 7. eval, generate, benchmark
+## 7. 장기 학습 checkpoint audit
 
-평가 설정은 smoke의 best checkpoint, 동일 tokenizer와 shard manifest를 함께 검증한다.
+100k 학습이 끝나면 평가 전에 완료 step, latest, best checkpoint를 엄격히 감사한다. 이 명령은
+각 파일의 SHA-256, schema, config/corpus/model/shards/tokenizer fingerprint, optimizer·scheduler·
+scaler·sampler·RNG 상태와 모델 tensor의 NaN/Inf 부재를 확인한다.
+
+```bash
+uv run llmex train audit --config configs/training/baseline-100m.yaml
+```
+
+audit가 통과해야 checkpoint를 baseline 평가 입력으로 사용한다. 현재 완료 step/latest는 100,000,
+best는 82,000이다.
+
+## 8. baseline eval, generate, benchmark
+
+smoke 평가는 기존 설정을 사용한다.
 
 ```bash
 uv run llmex eval --config configs/evaluation/smoke.yaml
@@ -129,11 +142,25 @@ uv run llmex generate --config configs/evaluation/smoke.yaml \
 uv run llmex benchmark --config configs/evaluation/smoke.yaml
 ```
 
-JSON·Markdown 결과와 checksum manifest는 `runs/smoke/evaluation/`에 생성된다. `eval`은
+100k baseline의 best checkpoint는 다음 명령으로 평가하고 생성한다.
+
+```bash
+uv run llmex eval --config configs/evaluation/baseline-100m.yaml
+uv run llmex generate --config configs/evaluation/baseline-100m.yaml \
+  --prompt "대한민국의 수도는"
+uv run llmex benchmark --config configs/evaluation/baseline-100m.yaml
+```
+
+JSON·Markdown 결과와 checksum manifest는 각 run의 `evaluation/`에 생성된다. `eval`은
 validation/test 손실과 품질 지표, `generate`는 생성 및 오염 지표, `benchmark`는 cache 추론
 latency·처리량과 사용 가능한 경우 CUDA peak memory를 기록한다.
 
-## 8. 실행 전후 점검
+현재 baseline 설정의 `batch_size: 1`, `max_batches: 1` 결과는 실행 경로 확인용이다. canary
+provenance와 corpus 경로를 설정하지 않으면 canary exposure, contamination, long train match는
+미실행이며 최종 gate로 해석하지 않는다. 전체 평가에서는 해당 입력을 설정하고 split 전체,
+생성·암기·오염·수동 품질을 별도로 검증한다.
+
+## 9. 실행 전후 점검
 
 명령 계약은 각 단계의 `--help`로 확인하고 문서 변경 뒤 Markdown 링크와 공백 오류를 검사한다.
 

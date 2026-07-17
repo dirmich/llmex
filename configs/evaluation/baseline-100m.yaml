@@ -1,0 +1,21 @@
+name: baseline-100m
+seed: 42
+checkpoint: runs/baseline-100m/checkpoints/best.pt
+training_config: configs/training/baseline-100m.yaml
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+shards_manifest: artifacts/tokenizers/bpe-16k/shards/manifest.json
+output_dir: runs/baseline-100m/evaluation
+device: cuda
+splits: [validation, test]
+batch_size: 1
+max_batches: 1
+prompts:
+  - 대한민국의 수도는
+max_new_tokens: 32
+temperature: 0.0
+top_k: null
+top_p: 1.0
+repetition_penalty: 1.0
+use_cache: true
+benchmark_warmup: 0
+benchmark_iterations: 1

@@ -20,7 +20,13 @@ from llmex.fingerprint import fingerprint, sha256_file
 from llmex.inference.runtime import resolve_device
 from llmex.model import CausalLM, GenerationConfig
 from llmex.tokenizer.core import SPECIAL_IDS, load_tokenizer
-from llmex.train.checkpoint import load_checkpoint, restore_rng_state, rng_state, save_checkpoint
+from llmex.train.checkpoint import (
+    SFT_CHECKPOINT_REQUIRED_STATE,
+    load_checkpoint,
+    restore_rng_state,
+    rng_state,
+    save_checkpoint,
+)
 from llmex.train.optim import learning_rate, parameter_groups
 
 
@@ -118,7 +124,9 @@ class SFTTrainer:
 
     def resume(self, path: Path | None = None) -> None:
         checkpoint = load_checkpoint(
-            path or self.run_dir / "checkpoints/latest.pt", self.fingerprints
+            path or self.run_dir / "checkpoints/latest.pt",
+            self.fingerprints,
+            required_state=SFT_CHECKPOINT_REQUIRED_STATE,
         )
         self.model.load_state_dict(checkpoint["model"], strict=True)
         self.optimizer.load_state_dict(checkpoint["optimizer"])
@@ -203,7 +211,9 @@ def _load_sft(
 ) -> tuple[CausalLM, Any, ChatDataset, dict[str, str]]:
     train, heldout = _datasets(config)
     fingerprints = _fingerprints(config, train, heldout)
-    payload = load_checkpoint(checkpoint, fingerprints)
+    payload = load_checkpoint(
+        checkpoint, fingerprints, required_state=SFT_CHECKPOINT_REQUIRED_STATE
+    )
     model = CausalLM(config.model).to(resolve_device(config.device))
     model.load_state_dict(payload["model"], strict=True)
     return model.eval(), load_tokenizer(config.tokenizer_dir), heldout, fingerprints

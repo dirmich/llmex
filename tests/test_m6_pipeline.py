@@ -48,7 +48,9 @@ def _repository(tmp_path: Path) -> tuple[Path, Ed25519PrivateKey, str]:
             }
         },
     }
-    (repository / ".llmex/trust-policy.json").write_text(json.dumps(_sign(policy, root_key)))
+    policy_path = repository / ".llmex/trust-policy.json"
+    policy_path.write_text(json.dumps(_sign(policy, root_key)))
+    policy_path.chmod(0o600)
     subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
     subprocess.run(["git", "add", "."], cwd=repository, check=True)
     subprocess.run(

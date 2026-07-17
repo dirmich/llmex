@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.5.2 - 2026-07-17
+
+- 100,000-step CUDA bf16 baseline 학습을 완료하고 best checkpoint를 step 82,000으로 확정했다.
+- 완료 step/latest/best checkpoint의 SHA-256, strict fingerprint, schema, 필수 재개 상태와 NaN/Inf 부재를 검사하는 `llmex train audit` 명령을 추가했다.
+- best checkpoint의 CUDA 1-batch validation/test 평가, cloze와 고정 prompt 생성 결과를 기록하고 corpus/canary 미설정으로 미실행된 항목을 후속 전체 평가 gate와 분리했다.
+- 다음 실행 순서를 SFT engine 강화, teacher 10k pilot, 혼합 SFT, 대화 gate, GGUF/llama.cpp parity로 갱신했다.
+
 ## 1.5.1 - 2026-07-17
 
 - 전체 Wikipedia corpus/tokenizer 실측과 진행 중인 87,804,672-parameter baseline의 기록 시점 snapshot을 문서화했다.

@@ -23,7 +23,7 @@ def test_release_audit_and_artifact_bound_supply_chain(tmp_path: Path) -> None:
     assert audit(ROOT)["판정"] == "통과"
     output = tmp_path / "재현"
     result = bundle(ROOT, output)
-    assert result["버전"] == "1.5.1"
+    assert result["버전"] == "1.5.2"
     artifacts = json.loads((output / "artifact-checksums.json").read_text())["artifacts"]
     provenance = json.loads((output / "provenance.intoto.json").read_text())
     assert {row["digest"]["sha256"] for row in provenance["subject"]} == {
@@ -63,7 +63,9 @@ def make_repository(
         }
     policy: dict[str, object] = {"schema_version": 2, "issuers": policy_issuers}
     (repository / ".llmex").mkdir()
-    (repository / ".llmex/trust-policy.json").write_text(json.dumps(_sign(policy, root)))
+    policy_path = repository / ".llmex/trust-policy.json"
+    policy_path.write_text(json.dumps(_sign(policy, root)))
+    policy_path.chmod(0o600)
     subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
     subprocess.run(["git", "add", ".llmex/trust-policy.json"], cwd=repository, check=True)
     subprocess.run(

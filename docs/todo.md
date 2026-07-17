@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.5.1 전체 Wikipedia baseline 및 대화 실험
+## 1.5.2 전체 Wikipedia baseline 완료 및 후속 평가
 
 ### 완료
 
@@ -12,32 +12,32 @@
 - [x] CarrotAI 50/500/1,000/2,000-step NLL·PPL 기록
 - [x] qwen36mtp teacher 100건(100건 accepted, train/heldout 90/10, repetition 0.121885, 30,547 tokens)과 distill 100-step 결과 기록
 - [x] 실행 성공·safety 통과와 repetition 0.96875/EOS 실패/newline 붕괴 기록
+- [x] 87,804,672 unique parameters, 100,000 steps, 6,547,200,000 tokens의 GB10 CUDA bf16 baseline 학습 완료
+- [x] `train audit`: 완료/latest step 100,000, best step 82,000, SHA-256·strict fingerprint·schema·필수 상태·NaN/Inf 통과
+- [x] CUDA 1-batch baseline: validation PPL 17.4997869, test PPL 3.2870502, cloze 0.5
+- [x] 고정 생성: repetition 0.21875, UTF-8 통과, EOS 미도달
 
-### 진행 중
+### 후속 전체 평가 대기
 
-- [~] 87,804,672 parameters, 100,000 steps, 6,553,600,000 tokens의 GB10 CUDA bf16 baseline 장기 학습
-- [~] 기록 시점 `2026-07-17T02:57:01+09:00`: PID 1082225/1082250, step 89,900, 최신 `step-00089500.pt`
-- [ ] 100k 완료
-- [ ] final eval
+- [ ] canary provenance와 corpus 경로를 설정한 canary exposure·contamination·long train match
+- [ ] 전체 validation/test 및 생성·암기·오염·수동 평가
 - [ ] conversation 검증
 
-### 100k 후 계획
+### 다음 계획
 
-1. [ ] checkpoint integrity
-2. [ ] best/latest eval + generate
-3. [ ] CarrotAI SFT
-4. [ ] teacher 수천~수만 확대
-5. [ ] mixed distill
-6. [ ] conversation/EOS/repetition/safety/manual gate
-7. [ ] 필요 시 DPO
-8. [ ] API packaging
+1. [ ] SFT engine 강화
+2. [ ] teacher 10k pilot
+3. [ ] 공개 instruction + teacher 혼합 SFT
+4. [ ] conversation/EOS/repetition/safety/manual gate
+5. [ ] GGUF 변환과 llama.cpp parity
 
 ## G003 한국어 대화 학습 경로 (1.5.0)
 
 - [x] JSONL provenance/license/행·파일 hash 검증
 - [x] assistant-only SFT masking, base checkpoint 재사용과 원자 재개
 - [x] SFT CLI, heldout safety/repetition/EOS 평가, chat 생성, 합성 CPU 테스트
-- [ ] 전체 Wikipedia baseline, 외부 장기 학습, 독립 안전·법무·공개 승인(별도 gate)
+- [x] 전체 Wikipedia 100k baseline 학습 완료
+- [ ] 전체 baseline 평가, 독립 안전·법무·공개 승인(별도 gate)
 
 ## 1.4.0 차단 해제
 

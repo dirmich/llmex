@@ -1,5 +1,28 @@
 # 구현 이력
 
+## 2026-07-17 · 1.5.2 100k baseline 학습 완료와 checkpoint audit
+
+### 완료: 100k 학습과 checkpoint 감사
+
+- GB10 CUDA bf16 baseline이 100,000 step과 6,547,200,000 token을 완료했다. 모델의 tied embedding을 한 번만 세는 고유 파라미터 수는 87,804,672다.
+- 새 `uv run llmex train audit --config configs/training/baseline-100m.yaml` 명령으로 `step-00100000.pt`, `latest.pt`, `best.pt`를 수정 없이 감사했다. 완료 step과 latest는 100,000이고 validation loss가 가장 낮은 best step은 82,000이다.
+- `step-00100000.pt`와 `latest.pt`의 SHA-256은 모두 `dae1b01b35d4ff0dc32dab464e9d3d286fb885b96fd0a880faf2e2e5e8e53b33`, `best.pt`의 SHA-256은 `56ebbd48905a6eae27348318a6f385de61fe7b36b1e1704fc8dcae6bb95feb3a`다.
+- 세 checkpoint 모두 schema version 1, 현재 config/corpus/model/shards/tokenizer의 strict fingerprint 일치, optimizer/scheduler/scaler/train·validation sampler/RNG/step 필수 상태 존재, scheduler step 일치와 모델 tensor의 NaN/Inf 부재를 통과했다. state dict 원소 합계 100,092,672는 tied embedding이 두 키에 나타난 값이며 고유 파라미터 수와 구분한다.
+
+### 완료: 제한된 baseline 평가와 생성
+
+- `configs/evaluation/baseline-100m.yaml`에서 best checkpoint를 대상으로 CUDA batch size 1, split별 1 batch만 평가했다. validation perplexity는 `17.4997868841064`(요약 `17.4997869`), test perplexity는 `3.2870502053811377`(요약 `3.2870502`)이다. 이 값은 전체 validation/test 집합 평가가 아닌 1-batch 확인 결과다.
+- cloze 2문항 정확도는 `0.5`다. 고정 prompt 생성은 repetition `0.21875`, UTF-8/Unicode 유효성 통과, 32 token 제한 안에서 EOS 미도달이었다. 따라서 기본 추론 경로는 확인했지만 대화 품질이나 EOS gate 통과를 뜻하지 않는다.
+- canary exposure는 canary provenance 파일 미설정, contamination과 long train match는 corpus 경로 미설정으로 미실행이다. 이 세 항목은 이번 제한 평가의 최종 gate가 아니며, 설정을 보완한 전체 validation/test·오염·암기·생성·수동 평가가 후속으로 남아 있다.
+
+### 다음 순서
+
+1. SFT engine의 데이터·재개·평가 계약을 강화한다.
+2. teacher 10k pilot을 수행하고 provenance, hash, train/heldout 비중복과 품질을 검증한다.
+3. 공개 instruction과 승인된 teacher 데이터를 혼합해 SFT한다.
+4. 한국어 대화, EOS, repetition, safety와 수동 품질 gate를 통과시킨다.
+5. GGUF 변환 뒤 llama.cpp와 PyTorch 출력 parity를 검증한다.
+
 ## 2026-07-17 · 1.5.1 전체 Wikipedia baseline 및 대화 실험 기록
 
 ### 완료: 데이터와 tokenizer

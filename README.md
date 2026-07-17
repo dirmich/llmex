@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.5는 날짜가 고정된 한국어 Wikipedia 사전학습과 허가된 JSONL 대화 데이터의 assistant-only SFT를 위한 재현 가능한 교육·연구 도구다. 로컬 계약을 제공하지만 장기 baseline·독립 안전/법무·공개 배포 승인은 대기 중이므로 가중치와 corpus의 외부 공개를 허가하지 않는다.
+LLMEX 1.5는 날짜가 고정된 한국어 Wikipedia 사전학습과 허가된 JSONL 대화 데이터의 assistant-only SFT를 위한 재현 가능한 교육·연구 도구다. 100k baseline 학습은 완료했지만 후속 전체 평가와 독립 안전/법무·공개 배포 승인은 대기 중이므로 가중치와 corpus의 외부 공개를 허가하지 않는다.
 
 ## 빠른 시작
 

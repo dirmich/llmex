@@ -15,6 +15,7 @@ from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
+from llmex.train.checkpoint import load_checkpoint
 
 
 def _tokenizer(path: Path) -> int:
@@ -144,6 +145,8 @@ def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
     result = first.run()
     checkpoint = Path(str(result["checkpoint"]))
     assert checkpoint.is_file() and (config.run_dir / "data-manifest.json").is_file()
+    sft_payload = load_checkpoint(checkpoint, first.fingerprints)
+    assert "validation_sampler" not in sft_payload
     resumed_config = config.model_copy(update={"max_steps": 2})
     resumed = SFTTrainer(resumed_config)
     resumed.resume(config.run_dir / "checkpoints/latest.pt")

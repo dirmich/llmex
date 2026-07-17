@@ -12,7 +12,7 @@ from llmex.errors import ConfigError, IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.model import CausalLM
 from llmex.tokenizer.core import SPECIAL_IDS, load_tokenizer
-from llmex.train.checkpoint import load_checkpoint
+from llmex.train.checkpoint import TRAIN_CHECKPOINT_REQUIRED_STATE, load_checkpoint
 
 
 @dataclass(frozen=True)
@@ -71,7 +71,9 @@ def load_runtime(config: EvaluationConfig) -> LoadedRuntime:
         "model": fingerprint(training.model.model_dump(mode="json")),
         "shards": str(manifest["fingerprint"]),
     }
-    checkpoint = load_checkpoint(config.checkpoint, fingerprints)
+    checkpoint = load_checkpoint(
+        config.checkpoint, fingerprints, required_state=TRAIN_CHECKPOINT_REQUIRED_STATE
+    )
     model = CausalLM(training.model)
     try:
         model.load_state_dict(checkpoint["model"], strict=True)

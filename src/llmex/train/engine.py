@@ -18,9 +18,10 @@ from torch import Tensor
 from llmex.config import TrainingConfig
 from llmex.data.io import write_json
 from llmex.errors import ConfigError, IntegrityError
-from llmex.fingerprint import fingerprint
 from llmex.model import CausalLM, GenerationConfig
 from llmex.train.checkpoint import (
+    TRAIN_CHECKPOINT_REQUIRED_STATE,
+    checkpoint_fingerprints,
     load_checkpoint,
     restore_rng_state,
     rng_state,
@@ -87,13 +88,7 @@ class Trainer:
         self.device = _device(config.device)
         self.precision, self.autocast_dtype, use_scaler = _precision(config.precision, self.device)
         manifest = json.loads(config.shards_manifest.read_text(encoding="utf-8"))
-        self.fingerprints = {
-            "config": fingerprint(config.model_dump(mode="json")),
-            "corpus": fingerprint(manifest["corpus"]),
-            "tokenizer": str(manifest["tokenizer_fingerprint"]),
-            "model": fingerprint(config.model.model_dump(mode="json")),
-            "shards": str(manifest["fingerprint"]),
-        }
+        self.fingerprints = checkpoint_fingerprints(config, manifest)
         if (
             int(manifest.get("splits", {}).get("train", {}).get("tokens", 0))
             <= config.sequence_length
@@ -161,7 +156,11 @@ class Trainer:
         )
 
     def resume(self, path: Path | None = None) -> None:
-        checkpoint = load_checkpoint(path or self.checkpoint_dir / "latest.pt", self.fingerprints)
+        checkpoint = load_checkpoint(
+            path or self.checkpoint_dir / "latest.pt",
+            self.fingerprints,
+            required_state=TRAIN_CHECKPOINT_REQUIRED_STATE,
+        )
         self.model.load_state_dict(checkpoint["model"])
         self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.scaler.load_state_dict(checkpoint["scaler"])
