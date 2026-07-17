@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.8.0 - 2026-07-18
+
+- `sft quality-preflight/eval/status/validate`로 SHA 고정 SFT 설정·schema 2 checkpoint·한국어 suite의 실제 멀티턴 자동 품질 gate를 추가했다.
+- greedy 1회와 sampling 고정 seed 최소 5회에서 EOS/context/max 종료, target-token 가중 heldout NLL/PPL, 정확도·거부·오거부·PII·secret·Unicode·distinct·3회 연속 n-gram loop를 category/profile/seed 최악값으로 판정한다.
+- MIT suite 24 scenarios·27 unique turns와 canonical 162 responses 계획을 고정하고 공개 5,813 unique prompts·teacher inventory 10,000 prompts와 exact overlap 0을 확인했다.
+- release·overlap·deterministic·coverage, lock·staging·manifest-last 원자 publish, pinned snapshot 전체 재유도 검증을 실패-폐쇄한다.
+- teacher judge는 비활성화·향후 advisory-only이며 수동 review/approval gate는 1.8.1로 분리했다.
+- 독립 리뷰 승인과 전체 145 tests 실행 결과를 확인했다. 정식 qwen36mtp v5 수집은 진행 중이다.
+
 ## 1.7.1 - 2026-07-17
 
 - `llmex sft preflight`에 `--measure-baseline/--no-measure-baseline` 선택을 추가해 실제 데이터·tokenizer·source manifest·release·길이·base checkpoint·device·precision과 모델/optimizer 초기화를 검증한다.

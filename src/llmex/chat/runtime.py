@@ -596,6 +596,11 @@ class SFTTrainer:
         )
         self._restore(checkpoint)
 
+    def restore_checkpoint(self, checkpoint: Mapping[str, Any]) -> None:
+        """경로 외부에서 strict 검증을 마친 checkpoint snapshot을 복원한다."""
+
+        self._restore(checkpoint)
+
     def _metric(self, event: dict[str, object]) -> None:
         with (self.run_dir / "metrics.jsonl").open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")

@@ -171,10 +171,30 @@ def _load_checkpoint_snapshot(
     supported_schema_versions: Collection[int],
 ) -> _CheckpointSnapshot:
     data = _read_immutable_bytes(path)
+    checkpoint = load_checkpoint_bytes(
+        data,
+        expected_fingerprints,
+        supported_schema_versions=supported_schema_versions,
+        required_state=required_state,
+        source=str(path),
+    )
+    return _CheckpointSnapshot(checkpoint, len(data), hashlib.sha256(data).hexdigest())
+
+
+def load_checkpoint_bytes(
+    data: bytes,
+    expected_fingerprints: dict[str, str],
+    *,
+    supported_schema_versions: Collection[int],
+    required_state: Collection[str] = SFT_CHECKPOINT_REQUIRED_STATE,
+    source: str = "checkpoint snapshot",
+) -> dict[str, Any]:
+    """이미 고정한 bytes를 재읽기 없이 안전 역직렬화하고 resume 계약으로 검증한다."""
+
     try:
         value = torch.load(io.BytesIO(data), map_location="cpu", weights_only=True)
     except Exception as exc:
-        raise IntegrityError(f"checkpoint를 읽을 수 없습니다: {path}: {exc}") from exc
+        raise IntegrityError(f"checkpoint를 읽을 수 없습니다: {source}: {exc}") from exc
     if not isinstance(value, dict):
         raise IntegrityError("checkpoint가 매핑이 아닙니다")
     schema_version: object = cast(dict[object, object], value).get("schema_version")
@@ -197,7 +217,7 @@ def _load_checkpoint_snapshot(
     missing = set(required_state) - checkpoint.keys()
     if missing:
         raise IntegrityError(f"checkpoint 필수 상태가 없습니다: {sorted(missing)}")
-    return _CheckpointSnapshot(checkpoint, len(data), hashlib.sha256(data).hexdigest())
+    return checkpoint
 
 
 def load_checkpoint(

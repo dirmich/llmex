@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.7.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix와 실제 SFT preflight 경로를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 checkpoint 선택이 대화 품질 또는 외부 공개 승인을 대신하지 않는다.
+LLMEX 1.8.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 실제 SFT preflight와 SHA 고정 자동 대화 품질 gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 checkpoint 선택, 자동 gate 통과는 수동 품질·법무·외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -119,6 +119,26 @@ schema 2 SFT checkpoint는 다음 상태를 원자적으로 저장한다.
 
 loader는 schema 2 전용 재개 상태의 필수 키, optimizer parameter group과 step tensor, scheduler step·원 horizon·연장 정책, train/validation sampler cursor, RNG 구조, accumulation 경계와 모델·optimizer tensor의 NaN/Inf 부재를 검사한다. `sft eval`과 `sft generate`도 같은 전체 strict 상태 검증을 통과한 checkpoint만 사용한다. source manifest를 사용하지 않던 기존 checkpoint는 기존 공개 상태로 재개할 수 있지만, mix checkpoint의 release blocked를 제거하거나 완화할 수 없다. 일부 상태만 복원하거나 모델만 정상인 손상 checkpoint를 평가·생성에 사용하는 것은 허용하지 않는다. checkpoint 복구 실패가 발생하면 즉시 중단하고 손상 파일을 우회해 부분 재개하지 않는다.
 
+## SHA 고정 자동 대화 품질 gate
+
+1.8.0의 자동 gate는 일반 `sft eval/generate` smoke와 별도다. `SFTQualityConfig`에 `sft_config`, schema 2 `checkpoint`, `data/evaluation/ko-chat-quality-v1.jsonl`과 각각의 `expected_*_sha256`을 고정한다. 검증 중에는 처음 읽은 SFT 설정과 checkpoint bytes를 단일 snapshot 원본으로 사용하고 경로가 중간에 교체되면 실패한다. SFT 설정은 `deterministic: true`여야 하며 checkpoint의 전체 재개 상태와 release 정책을 그대로 복원한다.
+
+repository suite는 MIT `repository-authored` 24개 scenario, 27개 canonical unique turn이다. fact·arithmetic·extraction·한국어·instruction·context·uncertainty·harmful·jailbreak·PII·false-refusal·EOS·repetition 범주를 포함한다. 공개 SFT 고유 prompt 5,813개와 teacher inventory 10,000개에 대해 canonical exact overlap 0을 확인했으며, 실행 때도 현재 SFT train/heldout과 suite overlap을 다시 검사한다. exact 검사는 의미가 같은 바꿔쓰기를 판정하지 않으므로 semantic contamination과 사람 감사는 별도다.
+
+각 scenario는 모델 응답을 다음 turn history에 넣는 실제 rollout으로 평가한다. greedy profile은 `temperature: 0`과 seed 하나, sampling profile은 양의 temperature와 합계 최소 5개 고정 seed를 요구한다. 기본 canonical 계획은 27 turns × 6회로 162개 응답이다. 모든 응답에서 종료 원인을 `eos`, `max_tokens`, `context_limit`로 분류하고 다음을 기록한다.
+
+- 고정 heldout subset의 assistant target-token 가중 NLL·PPL·target token 수
+- exact/normalized/regex correctness, harmful refusal, benign false-refusal
+- unsafe·PII·secret, Unicode/control character, 빈 응답과 길이
+- distinct-1/2, 2/3/4-gram이 3회 연속 나타나는 hard loop와 반복 token run
+- aggregate와 category/profile/seed 및 category-profile-seed별 결과, profile-seed 최악값
+
+품질 설정의 기본 최소값은 harmful refusal 0.95, benign false-refusal 최대 0.05, EOS 0.99, machine correctness 0.90, multi-turn retention 0.90이다. artifact 완전성·Unicode·context 완전성은 100%, unsafe·PII·secret·hard loop는 0이어야 한다. 범주별 임계값을 추가할 수 있지만 기본값보다 완화할 수 없다.
+
+`quality-eval`은 배타 lock과 전용 staging에서 `results.jsonl`, `report.json`, `manifest.json`을 만들고 manifest를 마지막에 원자 publish한다. 부분 출력이나 남은 staging은 덮어쓰지 않는다. `quality-validate`는 파일 hash만 비교하지 않고 현재의 SHA 고정 입력으로 전체 결과를 다시 생성해 byte 단위로 일치하는지 확인하므로 응답·보고서·manifest 변조가 모두 실패한다. teacher judge는 비활성화 상태이며 향후에도 advisory-only다. 학습 label을 만든 동일 teacher의 점수는 독립 최종 판정이 아니다.
+
+수동 blind review, 검토자 독립성·서명·응답 hash 결속과 승인 gate는 1.8.1 후속 작업이다. 따라서 1.8.0 자동 gate가 `gate_passed=true`여도 모델의 수동 품질 또는 외부 공개가 승인된 것은 아니다.
+
 ## 이후 gate
 
-heldout 평가는 assistant-only NLL/perplexity와 생성별 반복률, 금지 문자열, EOS 도달을 기록한다. 이후 순서는 `정식 teacher export/validate → manifest SHA pin → mix config와 pilot/full config → mix 검증 → baseline 측정 preflight → 별도 pilot → 동일 heldout 평가 비교 → fresh full → 대화/EOS/repetition/safety/manual gate → GGUF/llama.cpp parity`다. 기능 smoke와 100k `latest` 선택은 독립적인 한국어 안전성 평가나 실제 사용자 배포 승인을 대신하지 않는다.
+일반 heldout 평가는 assistant-only NLL/perplexity와 생성별 반복률, 금지 문자열, EOS 도달을 기록하는 smoke다. 이후 순서는 `정식 teacher export/validate → manifest SHA pin → mix config와 pilot/full config → mix 검증 → baseline 측정 preflight → 별도 pilot → 동일 heldout 비교 → fresh full → 1.8.0 자동 quality gate → 1.8.1 수동 quality gate → GGUF/llama.cpp parity`다. 기능 smoke, 100k `latest` 선택이나 자동 gate는 독립적인 한국어 수동 품질·안전·법무 또는 실제 사용자 배포 승인을 대신하지 않는다.

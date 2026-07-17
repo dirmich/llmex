@@ -7,7 +7,7 @@
 | `config`, `fingerprint`, `run` | 설정·입력·실행 identity |
 | `data`, `tokenizer` | corpus와 token shard 생성 |
 | `model`, `train` | inspect, 학습, 재개, smoke |
-| `sft` | 공개·teacher mix, 실제 SFT preflight, train/resume/eval/generate |
+| `sft` | 공개·teacher mix, 실제 SFT preflight, train/resume/eval/generate, SHA 고정 자동 품질 gate |
 | `eval`, `generate`, `benchmark` | 품질·안전 평가와 추론 |
 | `distill` | teacher preflight/prepare/collect/resume/status/export/validate |
 | `pipeline` | preflight/run/status/drill/export |
@@ -46,3 +46,24 @@ uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
 `--no-measure-baseline`은 실제 data/tokenizer/source manifest/release/length/base/device/precision와 모델·optimizer 초기화까지만 검증한다. 기본값이다. `--measure-baseline`은 같은 검증에 고정 validation subset의 assistant target-token 가중 step-0 loss, perplexity와 target token 수를 추가한다.
 
 성공 결과는 device, precision, `unique_parameter_count`, train/heldout rows·fingerprint·file SHA, 전체 fingerprints, base checkpoint provenance, release 상태, `expected_effective_batch_size`, baseline 측정 여부와 결과를 JSON으로 출력한다. run 디렉터리·sampler·RNG·model mode·deterministic enabled/warn-only·cuDNN 상태는 성공과 오류 모두 변경하지 않으며 입력 또는 초기화 오류는 기존 종료 코드로 실패-폐쇄한다.
+
+## SFT 자동 품질 gate CLI
+
+| 명령 | 계약 |
+|---|---|
+| `llmex sft quality-preflight --config <경로>` | SHA 고정 SFT 설정·schema 2 checkpoint·suite, deterministic/release/overlap/coverage와 decoding 계획을 출력 없이 검사한다. |
+| `llmex sft quality-eval --config <경로>` | 실제 멀티턴 rollout과 고정 decoding matrix를 실행하고 불변 artifact를 원자 publish한다. |
+| `llmex sft quality-status --config <경로>` | 출력이 없으면 `pending`, 완전하고 재유도 검증된 출력이면 `ready`를 반환한다. |
+| `llmex sft quality-validate --config <경로>` | 현재 SHA 고정 snapshot에서 결과를 다시 유도해 기존 artifact와 byte 단위로 검증한다. |
+
+```bash
+uv run llmex config validate <quality-config.yaml> --kind sft-quality
+uv run llmex sft quality-preflight --config <quality-config.yaml>
+uv run llmex sft quality-eval --config <quality-config.yaml>
+uv run llmex sft quality-status --config <quality-config.yaml>
+uv run llmex sft quality-validate --config <quality-config.yaml>
+```
+
+설정은 `expected_sft_config_sha256`, `expected_checkpoint_sha256`, `expected_suite_sha256`을 필수로 요구한다. greedy는 temperature 0·seed 하나, sampling은 양의 temperature·합계 최소 5개 고정 seed다. repository suite의 canonical 계획은 24 scenarios·27 turns에 greedy 1회와 sampling 5회를 적용한 162 responses다. 실행 결과는 `output_dir/results.jsonl`, `report.json`, `manifest.json`이며 lock·staging·manifest-last publish와 전체 재유도로 부분 출력·동시 실행·ABA 교체·변조를 실패-폐쇄한다.
+
+`report.json`의 `gate_passed`는 자동 판정일 뿐 수동 품질이나 공개 승인 결과가 아니다. teacher judge는 1.8.0에서 꺼져 있고 향후 advisory-only이며, 수동 review/approval CLI는 1.8.1 범위다.

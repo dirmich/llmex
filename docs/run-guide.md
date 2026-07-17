@@ -218,7 +218,26 @@ uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
 run 디렉터리나 파일을 만들지 않고 sampler·RNG·model mode와 deterministic enabled/warn-only·cuDNN 상태를
 보존하며 오류는 실패-폐쇄한다. pilot 뒤 같은 heldout과 평가 설정으로 step-0 결과와 비교한다.
 
-## 11. 실행 전후 점검
+## 11. 자동 대화 품질 gate
+
+pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite SHA-256을 먼저 고정한다. suite는 repository의 `data/evaluation/ko-chat-quality-v1.jsonl`이며 MIT 24 scenarios·27 unique turns다. 공개 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다. 품질 설정 파일에는 `SFTQualityConfig`의 모든 필드와 SHA를 기록하고 SFT 설정은 `deterministic: true`로 유지한다.
+
+```bash
+sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
+uv run llmex config validate <quality-config.yaml> --kind sft-quality
+uv run llmex sft quality-preflight --config <quality-config.yaml>
+uv run llmex sft quality-eval --config <quality-config.yaml>
+uv run llmex sft quality-status --config <quality-config.yaml>
+uv run llmex sft quality-validate --config <quality-config.yaml>
+```
+
+`quality-preflight` 출력의 scenarios 24, turns 27과 canonical decoding 계획의 planned responses 162를 확인한다. 이 계획은 greedy 1회와 sampling 고정 seed 5회를 각 turn에 적용한다. 모델의 실제 응답을 다음 turn history에 넣으며, EOS·max token·context limit 종료와 weighted heldout NLL/PPL, correctness, harmful refusal, benign false-refusal, PII·secret·Unicode, distinct-1/2, 2/3/4-gram 3회 연속 hard loop를 category/profile/seed 최악값으로 판정한다.
+
+성공 출력은 `<output_dir>/results.jsonl`, `report.json`, `manifest.json`이다. `quality-eval`은 lock·staging을 사용하고 manifest를 마지막에 원자 publish한다. `quality-validate`는 현재 SHA 고정 입력 snapshot에서 전체 평가 결과를 다시 유도해 byte 단위 일치를 확인한다. 부분 출력, 남은 staging, 중간 입력 교체, overlap, release·deterministic·coverage 위반과 artifact 변조는 모두 실패-폐쇄한다.
+
+`gate_passed=true`는 1.8.0 자동 gate만 통과했다는 뜻이다. teacher judge는 비활성화되어 있고 향후에도 참고용이다. blind sample, 독립 검토자와 서명된 수동 승인은 1.8.1에서 구현하므로, 그전에는 대화 가능 모델이나 외부 공개 승인으로 선언하지 않는다.
+
+## 12. 실행 전후 점검
 
 명령 계약은 각 단계의 `--help`로 확인하고 문서 변경 뒤 Markdown 링크와 공백 오류를 검사한다.
 

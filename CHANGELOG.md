@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.8.0 - 2026-07-18
+
+- `sft quality-preflight/eval/status/validate`로 SHA 고정 SFT 설정·schema 2 checkpoint·한국어 suite를 실제 멀티턴 rollout과 greedy+고정 sampling seed로 자동 평가한다.
+- release·overlap·deterministic·coverage를 실패-폐쇄하고 EOS/context/max 종료, target-token 가중 heldout NLL/PPL, 정확도·거부·오거부·PII·secret·Unicode·distinct·3회 연속 n-gram loop를 category/profile/seed 최악값으로 판정한다.
+- MIT `data/evaluation/ko-chat-quality-v1.jsonl` 24 scenarios·27 unique turns를 추가했다. canonical greedy 1회+sampling seed 5회 계획은 162 responses이며 공개 고유 prompt 5,813개·teacher inventory 10,000개와 exact overlap 0이다.
+- lock·staging·manifest-last 원자 publish와 현재 pinned snapshot에서 artifact 전체 재유도로 동시 실행·부분 출력·ABA 교체·변조를 차단한다.
+- teacher judge는 비활성화하고 향후 advisory-only로 제한했다. 독립 수동 review/approval gate는 1.8.1 후속 작업이다.
+- 자동 품질 gate는 독립 검토에서 승인됐고 전체 145 tests를 통과했다. 정식 qwen36mtp v5 수집은 계속 진행 중이다.
+
 ## 1.7.1 - 2026-07-17
 
 - `llmex sft preflight --config ... --measure-baseline|--no-measure-baseline`으로 실제 SFT 전체 초기화와 선택적 step-0 기준선을 출력 생성 없이 검증한다.

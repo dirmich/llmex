@@ -86,6 +86,7 @@ docker-compose.override.yml
 
 # Keep schemas, manifests, fixtures, and selected 0.ref sources tracked.
 !tests/fixtures/**
+!data/evaluation/ko-chat-quality-v1.jsonl
 !**/*.manifest.json
 !**/SHA256SUMS
 !0.ref/**

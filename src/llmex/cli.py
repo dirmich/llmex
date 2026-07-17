@@ -18,6 +18,7 @@ from llmex.config import (
     PipelineConfig,
     SFTConfig,
     SFTMixConfig,
+    SFTQualityConfig,
     StrictModel,
     TokenizerConfig,
     TrainingConfig,
@@ -138,6 +139,7 @@ class ConfigKind(StrEnum):
     PIPELINE = "pipeline"
     SFT = "sft"
     SFT_MIX = "sft-mix"
+    SFT_QUALITY = "sft-quality"
     DISTILLATION = "distillation"
 
 
@@ -156,6 +158,8 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return SFTConfig
     if kind is ConfigKind.SFT_MIX:
         return SFTMixConfig
+    if kind is ConfigKind.SFT_QUALITY:
+        return SFTQualityConfig
     if kind is ConfigKind.DISTILLATION:
         return DistillationConfig
     return ModelConfig
@@ -266,6 +270,52 @@ def sft_status_mix(config_path: Annotated[Path, typer.Option("--config")]) -> No
 def sft_validate_mix(config_path: Annotated[Path, typer.Option("--config")]) -> None:
     """혼합 출력을 현재 입력과 재유도해 실패-폐쇄 검증합니다."""
     _sft_mix_call(config_path, "validate")
+
+
+def _sft_quality_call(config_path: Path, action: str) -> None:
+    try:
+        config = load_yaml(config_path, SFTQualityConfig)
+        from llmex.chat.quality import (
+            preflight_quality,
+            quality_eval,
+            status_quality,
+            validate_quality,
+        )
+
+        operations = {
+            "preflight": preflight_quality,
+            "eval": quality_eval,
+            "status": status_quality,
+            "validate": validate_quality,
+        }
+        result = operations[action](config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@sft_app.command("quality-preflight")
+def sft_quality_preflight(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """고정 suite·checkpoint·SFT 결속과 평가 계획을 검증합니다."""
+    _sft_quality_call(config_path, "preflight")
+
+
+@sft_app.command("quality-eval")
+def sft_quality_eval(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """고정 decoding matrix로 immutable 자동 대화 품질 평가를 실행합니다."""
+    _sft_quality_call(config_path, "eval")
+
+
+@sft_app.command("quality-status")
+def sft_quality_status(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """자동 대화 품질 평가 artifact 상태를 확인합니다."""
+    _sft_quality_call(config_path, "status")
+
+
+@sft_app.command("quality-validate")
+def sft_quality_validate(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """자동 대화 품질 평가 artifact 결속을 검증합니다."""
+    _sft_quality_call(config_path, "validate")
 
 
 def _sft_train(config_path: Path, resume: Path | None, dry_run: bool) -> None:

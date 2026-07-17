@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.7.1 SFT 실제 preflight 완료 및 정식 teacher 수집 진행
+## 1.8.0 자동 대화 품질 gate 완료 및 정식 teacher 수집 진행
 
 ### 완료
 
@@ -59,13 +59,24 @@
 - [x] run 디렉터리·sampler·RNG·model mode·deterministic enabled/warn-only·cuDNN 상태 무변경
 - [x] preflight 입력·초기화·baseline 오류 실패-폐쇄
 - [x] 독립 리뷰 warn-only MEDIUM 수정 후 승인, 전체 137 tests·Ruff·Pyright 통과
+- [x] `sft quality-preflight/eval/status/validate`와 SHA 고정 SFT config/checkpoint/suite snapshot
+- [x] release·overlap·deterministic·coverage 실패-폐쇄와 실제 multi-turn rollout
+- [x] greedy 1회+sampling 고정 seed 최소 5회, canonical 27 turns × 6 = 162 responses
+- [x] EOS/context/max 종료와 target-token 가중 heldout NLL/PPL
+- [x] correctness·refusal·false-refusal·PII·secret·Unicode·distinct·3회 연속 n-gram loop
+- [x] category/profile/seed·최악값 gate와 기본 임계값 완화 금지
+- [x] lock·staging·manifest-last 원자 publish와 pinned snapshot 전체 재유도·변조 차단
+- [x] MIT 한국어 suite 24 scenarios·27 unique turns, 공개 5,813·teacher inventory 10,000 exact overlap 0
+- [x] teacher judge 비활성화 및 향후 advisory-only 정책
+- [x] 자동 품질 gate 독립 리뷰 승인과 전체 145 tests 통과
 - [x] 독립 재검토 승인과 최종 전체 129 tests, Ruff lint/format, Pyright, 참조 코드 checksum·diff 검사
 
 ### 후속 전체 평가 대기
 
 - [ ] canary provenance와 corpus 경로를 설정한 canary exposure·contamination·long train match
-- [ ] 전체 validation/test 및 생성·암기·오염·수동 평가
-- [ ] conversation 검증
+- [ ] 전체 validation/test 및 암기·semantic contamination 평가
+- [ ] 1.8.1 수동 blind review·독립 승인 gate
+- [ ] 실제 학습 checkpoint의 자동·수동 conversation gate 통과
 
 ### 다음 계획
 
@@ -77,9 +88,10 @@
 6. [ ] `sft preflight --measure-baseline`으로 step-0 기준선과 실제 초기화 검증
 7. [ ] 별도 pilot 뒤 같은 heldout·설정으로 step-0 대비 평가
 8. [ ] pilot gate 통과 뒤 fresh full SFT와 best/latest 비교
-9. [ ] 대화/EOS/repetition/safety/manual gate
-10. [ ] semantic paraphrase contamination·수동 감사
-11. [ ] GGUF 변환과 llama.cpp parity
+9. [x] SHA 고정 대화/EOS/repetition/safety 자동 gate 구현
+10. [ ] 1.8.1 수동 blind review·응답 hash 결속·독립 승인 gate
+11. [ ] 실제 best/latest에 자동·수동 gate 실행 및 semantic paraphrase contamination 감사
+12. [ ] GGUF 변환과 llama.cpp parity
 
 ## G003 한국어 대화 학습 경로 (1.5.0)
 

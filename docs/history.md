@@ -1,5 +1,26 @@
 # 구현 이력
 
+## 2026-07-18 · 1.8.0 SHA 고정 자동 대화 품질 gate
+
+### 완료: 실제 멀티턴 자동 평가
+
+- 프로젝트 계획의 attribution·split·tokenizer·checkpoint 실패 즉시 중단과 공개 전 contamination·암기·개인정보·라이선스 검토 원칙을 자동 대화 품질 gate에 적용했다.
+- `llmex sft quality-preflight/eval/status/validate`와 `sft-quality` 설정 kind를 구현했다. SFT config, schema 2 checkpoint와 suite의 예상 SHA-256을 필수로 고정하고 처음 읽은 snapshot bytes를 로딩·복원의 단일 원본으로 사용한다. 경로가 검증 중 교체되는 ABA와 SHA 불일치는 실패한다.
+- release policy, SFT train/heldout과 suite canonical prompt overlap, `deterministic: true`, harmful·benign·multi-turn 분모와 category coverage를 평가 전에 실패-폐쇄한다.
+- 모델의 실제 응답을 다음 turn history에 삽입하는 multi-turn rollout을 구현했다. greedy temperature 0·seed 1개와 sampling 양의 temperature·합계 최소 5개 고정 seed를 강제한다.
+- MIT `data/evaluation/ko-chat-quality-v1.jsonl`에 24 scenarios·27 unique turns를 고정했다. canonical greedy 1회+sampling 5회 계획은 162 responses다. 공개 SFT 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다.
+- 응답마다 EOS, max tokens, context limit 종료를 구분하고 고정 heldout의 assistant target-token 가중 NLL·PPL·token 수를 기록한다. correctness, harmful refusal, benign false-refusal, unsafe·PII·secret, Unicode/control character, empty, distinct-1/2, 2/3/4-gram 3회 연속 hard loop와 반복 token run을 측정한다.
+- aggregate, category, profile, seed, profile-seed, category-profile-seed를 기록하고 profile-seed 최악값과 범주별 gate를 판정한다. 기본 최소값은 refusal 0.95, false-refusal 최대 0.05, EOS 0.99, correctness·multi-turn retention 0.90이며 완전성·Unicode·context는 100%, critical pattern·hard loop는 0이다.
+- 평가 출력은 배타 lock과 전용 staging에서 만든 뒤 `results.jsonl`, `report.json`, `manifest.json` 순서로 manifest를 마지막에 원자 publish한다. 기존 부분 출력·남은 staging을 거부하고 validate에서 현재 pinned snapshot으로 전체 결과를 다시 만들어 byte 단위로 비교한다.
+- teacher judge는 비활성화했고 향후에도 advisory-only다. 증류 label을 만든 teacher 점수는 독립적인 최종 품질 판정이 아니다.
+
+### 구현 검증과 후속 경계
+
+- 자동 품질 gate는 독립 리뷰에서 APPROVE 판정을 받았다.
+- 전체 145 tests 실행이 통과했다. release/overlap/deterministic/coverage 실패, 실제 rollout, 고정 seed, weighted loss, 종료 원인, 안전·반복 지표, 동시 실행·부분 출력·SHA/ABA·artifact 변조 회귀를 포함한다. Ruff lint·format과 Pyright도 오류 없이 통과했다.
+- 정식 `qwen36mtp-10k-v5` 수집은 이 문서 작성 시점에도 진행 중이다. 변하는 완료 건수는 이력에 고정하지 않고 `uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml`로 확인한다.
+- 수동 blind review, 응답 hash 결속, 독립 검토자·안전 검토자, 서명과 승인 gate는 1.8.1 후속 작업이다. 따라서 자동 gate 구현·통과만으로 대화 가능성 또는 외부 공개를 승인하지 않는다.
+
 ## 2026-07-17 · 1.7.1 SFT 실제 preflight와 step-0 기준선
 
 - `llmex sft preflight --config <경로> --measure-baseline|--no-measure-baseline`을 추가했다. 기존 `train --dry-run`의 설정 fingerprint 확인보다 강하게 실제 train/heldout schema·license·canonical 누출, tokenizer와 source manifest 결속·release·길이 gate, base checkpoint, device·precision 및 모델/optimizer 초기화를 수행한다.
