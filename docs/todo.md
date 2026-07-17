@@ -1,8 +1,15 @@
 # LLMEX 개발 TODO
 
-## 1.9.4 SFT token cache 완료 및 정식 teacher 수집 진행
+## 1.9.5 모듈별 교재 보강 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] `src/llmex` Python 56개 전수의 책임·입출력·불변식·완료 증거 지도
+- [x] CPU fixture, CUDA pilot, DGX Spark, localhost teacher 환경별 진단과 비용 경계
+- [x] 빈 골격부터 데이터·모델·학습·증류·SFT·품질·릴리스까지 0~12단계 제작 워크북
+- [x] 장별 exit ticket, 변조 실험 3개와 기능/재현성/무결성/해석 capstone rubric
+- [x] 독자 brief, 문체, 출처, 구현·수치 주장과 AI 보조 원칙의 교재 제작 메타데이터
+- [x] 잘못된 mix 단계명·quality SHA·SFT 경로·checkpoint sidecar 설명 교정
 
 - [x] train/heldout 검증 token을 split별 연속 int32 input/label과 int64 offsets로 cache
 - [x] 전체 길이·generation gate 1차 검증과 2차 token/label SHA-256 동일성 결속

@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.9.5 - 2026-07-18
+
+- `src/llmex` Python 56개 전수의 책임·입출력·불변식·완료 증거를 연결한 코드 모듈 지도를 추가했다.
+- 빈 골격부터 데이터·tokenizer·model·pretraining·teacher·mix·SFT·품질·release까지 따라 만드는 0~12단계 워크북을 추가했다.
+- CPU/CUDA/DGX Spark/teacher 환경 경계, 장별 진단·exit ticket, 변조 실험과 100점 capstone rubric을 추가했다.
+- 독자 brief, 문체, 출처 권위, 주장 검증과 AI 보조 원칙을 책 제작 메타데이터로 기록했다.
+- mix 단계명, 자동 품질 SHA, SFT 예시 경로, checkpoint sidecar와 wiki snapshot 설명의 문서 오류를 교정했다.
+- 모듈 56/56, 내부 링크 누락 0, 전체 165 tests, Ruff, Pyright, release audit와 독립 재검토 `APPROVE`를 통과했다.
+
 ## 1.9.4 - 2026-07-18
 
 - 검증된 train/heldout token을 split별 연속 int32 input/label과 int64 offsets, 총 6개 tensor에 cache해 학습·validation 반복 tokenization을 제거했다.

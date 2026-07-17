@@ -33,7 +33,7 @@ lr(s)=lr_{min}+\frac12(lr_{max}-lr_{min})(1+\cos(\pi p))
 3. bias/norm은 decay 제외, 나머지는 AdamW decay group으로 나눈다.
 4. accumulation 동안 loss를 나누어 backward하고 마지막에 unscale·clip·step한다.
 5. NaN/Inf loss·gradient를 `failure.json`과 함께 즉시 실패시킨다.
-6. checkpoint bytes를 temp write→fsync→atomic replace하고 SHA sidecar를 쓴다.
+6. checkpoint bytes를 temp write→fsync→atomic replace하고 audit 때 immutable bytes의 SHA-256을 계산한다.
 7. SIGTERM은 현재 accumulation 경계에서 latest checkpoint를 저장하고 종료한다.
 
 ```python
@@ -61,7 +61,7 @@ uv run pytest -q tests/test_m4_training.py
 
 ## 예상 산출물
 
-`resolved-config.json`, `fingerprints.json`, `metrics.jsonl`, `checkpoints/latest.pt`, step checkpoint, `best.pt`와 SHA sidecar가 생긴다. metrics에는 loss/lr/gradient norm/tokens/s/device/precision이 기록된다.
+`resolved-config.json`, `fingerprints.json`, `metrics.jsonl`, `checkpoints/latest.pt`, step checkpoint와 `best.pt`가 생긴다. 별도 checkpoint SHA sidecar는 만들지 않으며 `train audit`가 파일의 immutable bytes를 읽어 SHA-256을 계산한다. metrics에는 loss/lr/gradient norm/tokens/s/device/precision이 기록된다.
 
 ## 검증 테스트
 

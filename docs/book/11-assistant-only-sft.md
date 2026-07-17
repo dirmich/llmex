@@ -236,7 +236,7 @@ uv run llmex sft generate \
 ## 예상 산출물
 
 ```text
-runs/sft-smoke/
+runs/book-sft/
 ├── resolved-config.json
 ├── data-manifest.json
 ├── metrics.jsonl

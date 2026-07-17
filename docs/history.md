@@ -1,5 +1,25 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.5 모듈별 단계 학습 교재
+
+### 56개 모듈 전수 지도와 제작 워크북
+
+- `src/llmex`의 Python 파일 56개를 기반, 데이터, tokenizer, model, pretraining, inference/evaluation, chat/SFT, distillation, pipeline/trust/release 순으로 전수 연결했다. 각 모듈에 책임, 주요 입력·출력, 직접 구현할 불변식과 완료 증거를 기록했다.
+- 빈 저장소에서 공통 기반→원자 I/O→Wikipedia→BPE→Transformer→완전 재개 학습→평가→chat schema→teacher→mix→SFT→자동 품질→수동·release를 만드는 0~12단계 워크북을 추가했다. CPU fixture, CUDA pilot, DGX Spark 장기 실행과 localhost teacher의 자원·네트워크·중단 경계를 분리했다.
+- 장별 진단과 exit ticket, 필수 변조 실험 3개, 기능 40·재현성 25·무결성 20·해석 15점의 capstone rubric을 추가했다. 실행 성공과 개념 이해, 자동 품질과 외부 사람 승인을 구분한다.
+
+### 책 제작 근거와 정합성 교정
+
+- 독자 brief, 한국어 문체·용어, 내부·외부 출처 권위, 구현·수치 주장 원장과 AI 보조 검증 원칙을 `docs/book/meta`에 추가했다. `../knowledge_base`의 프로젝트 계획은 M0부터 1.5.2까지 누적된 운영 snapshot이며 현재 저장소보다 후순위임을 명시했다.
+- 독립 감사에서 찾은 존재하지 않는 `materialize` 단계, 자동 품질의 잘못된 SHA 세트, `runs/sft-smoke` 경로, 생성되지 않는 checkpoint SHA sidecar 설명을 현재 CLI와 구현에 맞게 교정했다.
+- GGUF/llama.cpp는 현재 구현된 기능이 아니라 후속 acceptance contract임을 본문과 capstone에 분명히 표시했다. 00~08 fixture capstone과 09~14 gated extension을 분리해 도움말 확인을 전체 완주로 오인하지 않게 했다.
+
+### 검증
+
+- 56개 source module이 모듈 지도에 모두 포함되는지 전수 검사하고 percent-encoding을 해석한 교재 내부 링크 누락 0, 예제 설정 3종 strict validation과 워크북 CLI 표면을 확인했다. `data sample-e2e`의 완전한 명령은 실제 dry-run으로 검증했다.
+- 전체 `165 passed`, Ruff lint/71파일 format, Pyright strict 오류 0, release audit와 `git diff --check`를 통과했다. 독립 리뷰가 처음 지적한 실행 불가 명령과 구현 경계 과장을 모두 교정한 뒤 HIGH/MEDIUM 없이 최종 `APPROVE`를 받았다.
+- 정식 qwen36mtp v5 수집은 중단하지 않고 계속 진행한다.
+
 ## 2026-07-18 · 1.9.4 상한 결속 SFT token cache
 
 ### 반복 tokenization 제거

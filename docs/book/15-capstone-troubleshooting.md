@@ -1,5 +1,7 @@
 # 15. End-to-end capstone과 문제 해결
 
+이 capstone은 두 층이다. 00~08장의 fixture CPU 경로는 저장소만으로 실행할 수 있다. 09~14장의 teacher·혼합 SFT·수동 승인·GGUF 경로는 필요한 외부 입력과 아직 구현되지 않은 converter를 명시하는 gated extension이다. 외부 조건이 없는 상태에서 도움말 확인만으로 전체 capstone 완료를 주장하지 않는다.
+
 ## 학습 목표
 
 - 데이터부터 자동·수동 대화 품질 증거까지 작은 실행을 완성한다.
@@ -16,7 +18,7 @@
 - [전체 테스트](../../tests), [운영 runbook](../operations-runbook.md), [실패 모드](../failure-modes.md)
 - [TODO](../todo.md), [구현 이력](../history.md), [역사 snapshot인 프로젝트 계획](../../../knowledge_base/Codex/LLMEX/프로젝트%20계획.md)
 
-현재 동작의 권위는 이 저장소의 `src/llmex`, `configs`, `docs`와 CLI `--help`다. 외부 `knowledge_base`의 프로젝트 계획은 과거 의사결정과 M0 상태를 이해하는 참고 자료일 뿐이다. 그 문서의 개인 절대 경로나 오래된 단계·산출물을 현재 capstone에 복제하지 않는다.
+현재 동작의 권위는 이 저장소의 `src/llmex`, `configs`, `docs`와 CLI `--help`다. 외부 `knowledge_base`의 프로젝트 계획은 M0부터 1.5.2까지의 운영 snapshot을 이해하는 참고 자료일 뿐이다. 그 문서의 개인 절대 경로나 과거 단계·산출물을 현재 capstone에 복제하지 않는다.
 
 ## 핵심 개념
 
@@ -83,9 +85,9 @@ uv run llmex release gate --help
 나머지는 값이 실행 때마다 달라지는 다음 결속 사슬을 따른다.
 
 1. 09장에서 teacher `export → validate`를 마친 뒤 export manifest SHA를 확정한다.
-2. 그 SHA와 공개 데이터 경로를 10장의 `sft-mix-book.yaml`에 넣고 `preflight → materialize → status → validate`한다.
+2. 그 SHA와 공개 데이터 경로를 10장의 `sft-mix-book.yaml`에 넣고 `preflight-mix → prepare-mix → status-mix → validate-mix`한다.
 3. mix manifest SHA를 11장의 `sft-book.yaml`에 넣고 07장의 base checkpoint에서 SFT를 수행한다.
-4. SFT checkpoint·mix manifest·source manifest의 실제 SHA 세 개를 12장의 `quality-book.yaml`에 넣고 자동 quality를 평가·검증한다.
+4. SFT config·SFT checkpoint·scenario suite의 실제 SHA 세 개를 12장의 `quality-book.yaml`에 넣고 자동 quality를 평가·검증한다.
 5. 같은 checkpoint와 품질 증거를 13장의 최소 100개 blind review에 결속하고 수동 gate evidence를 만든다.
 6. 14장의 법무·baseline·quality-release·release 네 승인과 엄격한 manual evidence 검증을 모두 통과한 경우에만 release gate를 연다.
 

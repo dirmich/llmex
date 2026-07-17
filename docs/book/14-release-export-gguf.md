@@ -1,5 +1,7 @@
 # 14. 릴리스 증거, export, GGUF와 llama.cpp
 
+> 현재 상태: release audit/bundle/gate는 구현돼 있다. GGUF converter와 llama.cpp parity CLI는 아직 구현되지 않은 후속 연구실 계약이다. 이 절을 실행 완료로 표시하려면 실제 converter 코드와 자동 parity test를 먼저 추가해야 한다.
+
 ## 학습 목표
 
 - wheel/sdist, checksum, SBOM, provenance bundle의 신뢰 경계를 이해한다.
