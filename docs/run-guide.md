@@ -234,9 +234,13 @@ uv run llmex sft train --config configs/sft/qwen36mtp-v5-full.yaml
 
 최종 mix train 행 수가 `N`, micro batch가 4, accumulation이 16이면 full의 약 3 epoch 시작값은 `ceil(3 × floor(N / 4) / 16)` step이다. sampler가 epoch tail을 버리므로 정확히 3 epoch라고 표현하지 않으며, pilot의 실제 step 시간과 GPU 사용률로 최종 예산을 확정한다.
 
+정식 full은 `N=8,746`, 410 step으로 약 44분 실행됐다. final train loss는 1.795000, validation loss/PPL은 2.204719/9.0677이고 checkpoint SHA는 `506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1`이다. 100개 heldout 생성에서 EOS 60/100·반복 실패 21/100이므로 실행 완료를 대화 가능 판정으로 해석하지 않는다.
+
 ## 11. 자동 대화 품질 gate
 
 pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite SHA-256을 먼저 고정한다. suite는 repository의 `data/evaluation/ko-chat-quality-v1.jsonl`이며 MIT 24 scenarios·27 unique turns다. 공개 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다. 품질 설정 파일에는 `SFTQualityConfig`의 모든 필드와 SHA를 기록하고 SFT 설정은 `deterministic: true`로 유지한다.
+
+정식 full 평가는 `configs/sft/qwen36mtp-v5-full-quality.yaml`에 세 SHA와 greedy+5 sampling seed를 고정한다. 실제 162응답 결과는 EOS 83.95%, machine correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건으로 `gate_passed=false`다. 실패 artifact도 `runs/sft-qwen36mtp-v5-full-quality`에 보존해 다음 보강 학습과 동일 조건으로 비교한다.
 
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl

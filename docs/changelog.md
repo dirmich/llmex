@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.8 - 2026-07-18
+
+- 100M latest에서 직접 시작한 CUDA bf16 410-step SFT로 train 8,746행을 약 3 epoch 학습했다.
+- step-410 validation loss/PPL 2.204719/9.0677을 기록했고 best/latest/final SHA `506c5e22…65e1`이 일치했다.
+- 100개 heldout 생성은 PPL 9.9594, EOS 60/100, 반복 임계 초과 21/100, safety 100/100을 기록했다.
+- SHA 고정 24 scenario·27 turn·162응답 자동 품질 평가를 실제 실행해 EOS 83.95%, correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건을 확인했다.
+- 자동 gate 실패를 숨기지 않고 모델 승인을 차단했으며 실패 범주 teacher 보강과 추가 SFT를 다음 단계로 확정했다.
+
 ## 1.9.7 - 2026-07-18
 
 - qwen36mtp v5 10,000건을 accepted 9,712/rejected 288로 수집 완료하고 export 재유도 검증을 통과했다.

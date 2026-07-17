@@ -1,8 +1,16 @@
 # LLMEX 개발 TODO
 
-## 1.9.7 정식 teacher·mix·100-step pilot 완료
+## 1.9.8 fresh full SFT와 자동 품질 실측 완료
 
 ### 완료
+
+- [x] 100M latest에서 직접 시작한 CUDA bf16 410-step·약 3 epoch SFT
+- [x] step-410 validation loss/PPL 2.204719/9.0677과 best/latest/final SHA 일치
+- [x] 100개 heldout 생성 PPL 9.9594, EOS 60/100, 반복 실패 21/100, safety 100/100
+- [x] 24 scenario·27 turn·162응답 SHA 고정 자동 품질 평가와 byte 재유도 검증
+- [x] EOS 83.95%, correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건 실패 기록
+- [ ] 실패 범주를 exact suite 중복 없이 teacher로 보강하고 추가 SFT
+- [ ] 자동 gate 통과 checkpoint의 독립 서명 수동 품질·안전 검토
 
 - [x] validation best·checkpoint interval·중단/final이 같은 step에 겹칠 때 단일 `save`
 - [x] 개선 step의 `best.pt` 갱신과 비개선 step의 기존 best 보존

@@ -1,5 +1,20 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.8 fresh full SFT와 자동 품질 실측
+
+### 약 3 epoch 본 학습 완료
+
+- `configs/sft/qwen36mtp-v5-full.yaml`은 pilot checkpoint가 아니라 원래 100M latest에서 직접 시작하고, 정식 mix manifest SHA를 고정한다. CUDA bf16, sequence 1,024, micro batch 4, accumulation 16, 410 optimizer step으로 26,240 example을 노출해 train 8,746행의 약 3.0 epoch를 실행했다.
+- 410-step 학습은 약 44분에 정상 종료됐다. final train loss는 1.795000이고 고정 validation loss/PPL은 step 25의 2.551858/12.8309에서 step 410의 2.204719/9.0677까지 개선됐다. best/latest/step-410 SHA-256은 모두 `506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1`이다.
+- 100개 heldout 생성 smoke는 assistant NLL 2.298512/PPL 9.9594, EOS 60/100, 반복 임계 초과 21/100, 평균 반복률 0.5543, safety 100/100을 기록했다. 파일럿보다 NLL은 개선됐지만 EOS·반복 gate는 계속 실패했다.
+
+### 고정 162응답 자동 품질 gate 실패
+
+- `configs/sft/qwen36mtp-v5-full-quality.yaml`은 full 설정, checkpoint와 MIT suite SHA를 고정한다. 24 scenario·27 turn에 greedy 1회와 sampling seed 5회를 적용한 162개 실제 rollout과 byte 재유도 검증을 완료했다.
+- aggregate는 EOS 0.8395, machine correctness 0.2160, harmful refusal 0, multi-turn retention 0, hard n-gram loop 3건, unsafe 2건이었다. artifact/context/Unicode 완전성과 benign false-refusal·PII·secret은 통과했지만 자동 gate 전체는 실패했다.
+- full checkpoint를 대화 가능 또는 안전 모델로 승인하지 않는다. fact·산술·instruction·context·harmful·jailbreak·PII를 quality suite와 exact 중복 없이 바꿔 쓴 teacher 보강 데이터로 수집하고 추가 SFT 후 같은 gate를 다시 실행한다. 자동 gate 통과 뒤에도 외부 서명 수동 검토와 법무·공개 승인은 별도다.
+- 두 신규 설정 strict validation, 전체 `166 passed`, Ruff lint/71파일 format, Pyright strict 오류 0, release audit와 `git diff --check`를 통과했다.
+
 ## 2026-07-18 · 1.9.7 정식 teacher·mix·100-step pilot
 
 ### 정식 증류와 비누출 혼합 완료

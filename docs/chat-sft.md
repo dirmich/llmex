@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.7은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 v5 export와 mix 검증, 100M latest 기반 100-step pilot을 완료했지만 pilot은 EOS·반복 smoke를 통과하지 못했다. 이는 fresh full SFT와 실제 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
+LLMEX 1.9.8은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 v5 mix로 100M latest 기반 410-step full을 완료했지만 162응답 자동 품질 gate는 EOS·정확도·안전 거부·멀티턴·반복에서 실패했다. 이는 대화 가능 모델이 아니며 실패 범주 보강 증류, 추가 SFT와 실제 사람 품질·법무·외부 공개 승인이 남아 있다.
 
 ## JSONL 계약
 
@@ -64,6 +64,8 @@ baseline은 매 학습 validation과 같은 seed·고정 subset을 사용한다.
 trainer는 전체 길이와 generation gate를 검사하는 1차 tokenization의 input/label SHA-256을 임시 보존한다. offset을 포함한 영속 cache 크기가 128 MiB 이하일 때만 split별 연속 int32 input/label과 int64 offsets, 총 6개 tensor를 정확한 크기로 할당한다. 2차 tokenization 값이 1차 SHA와 같을 때만 buffer를 채운다. 이후 학습·validation은 sampler index로 cache를 조회해 long tensor로 패딩하므로 반복 tokenization이 없다. cap 초과나 동일 길이 값 변조는 cache 할당·sampler 진행 전에 실패한다.
 
 정식 mix preflight는 10,244행, 3,539,593 token, 영속 storage 28,398,712 bytes로 128 MiB 상한을 통과했다. pilot step-0 고정 heldout subset은 21,342 target tokens, loss 2.895133/PPL 18.0859였다. 100-step CUDA bf16 결과는 best/final validation loss 2.392192/PPL 10.9374이고 100개 생성 smoke는 safety 통과, EOS·repetition 실패였다. 이 pilot은 full 진행 근거이지 대화 가능 판정이 아니다.
+
+fresh full은 `configs/sft/qwen36mtp-v5-full.yaml`로 410 step을 실행했다. final train loss 1.795000, validation loss/PPL 2.204719/9.0677이며 best/latest/final SHA는 `506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1`로 같다. 100개 heldout smoke는 NLL/PPL 2.298512/9.9594, EOS 60/100, 반복 임계 초과 21/100, safety 100/100이다. 고정 162응답 자동 평가는 EOS 83.95%, correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건, unsafe 2건으로 실패했다. 낮은 PPL을 대화 가능 판정으로 바꾸지 않는다.
 
 ## 시작 checkpoint 선택
 
