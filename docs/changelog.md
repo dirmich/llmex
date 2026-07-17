@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.6.1 - 2026-07-17
+
+- v3 초반 수용률 저하를 5건에서 안전 중단하고 기존 v3/v4 계열 run을 변경 없이 보존했다.
+- v4/v4b에서 teacher prompt와 copy 오탐을 교정하고 정상 요약 허용, 연속 발췌·근접 복사 차단과 500자 hard gate를 고정했다.
+- 최종 v5 30건 pilot의 prepare/preflight/collect/export/validate를 통과해 accepted 28건(93.3%), rejected 2건, failed/incomplete/duplicate 0을 확인했다.
+- 정식 v5 10k inventory와 config fingerprint를 고정하고 preflight 통과, pending 10,000과 pilot 단순 환산 약 11.3시간을 기록했다.
+- 실제 수집부터 export/validate, 공개 instruction 혼합 SFT와 대화 품질 gate까지의 후속 순서를 갱신했다.
+- 독립 재검토 승인과 전체 129 tests, Ruff lint/format, Pyright, 참조 코드 checksum 검증을 통과했다.
+
 ## 1.6.0 - 2026-07-17
 
 - `distill preflight/prepare/collect/resume/status/export/validate` schema 2 teacher 수집 파이프라인과 qwen36mtp 10k v3 설정을 추가했다.

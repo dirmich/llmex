@@ -67,10 +67,22 @@ def _copy_ratio(prompt: str, response: str) -> float:
     response_skeleton = compact_skeleton(response)
     if not response_skeleton:
         return 1.0
-    if response_skeleton in prompt_skeleton:
+    if response_skeleton == prompt_skeleton:
         return 1.0
-    prompt_chars = set(prompt_skeleton)
-    return sum(char in prompt_chars for char in response_skeleton) / len(response_skeleton)
+    if not prompt_skeleton or len(response_skeleton) < 32:
+        return 0.0
+
+    width = min(8, len(prompt_skeleton), len(response_skeleton))
+    prompt_shingles = {
+        prompt_skeleton[index : index + width] for index in range(len(prompt_skeleton) - width + 1)
+    }
+    response_shingles = {
+        response_skeleton[index : index + width]
+        for index in range(len(response_skeleton) - width + 1)
+    }
+    return len(prompt_shingles & response_shingles) / min(
+        len(prompt_shingles), len(response_shingles)
+    )
 
 
 def filter_response(prompt: str, response: str, config: DistillationConfig) -> str | None:

@@ -1,10 +1,10 @@
 schema_version: 2
-name: qwen36mtp-10k-v3
+name: qwen36mtp-10k-v5
 seed: 42
 endpoint: http://localhost:8081/v1
 model: qwen36mtp
 api_key_env: null
-run_dir: runs/distill/qwen36mtp-10k-v3
+run_dir: runs/distill/qwen36mtp-10k-v5
 source_chat_files:
   - /tmp/llmex-public-sft/data/train.jsonl
   - /tmp/llmex-public-sft/data/heldout.jsonl
@@ -18,13 +18,13 @@ max_response_bytes: 1048576
 max_attempts: 5
 retry_backoff_seconds: 1.0
 max_retry_delay_seconds: 60.0
-system_prompt: 질문에 한국어로 정확하고 자연스럽게 답하세요. 모르는 내용은 추측하지 마세요.
+system_prompt: 질문에 한국어로 직접 답하세요. 내부 추론은 쓰지 말고, 핵심만 1~5문장과 500자 이내로 완결하세요. 불필요한 서론·목록·반복을 피하고 모르면 추측하지 마세요.
 max_tokens: 512
 temperature: 0.2
 source_collected_at: '2026-07-17'
 teacher_output_license: LicenseRef-LLMEX-Internal-Distillation
 min_response_chars: 8
-max_response_chars: 8000
+max_response_chars: 500
 max_repetition_ratio: 0.65
 max_prompt_copy_ratio: 0.9
 unsafe_concepts:

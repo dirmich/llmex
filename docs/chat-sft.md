@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.6.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습 경로를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터 수집은 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 내부 전용 export 검증을 통과한 뒤에만 혼합한다. SFT 실행이나 checkpoint 선택이 대화 품질 또는 외부 공개 승인을 대신하지 않는다.
+LLMEX 1.6.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습 경로를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터 수집은 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증을 통과한 뒤에만 혼합한다. SFT 실행이나 checkpoint 선택이 대화 품질 또는 외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 

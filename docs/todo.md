@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.6.0 teacher 증류 파이프라인 준비 완료 및 실제 수집 대기
+## 1.6.1 teacher v5 pilot 완료 및 정식 10k 수집 대기
 
 ### 완료
 
@@ -37,6 +37,15 @@
 - [x] redirect·환경 proxy·secret echo 차단과 strict teacher 응답 검증
 - [x] 독립 리뷰 최초 9개와 추가 5개 지적 수정 후 승인
 - [x] 최종 전체 123 tests, Ruff, format, Pyright, diff 검사
+- [x] v3 초반 5건 accepted/rejected 1/4 확인 후 안전 중단과 산출물 보존
+- [x] v4/v4b prompt 및 copy 오탐 교정, 정상 요약 허용과 20/50/79% 발췌·한 단어 변경 차단
+- [x] 500자 응답 hard gate
+- [x] v5 30건 prepare/preflight/collect/export/validate 실제 통과
+- [x] v5 pilot accepted 28/30(93.3%), rejected length/finish reason 각 1건, failed/incomplete/duplicate 0
+- [x] v5 pilot 122.0626초, 0.245775 RPS, 요청당 4.069초, 응답 길이 67/226.0/357자
+- [x] v5 pilot export train/heldout 25/3, overlap 0, release blocked
+- [x] 정식 v5 10k inventory·config fingerprint 고정과 preflight 통과
+- [x] 독립 재검토 승인과 최종 전체 129 tests, Ruff lint/format, Pyright, 참조 코드 checksum·diff 검사
 
 ### 후속 전체 평가 대기
 
@@ -47,7 +56,7 @@
 ### 다음 계획
 
 1. [x] SFT engine 강화
-2. [ ] v3 run에서 teacher 10k 실제 collect/resume
+2. [ ] 정식 v5 run에서 teacher 10k 실제 collect/resume(현재 pending 10,000, 단순 환산 약 11.3시간)
 3. [ ] current spool export/validate
 4. [ ] 공개 instruction + teacher 혼합 SFT
 5. [ ] 대화/EOS/repetition/safety/manual gate

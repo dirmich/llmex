@@ -166,7 +166,7 @@ loss 2.549981, PPL 12.806864다.
 
 ## 9. teacher 10k 준비·수집·검증
 
-full latest 평가와 SFT 시작 checkpoint 선택 뒤 로컬 qwen36mtp teacher를 확인하고 v3 inventory를
+full latest 평가와 SFT 시작 checkpoint 선택 뒤 로컬 qwen36mtp teacher를 확인하고 정식 v5 inventory를
 준비한다. 실제 수집은 장시간 실행이므로 status로 진행률과 ETA를 확인하고 중단 시 resume한다.
 
 ```bash
@@ -180,8 +180,10 @@ uv run llmex distill export --config configs/distill/qwen36mtp-10k.yaml
 uv run llmex distill validate --config configs/distill/qwen36mtp-10k.yaml
 ```
 
-현재 `runs/distill/qwen36mtp-10k-v3`은 preflight와 10,000건 inventory 준비까지 통과했고 실제
-수집은 pending 10,000이다. collect 완료 전에는 export/validate를 실행 완료로 기록하지 않는다.
+v3 초반 5건은 accepted/rejected 1/4라 안전 중단·보존했고, v4/v4b 교정 뒤 v5 30건 pilot은
+accepted 28건(93.3%)으로 prepare부터 validate까지 통과했다. 현재 `runs/distill/qwen36mtp-10k-v5`는
+preflight와 10,000건 inventory 준비까지 통과했으며 실제 수집은 pending 10,000이다. pilot 처리율
+단순 환산은 약 11.3시간이지만 변동될 수 있다. collect 완료 전에는 정식 export/validate를 완료로 기록하지 않는다.
 상세 설정, 재개, 보안과 내부 전용 라이선스 경계는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)를 따른다.
 
 ## 10. 실행 전후 점검

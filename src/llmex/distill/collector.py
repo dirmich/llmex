@@ -544,6 +544,9 @@ def status(config: DistillationConfig) -> dict[str, Any]:
     requests = _inventory(config)
     records = _records(config, requests)
     counts: Counter[str] = Counter(record.status for record in records.values())
+    reasons: Counter[str] = Counter(
+        record.reason for record in records.values() if record.reason is not None
+    )
     counts["pending"] = len(requests) - len(records)
     completed = sum(record.status != "failed" for record in records.values())
     state = _load_state(config)
@@ -558,6 +561,7 @@ def status(config: DistillationConfig) -> dict[str, Any]:
         "completed": completed,
         "progress": completed / len(requests),
         "counts": dict(sorted(counts.items())),
+        "reasons": dict(sorted(reasons.items())),
         "started_at": state.get("started_at"),
         "updated_at": state.get("updated_at"),
         "elapsed_seconds": elapsed,

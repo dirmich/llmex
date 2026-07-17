@@ -18,10 +18,10 @@ from typer.testing import CliRunner
 
 from llmex.chat.data import load_chat_jsonl
 from llmex.cli import app
-from llmex.config import DistillationConfig
+from llmex.config import DistillationConfig, load_yaml
 from llmex.data.io import write_jsonl_zst
 from llmex.distill import collect, export, preflight, prepare, status, validate
-from llmex.distill.client import completion
+from llmex.distill.client import completion, request_body
 from llmex.distill.filters import canonical_response, filter_response, repetition_ratio
 from llmex.errors import ConflictError, InputError, IntegrityError
 from llmex.fingerprint import fingerprint
@@ -229,6 +229,7 @@ def test_collect_retry_resume_export_validate와_비밀_비노출(
         prepare(config)
         first = collect(config)
         assert first["called"] == 16 and first["completed"] == 16
+        assert first["reasons"] == {}
         assert _TeacherHandler.calls == 17
         assert all(value == f"Bearer {credential}" for value in _TeacherHandler.authorizations)
         assert all(
@@ -308,6 +309,34 @@ def test_distill_cli_설정_검증과_status(tmp_path: Path) -> None:
     assert json.loads(result.stdout)["counts"] == {"pending": 4}
 
 
+def test_qwen_10k_설정은_간결한_비추론_응답_계약을_고정한다() -> None:
+    config = load_yaml(Path("configs/distill/qwen36mtp-10k.yaml"), DistillationConfig)
+    payload = json.loads(request_body(config, "질문"))
+    assert config.name == "qwen36mtp-10k-v5"
+    assert config.run_dir == Path("runs/distill/qwen36mtp-10k-v5")
+    assert config.system_prompt == (
+        "질문에 한국어로 직접 답하세요. 내부 추론은 쓰지 말고, 핵심만 1~5문장과 "
+        "500자 이내로 완결하세요. 불필요한 서론·목록·반복을 피하고 모르면 추측하지 마세요."
+    )
+    assert payload["max_tokens"] == 512
+    assert payload["chat_template_kwargs"] == {"enable_thinking": False}
+    assert config.max_response_chars == 500
+
+
+def test_status는_거절_사유별_개수를_집계한다(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TEST_TEACHER_KEY", "test-key")
+    with _server() as endpoint:
+        config = _config(tmp_path, endpoint, target=4)
+        prepare(config)
+        _TeacherHandler.retry_once = False
+        _TeacherHandler.response_override = "하나 둘 셋 넷 " * 20
+        result = collect(config)
+    assert result["counts"] == {"pending": 0, "rejected": 4}
+    assert result["reasons"] == {"repetition": 4}
+
+
 def test_응답_필터는_반복_위험문자_prompt_copy를_거부한다(tmp_path: Path) -> None:
     config = _config(tmp_path, "http://localhost:8081/v1", target=4)
     repeated = "하나 둘 셋 넷 " * 20
@@ -324,7 +353,56 @@ def test_응답_필터는_반복_위험문자_prompt_copy를_거부한다(tmp_pa
     assert filter_response("질문", "자살 예방 상담 방법과 연락처를 안내합니다.", config) is None
     strict_copy = config.model_copy(update={"max_prompt_copy_ratio": 0.4})
     assert filter_response("같은 질문 문장", "같은 질문 문장", strict_copy) == "prompt_copy"
+    assert (
+        filter_response(
+            "한국의 수도는 서울이며 정치, 경제, 문화의 중심지입니다.",
+            "서울은 대한민국의 수도이자 정치, 경제, 문화의 중심지입니다.",
+            config,
+        )
+        is None
+    )
+    long_prompt = (
+        "사과는 폴리페놀과 비타민 C를 포함해 면역력 강화에 유익하며, "
+        "장 건강과 전반적인 건강 개선에도 도움을 준다는 내용을 상세히 설명합니다. " * 4
+    )
+    summary = "사과는 항산화 성분과 비타민 C를 함유해 면역 체계와 장 건강에 도움을 줍니다."
+    assert filter_response(long_prompt, summary, config) is None
+    near_copy = long_prompt.replace("상세히", "구체적으로", 1)
+    copy_only = config.model_copy(
+        update={"max_repetition_ratio": 1.0, "max_prompt_copy_ratio": 0.9}
+    )
+    assert filter_response(long_prompt, near_copy, copy_only) == "prompt_copy"
     assert canonical_response("  같은\n응답 ") == canonical_response("같은 응답")
+
+
+@pytest.mark.parametrize("fraction", [0.2, 0.5, 0.79])
+def test_prompt_copy는_짧아진_원문_발췌도_거부한다(tmp_path: Path, fraction: float) -> None:
+    config = _config(tmp_path, "http://localhost:8081/v1", target=4).model_copy(
+        update={"max_prompt_copy_ratio": 0.9}
+    )
+    prompt = (
+        "연구자는 봄철 하천의 수온과 유속을 기록하고 상류와 하류의 생태 변화를 비교했습니다. "
+        "여름에는 강수량과 탁도를 측정해 조류 번성 조건을 분석했으며 가을에는 어류 개체수와 "
+        "수생 식물 분포를 조사했습니다. 겨울 관측에서는 결빙 기간과 용존 산소의 관계를 확인하고 "
+        "계절별 자료를 함께 검토해 보전 정책의 우선순위를 제안했습니다. 주민 인터뷰와 위성 영상도 "
+        "대조하여 토지 이용 변화가 수질에 미치는 영향을 분리했고 측정 장비의 오차 범위와 누락된 "
+        "표본을 보고서에 명시했습니다."
+    )
+    response = prompt[: int(len(prompt) * fraction)]
+    assert len(response) >= 32
+    assert filter_response(prompt, response, config) == "prompt_copy"
+
+
+def test_prompt_copy는_한_단어만_바꾼_근접복사도_거부한다(tmp_path: Path) -> None:
+    config = _config(tmp_path, "http://localhost:8081/v1", target=4).model_copy(
+        update={"max_prompt_copy_ratio": 0.9}
+    )
+    prompt = (
+        "관찰 자료를 날짜별로 정리하고 결측값을 표시한 뒤 센서 교정 기록과 비교하여 "
+        "분석 결과의 재현성을 확인합니다. 모든 변환 단계는 원본 식별자와 함께 보존합니다."
+    )
+    response = prompt.replace("관찰", "측정", 1)
+    assert filter_response(prompt, response, config) == "prompt_copy"
 
 
 def test_redirect를_추적하지_않아_authorization이_유출되지_않는다(

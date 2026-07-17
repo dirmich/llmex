@@ -1,5 +1,27 @@
 # 구현 이력
 
+## 2026-07-17 · 1.6.1 teacher pilot 교정과 정식 v5 준비
+
+### 안전 중단과 세대별 보존
+
+- 정식 v3 수집 초반 5건은 accepted 1건, rejected 4건이었고 rejected 사유는 모두 `finish_reason_not_stop`였다. 낮은 수용률을 확인한 즉시 수집을 안전 중단했으며 `runs/distill/qwen36mtp-10k-v3`의 inventory, state와 spool을 수정하지 않고 보존했다.
+- v4와 v4b pilot은 기존 v3를 덮어쓰지 않고 별도 run에서 system prompt와 응답 copy 판정을 교정하는 데 사용했다. 정상적인 질문 요약은 허용하되 원문의 20%, 50%, 79% 연속 발췌와 한 단어만 바꾼 근접 복사는 차단하도록 회귀 계약을 고정했다.
+- 응답은 1~5문장과 500자 이내로 요청하고 `max_response_chars=500`을 hard gate로 적용했다.
+
+### 완료: 최종 v5 30건 실제 pilot
+
+- `runs/distill/qwen36mtp-pilot-v5`에서 prepare, preflight, collect, export, validate를 실제로 모두 통과했다.
+- 30건 중 accepted 28건(93.3%), rejected 2건이며 거부 사유는 `length` 1건과 `finish_reason_not_stop` 1건이다. failed, incomplete와 canonical response duplicate는 모두 0이다.
+- accepted 응답 길이는 최소 67자, 평균 226.0자, 최대 357자였다. export는 train 25건, heldout 3건이며 prompt와 upstream source overlap은 0, redistribution은 불가하고 release gate는 blocked다.
+- 누적 시간은 122.0626초, 실효 처리율은 0.245775 RPS, 상각 시간은 요청당 4.069초였다.
+
+### 정식 v5 10k 상태와 다음 순서
+
+- 정식 설정은 `runs/distill/qwen36mtp-10k-v5`다. train/heldout 8,445/1,555, inventory SHA-256 `b6a02b20b76f698a7b292b54faf5c46c65fce246ff2cd79a21be99274bc42ea1`, inventory fingerprint `46248ba32985f7102a4d401dfa019c43884011c7fb080014d6888e8e20593e7b`, config fingerprint `4a3eea14ca4a5bf43eea8c0302043a13da8ea848f4c757b6375637363417bb9d`로 준비했다.
+- preflight는 통과했고 현재 10,000건 모두 pending이다. pilot 실효 RPS를 단순 적용한 예상 시간은 약 11.3시간이지만 teacher 부하, 응답 길이와 retry에 따라 변동될 수 있다.
+- 저장소 외부 운영 참고 문서 `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 확정 결정, 품질 gate와 100M baseline 이후 순서를 참고했다. 해당 계보에 따라 실패한 run을 덮어쓰지 않고 checkpoint·artifact 무결성을 우선하며, secret이나 로컬 절대경로는 문서에 기록하지 않는다.
+- 이후 순서는 `정식 v5 실제 수집 → current spool export/validate → 공개 instruction+teacher 혼합 SFT → 대화/EOS/repetition/safety/manual gate`다.
+
 ## 2026-07-17 · 1.6.0 teacher 10k 증류 수집 파이프라인
 
 ### 완료: full latest baseline 평가
@@ -59,7 +81,7 @@
 
 ### 개발 근거와 다음 순서
 
-- `/home/dirmich/work/0.ai/knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 개발 문서 순서인 `docs/README.md → docs/prd.md → docs/plan.md → docs/todo.md`를 참조했다.
+- `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 개발 문서 순서인 `docs/README.md → docs/prd.md → docs/plan.md → docs/todo.md`를 참조했다.
 - 같은 계획의 실패 중단 기준을 따라 checkpoint 복구 실패가 있으면 즉시 중단하며, 손상 상태를 우회하거나 부분 재개하지 않는다.
 - 이후 순서는 `teacher 10k pilot → 공개 instruction+teacher 혼합 SFT → 대화/EOS/repetition/safety/manual gate → GGUF/llama.cpp parity`다.
 

@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.6은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 100k baseline 학습과 full latest 평가, teacher 10k inventory 준비는 완료했지만 실제 수집·혼합 SFT와 독립 안전/법무·공개 배포 승인은 대기 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
+LLMEX 1.6.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. v5 30건 teacher pilot과 정식 10k inventory 준비는 완료했지만 실제 10k 수집·혼합 SFT와 독립 안전/법무·공개 배포 승인은 대기 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
 
 ## 빠른 시작
 

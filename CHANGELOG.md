@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.6.1 - 2026-07-17
+
+- v3 초반 5건 결과를 근거로 안전 중단하고 v3/v4 산출물을 보존한 채 별도 pilot에서 prompt와 copy filter를 교정했다.
+- 정상 요약은 허용하면서 연속 발췌·한 단어 변경 복사를 차단하고 teacher 응답에 500자 hard gate를 적용했다.
+- v5 30건 실제 pilot이 전체 CLI 단계를 통과해 accepted 28건(93.3%), rejected 2건, failed/incomplete/duplicate 0을 기록했다.
+- 정식 v5 10k run은 preflight 통과·pending 10,000 상태이며 pilot 처리율 단순 환산 약 11.3시간으로 예상한다.
+- 독립 재검토 승인과 전체 129 tests, Ruff lint/format, Pyright, 참조 코드 checksum 검증을 통과했다.
+
 ## 1.6.0 - 2026-07-17
 
 - 로컬 OpenAI 호환 qwen36mtp teacher의 10k 데이터를 준비·수집·재개·export·검증하는 schema 2 CLI를 추가했다.
