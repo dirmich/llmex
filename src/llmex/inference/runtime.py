@@ -72,7 +72,10 @@ def load_runtime(config: EvaluationConfig) -> LoadedRuntime:
         "shards": str(manifest["fingerprint"]),
     }
     checkpoint = load_checkpoint(
-        config.checkpoint, fingerprints, required_state=TRAIN_CHECKPOINT_REQUIRED_STATE
+        config.checkpoint,
+        fingerprints,
+        supported_schema_versions={1},
+        required_state=TRAIN_CHECKPOINT_REQUIRED_STATE,
     )
     model = CausalLM(training.model)
     try:

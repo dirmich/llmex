@@ -196,7 +196,7 @@ def test_fingerprint_rejection_nan_diagnostic_and_corrupt_checkpoint(tmp_path: P
     checkpoint = tmp_path / "broken.pt"
     checkpoint.write_bytes(b"not torch")
     with pytest.raises(IntegrityError, match="읽을 수 없습니다"):
-        load_checkpoint(checkpoint, trainer.fingerprints)
+        load_checkpoint(checkpoint, trainer.fingerprints, supported_schema_versions={1})
     failing = Trainer(_config(manifest, tmp_path / "nan", max_steps=1))
     for parameter in failing.model.parameters():
         parameter.data.fill_(float("nan"))
@@ -216,7 +216,7 @@ def test_checkpoint_never_executes_malicious_pickle(tmp_path: Path) -> None:
     checkpoint = tmp_path / "malicious.pt"
     checkpoint.write_bytes(pickle.dumps(Payload()))
     with pytest.raises(IntegrityError, match="읽을 수 없습니다"):
-        load_checkpoint(checkpoint, {})
+        load_checkpoint(checkpoint, {}, supported_schema_versions={1})
     assert not marker.exists()
 
 

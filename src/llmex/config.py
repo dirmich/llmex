@@ -227,9 +227,13 @@ class SFTConfig(StrictModel):
     allowed_licenses: list[str] = Field(min_length=1)
     base_checkpoint: YamlPath | None = None
     device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
+    precision: Literal["auto", "bf16", "fp16", "fp32"] = "auto"
     sequence_length: int = Field(gt=2)
     micro_batch_size: int = Field(gt=0)
+    gradient_accumulation_steps: int = Field(default=1, gt=0)
     max_steps: int = Field(gt=0)
+    validation_interval: int = Field(default=10, gt=0)
+    validation_batches: int = Field(default=4, gt=0)
     checkpoint_interval: int = Field(default=10, gt=0)
     log_interval: int = Field(default=1, gt=0)
     gradient_clip_norm: float = Field(default=1.0, gt=0.0)

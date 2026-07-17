@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.5.3 - 2026-07-17
+
+- SFT에 `auto`/`bf16`/`fp16`/`fp32` 정밀도, gradient accumulation, 주기적 heldout validation과 validation loss 기준 `best.pt`를 추가했다.
+- schema 2 SFT checkpoint로 모델·optimizer·scheduler·scaler·train/validation sampler·RNG·실제 precision·best 상태를 완전 재개하고, 무결성 및 NaN/Inf 검사를 강화했다.
+- 매 validation에 동일한 고정 heldout subset을 사용해 best 비교 기준을 고정하고, `max_steps` 연장 시 원 scheduler horizon과 이후 최소 학습률을 보존한다.
+- schema 1/2 `base_checkpoint`의 immutable SHA-256과 원 학습 provenance를 결속하고, 평가·생성도 schema 2 전체 상태를 strict 검증한다.
+- 동일한 split별 128 batch 평가에서 모든 측정 축이 우세한 100k `latest`를 SFT 시작점으로 선택했으며, 이 선택과 대화 품질 gate를 분리했다.
+
 ## 1.5.2 - 2026-07-17
 
 - 100,000-step CUDA bf16 baseline 학습을 완료하고 best checkpoint를 step 82,000으로 확정했다.

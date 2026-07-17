@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.5.3 - 2026-07-17
+
+- SFT에 명시적 정밀도 선택, gradient accumulation, 주기적 heldout validation과 validation loss 기준 best/latest checkpoint를 추가했다.
+- schema 2 SFT checkpoint가 학습·검증 sampler, optimizer, RNG, 실제 precision과 best 상태를 포함해 완전 재개되며 손상·NaN/Inf를 실패-폐쇄로 거부한다.
+- 동일한 고정 heldout subset으로 best를 비교하고, `max_steps` 연장 시 원 scheduler horizon과 이후 최소 학습률을 보존한다.
+- schema 1/2 base checkpoint의 immutable SHA-256과 원 학습 provenance를 결속하며 평가·생성도 전체 schema 2 상태를 strict 검증한다.
+- 동일한 split별 128 batch 비교에서 validation/test PPL, 평균 repetition, EOS가 모두 우세한 100k latest를 SFT 시작점으로 선택했다. 이는 대화 품질 gate 통과를 뜻하지 않는다.
+
 ## 1.5.1 - 2026-07-17
 
 - 전체 Wikipedia corpus와 16k tokenizer 실측을 완료하고, 87,804,672-parameter baseline의 100,000-step 장기 학습 진행 상황을 기록했다.

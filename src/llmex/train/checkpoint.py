@@ -23,9 +23,24 @@ from llmex.train.data import DeterministicBatchSampler, TokenShardDataset
 from llmex.train.optim import parameter_groups
 
 SFT_CHECKPOINT_REQUIRED_STATE = frozenset(
-    {"model", "optimizer", "scheduler", "scaler", "sampler", "rng", "step"}
+    {
+        "model",
+        "optimizer",
+        "scheduler",
+        "scaler",
+        "sampler",
+        "validation_sampler",
+        "rng",
+        "step",
+        "micro_step",
+        "precision",
+        "best_validation_loss",
+        "validation_batches_seen",
+    }
 )
-TRAIN_CHECKPOINT_REQUIRED_STATE = SFT_CHECKPOINT_REQUIRED_STATE | {"validation_sampler"}
+TRAIN_CHECKPOINT_REQUIRED_STATE = frozenset(
+    {"model", "optimizer", "scheduler", "scaler", "sampler", "validation_sampler", "rng", "step"}
+)
 # 기존 import 사용자를 위한 pretrain 계약 별칭이다.
 CHECKPOINT_REQUIRED_STATE = TRAIN_CHECKPOINT_REQUIRED_STATE
 # baseline-100m best.pt에서 관측한 PyTorch CUDA RNG byte-state의 정확한 크기다.
@@ -153,14 +168,25 @@ def _load_checkpoint_snapshot(
     path: Path,
     expected_fingerprints: dict[str, str],
     required_state: Collection[str],
+    supported_schema_versions: Collection[int],
 ) -> _CheckpointSnapshot:
     data = _read_immutable_bytes(path)
     try:
         value = torch.load(io.BytesIO(data), map_location="cpu", weights_only=True)
     except Exception as exc:
         raise IntegrityError(f"checkpoint를 읽을 수 없습니다: {path}: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema_version") != 1:
-        raise IntegrityError("지원하지 않는 checkpoint schema입니다")
+    if not isinstance(value, dict):
+        raise IntegrityError("checkpoint가 매핑이 아닙니다")
+    schema_version: object = cast(dict[object, object], value).get("schema_version")
+    if (
+        not isinstance(schema_version, int)
+        or isinstance(schema_version, bool)
+        or schema_version not in supported_schema_versions
+    ):
+        raise IntegrityError(
+            "지원하지 않는 checkpoint schema입니다: "
+            f"실제={schema_version}, 지원={sorted(supported_schema_versions)}"
+        )
     checkpoint = cast(dict[str, Any], value)
     actual = checkpoint.get("fingerprints")
     if actual != expected_fingerprints:
@@ -178,11 +204,33 @@ def load_checkpoint(
     path: Path,
     expected_fingerprints: dict[str, str],
     *,
+    supported_schema_versions: Collection[int],
     required_state: Collection[str] = SFT_CHECKPOINT_REQUIRED_STATE,
 ) -> dict[str, Any]:
     """호출자가 선언한 resume 상태 계약으로 checkpoint를 안전하게 읽는다."""
 
-    return _load_checkpoint_snapshot(path, expected_fingerprints, required_state).checkpoint
+    return _load_checkpoint_snapshot(
+        path, expected_fingerprints, required_state, supported_schema_versions
+    ).checkpoint
+
+
+def validate_model_state(
+    raw_state: object, *, context: str = "checkpoint model"
+) -> dict[str, torch.Tensor]:
+    """모델 상태가 비어 있지 않은 str→finite Tensor 매핑인지 검증한다."""
+
+    if not isinstance(raw_state, Mapping) or not raw_state:
+        raise IntegrityError(f"{context} 상태가 비었거나 매핑이 아닙니다")
+    state = cast(Mapping[object, object], raw_state)
+    if not all(isinstance(name, str) for name in state):
+        raise IntegrityError(f"{context} key가 문자열이 아닙니다")
+    if not all(isinstance(value, torch.Tensor) for value in state.values()):
+        raise IntegrityError(f"{context} 상태가 str→Tensor 매핑이 아닙니다")
+    typed_state = cast(dict[str, torch.Tensor], dict(state))
+    for name, value in typed_state.items():
+        if not bool(torch.isfinite(value).all()):
+            raise IntegrityError(f"{context}.{name} tensor에 NaN/Inf가 있습니다")
+    return typed_state
 
 
 def checkpoint_fingerprints(
@@ -551,7 +599,10 @@ def audit_checkpoints(config: TrainingConfig) -> dict[str, object]:
         if not path.is_file():
             raise IntegrityError(f"{role} checkpoint가 없습니다: {path}")
         snapshot = _load_checkpoint_snapshot(
-            path, expected_fingerprints, TRAIN_CHECKPOINT_REQUIRED_STATE
+            path,
+            expected_fingerprints,
+            TRAIN_CHECKPOINT_REQUIRED_STATE,
+            {1},
         )
         checkpoint = snapshot.checkpoint
         step = _require_int(checkpoint["step"], "step")

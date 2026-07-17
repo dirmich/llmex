@@ -1,5 +1,44 @@
 # 구현 이력
 
+## 2026-07-17 · 1.5.3 SFT 재개 무결성 강화와 100k 시작 checkpoint 선택
+
+### 완료: SFT 학습과 검증 계약 강화
+
+- SFT 정밀도 설정에 `auto`, `bf16`, `fp16`, `fp32`를 지원한다. `auto`는 CUDA bf16 지원 시 bf16, 그 밖의 CUDA에서는 fp16, CPU·MPS에서는 fp32를 선택한다. bf16은 CUDA 또는 CPU, fp16은 CUDA에서만 허용하며 fp16은 gradient scaler를 사용한다.
+- `gradient_accumulation_steps`로 여러 micro-batch의 assistant target token 수를 가중해 한 optimizer step으로 누적한다. checkpoint는 accumulation 도중이 아닌 optimizer 경계에서만 저장한다.
+- `validation_interval`마다 `validation_batches`개의 heldout batch를 평가하고 assistant-only validation loss와 perplexity를 기록한다. `latest.pt`는 최신 저장 상태를, `best.pt`는 validation loss가 개선된 상태를 보존한다.
+- 각 validation은 같은 seed의 동일한 고정 heldout subset과 순서를 다시 사용한다. 따라서 서로 다른 표본의 loss를 직접 비교하지 않고 같은 검증 기준에서만 `best.pt`를 갱신한다.
+- schema 2 SFT checkpoint에 모델, optimizer, scheduler, scaler, train·validation sampler, Python·NumPy·PyTorch CPU/CUDA RNG, step, micro-step, 실제 precision, best validation loss와 누적 validation batch 수를 저장해 완전 재개한다.
+- 재개 시 validation sampler cursor, optimizer 구조·parameter group·step tensor, RNG 구조, scheduler step, accumulation 경계와 model/optimizer tensor의 NaN/Inf 부재를 실패-폐쇄로 검사한다. `max_steps`만 늘린 재개는 허용하지만 다른 fingerprint 불일치는 거부한다.
+- `max_steps` 연장 재개 시 checkpoint의 원래 scheduler horizon을 보존하고, 그 horizon 이후 추가 step은 `min_learning_rate`를 유지해 과거 학습 궤적을 재해석하지 않는다.
+- SFT의 `base_checkpoint`는 schema 1과 schema 2의 모델 가중치를 모두 지원한다. immutable bytes SHA-256, schema/kind/step과 원 학습 fingerprint를 SFT fingerprint 및 data manifest에 결속하며, 같은 경로의 다른 가중치 교체·비유한 모델 상태·형상 불일치를 거부한다.
+- `sft eval`과 `sft generate`도 모델 tensor만 읽지 않고 optimizer/scaler/scheduler/train·validation sampler/RNG/precision을 포함한 schema 2 전체 상태를 strict 검증한 뒤 로드한다.
+
+### 완료: 100k checkpoint 동일 조건 평가와 선택
+
+동일한 validation/test split별 128 batch와 같은 생성 평가 조건에서 비교했다.
+
+| 100k checkpoint | validation PPL | test PPL | 평균 repetition | EOS 도달 |
+|---|---:|---:|---:|---:|
+| best | 13.288556 | 14.080648 | 0.549716 | 2/6 |
+| latest | 13.178043 | 13.952660 | 0.529836 | 3/6 |
+
+- validation PPL, test PPL, 평균 repetition, EOS 도달의 모든 측정 축에서 우세한 100k `latest`를 SFT 시작점으로 선택했다.
+- 이 선택은 두 checkpoint 사이의 상대 비교 결과이며 대화 품질 gate 통과를 뜻하지 않는다. 한국어 대화 품질, EOS, repetition, safety와 수동 평가는 SFT 이후 별도 gate로 판정한다.
+
+### 개발 근거와 다음 순서
+
+- `/home/dirmich/work/0.ai/knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 개발 문서 순서인 `docs/README.md → docs/prd.md → docs/plan.md → docs/todo.md`를 참조했다.
+- 같은 계획의 실패 중단 기준을 따라 checkpoint 복구 실패가 있으면 즉시 중단하며, 손상 상태를 우회하거나 부분 재개하지 않는다.
+- 이후 순서는 `teacher 10k pilot → 공개 instruction+teacher 혼합 SFT → 대화/EOS/repetition/safety/manual gate → GGUF/llama.cpp parity`다.
+
+### 검증
+
+- 구현 1차 검증에서 93개 테스트가 통과했고, 독립 리뷰 보강 회귀 4개를 추가한 최종 `uv run pytest -q`에서 97개 테스트가 통과했다. 악성 pickle 차단 회귀의 의도된 PyTorch `weights_only` 경고 1건만 발생했다.
+- `uv run ruff check .`: 통과
+- `uv run ruff format --check .`: 56개 파일 형식 통과
+- `uv run pyright`: 오류·경고 0건으로 통과
+
 ## 2026-07-17 · 1.5.2 100k baseline 학습 완료와 checkpoint audit
 
 ### 완료: 100k 학습과 checkpoint 감사

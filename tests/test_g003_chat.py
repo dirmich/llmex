@@ -60,6 +60,7 @@ def _write(path: Path, rows: list[dict[str, object]]) -> None:
 
 
 def _config(tmp_path: Path, *, max_steps: int = 1) -> SFTConfig:
+    tmp_path.mkdir(parents=True, exist_ok=True)
     vocab = (
         _tokenizer(tmp_path / "tokenizer")
         if not (tmp_path / "tokenizer").exists()
@@ -100,6 +101,8 @@ def _config(tmp_path: Path, *, max_steps: int = 1) -> SFTConfig:
         sequence_length=48,
         micro_batch_size=1,
         max_steps=max_steps,
+        validation_interval=1,
+        validation_batches=1,
         checkpoint_interval=1,
         log_interval=1,
         optimizer=OptimizerConfig(learning_rate=0.02, min_learning_rate=0.002),
@@ -124,19 +127,34 @@ def test_chat_template_masks_everything_except_assistant(tmp_path: Path) -> None
     config = _config(tmp_path)
     from llmex.tokenizer.core import load_tokenizer
 
+    tokenizer = load_tokenizer(config.tokenizer_dir)
     encoded = tokenize_chat(
-        load_tokenizer(config.tokenizer_dir),
+        tokenizer,
         (
             Message(role="system", content="안전하게 답하세요"),
             Message(role="user", content="안녕"),
             Message(role="assistant", content="반가워요"),
+            Message(role="user", content="이름은?"),
+            Message(role="assistant", content="LLMEX입니다"),
         ),
-        max_length=64,
+        max_length=256,
     )
-    assert encoded.labels[0] == -100
-    trained = [label for label in encoded.labels if label != -100]
-    assert trained and trained[-1] == 2
-    assert any(label == -100 for label in encoded.labels[1:])
+    expected_labels = [
+        -100,
+        *([-100] * len(tokenizer.encode("<|system|>\n").ids)),
+        *([-100] * len(tokenizer.encode("안전하게 답하세요\n").ids)),
+        *([-100] * len(tokenizer.encode("<|user|>\n").ids)),
+        *([-100] * len(tokenizer.encode("안녕\n").ids)),
+        *([-100] * len(tokenizer.encode("<|assistant|>\n").ids)),
+        *tokenizer.encode("반가워요\n").ids,
+        2,
+        *([-100] * len(tokenizer.encode("<|user|>\n").ids)),
+        *([-100] * len(tokenizer.encode("이름은?\n").ids)),
+        *([-100] * len(tokenizer.encode("<|assistant|>\n").ids)),
+        *tokenizer.encode("LLMEX입니다\n").ids,
+        2,
+    ]
+    assert encoded.labels == tuple(expected_labels)
 
 
 def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
@@ -145,12 +163,26 @@ def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
     result = first.run()
     checkpoint = Path(str(result["checkpoint"]))
     assert checkpoint.is_file() and (config.run_dir / "data-manifest.json").is_file()
-    sft_payload = load_checkpoint(checkpoint, first.fingerprints)
-    assert "validation_sampler" not in sft_payload
+    sft_payload = load_checkpoint(checkpoint, first.fingerprints, supported_schema_versions={2})
+    assert sft_payload["micro_step"] == 0
+    assert sft_payload["precision"] == "fp32"
+    assert sft_payload["validation_batches_seen"] == 1
+    assert sft_payload["sampler"] == first.sampler.state_dict()
+    assert sft_payload["validation_sampler"] == first.validation_sampler.state_dict()
+    assert (config.run_dir / "checkpoints/best.pt").is_file()
+    best_payload = load_checkpoint(
+        config.run_dir / "checkpoints/best.pt",
+        first.fingerprints,
+        supported_schema_versions={2},
+    )
+    assert best_payload["step"] == 1
+    assert best_payload["best_validation_loss"] == result["best_validation_loss"]
     resumed_config = config.model_copy(update={"max_steps": 2})
     resumed = SFTTrainer(resumed_config)
     resumed.resume(config.run_dir / "checkpoints/latest.pt")
-    assert resumed.step == 1 and resumed.cursor == 1
+    assert resumed.step == 1
+    assert resumed.sampler.state_dict() == first.sampler.state_dict()
+    assert resumed.validation_sampler.state_dict() == first.validation_sampler.state_dict()
     resumed.run()
     generated = generate_chat(resumed_config, config.run_dir / "checkpoints/latest.pt", "안녕")
     assert isinstance(generated["response"], str)
@@ -199,3 +231,170 @@ def test_base_checkpoint_weights_are_reused(tmp_path: Path) -> None:
         torch.allclose(parameter, torch.full_like(parameter, 0.125))
         for parameter in reused.model.parameters()
     )
+
+    result = reused.run()
+    sft_checkpoint = Path(str(result["checkpoint"]))
+    manifest = json.loads((reused.run_dir / "data-manifest.json").read_text())
+    assert manifest["base_checkpoint"]["sha256"] == sha256_file(base)
+    assert manifest["base_checkpoint"]["training_fingerprints"] == trainer.fingerprints
+    base_payload = torch.load(base, map_location="cpu", weights_only=True)
+    first_tensor = next(iter(base_payload["model"].values()))
+    first_tensor.view(-1)[0] += 1.0
+    torch.save(base_payload, base)
+    with pytest.raises(IntegrityError, match="fingerprint"):
+        SFTTrainer(
+            config.model_copy(update={"base_checkpoint": base, "run_dir": tmp_path / "reused"})
+        ).resume(sft_checkpoint)
+
+
+def test_sft_config_training_defaults(tmp_path: Path) -> None:
+    explicit = _config(tmp_path)
+    values = explicit.model_dump(
+        exclude={
+            "precision",
+            "gradient_accumulation_steps",
+            "validation_interval",
+            "validation_batches",
+        }
+    )
+    config = SFTConfig.model_validate(values)
+    assert config.precision == "auto"
+    assert config.gradient_accumulation_steps == 1
+    assert config.validation_interval == 10
+    assert config.validation_batches == 4
+
+
+def test_sft_gradient_accumulation_matches_large_batch(tmp_path: Path) -> None:
+    accumulated = _config(tmp_path / "accum").model_copy(update={"gradient_accumulation_steps": 2})
+    large_batch = _config(tmp_path / "large").model_copy(update={"micro_batch_size": 2})
+    accumulated_trainer = SFTTrainer(accumulated)
+    large_batch_trainer = SFTTrainer(large_batch)
+    accumulated_trainer.run()
+    large_batch_trainer.run()
+    for accumulated_parameter, large_parameter in zip(
+        accumulated_trainer.model.parameters(), large_batch_trainer.model.parameters(), strict=True
+    ):
+        assert torch.allclose(accumulated_parameter, large_parameter, atol=1e-6, rtol=1e-6)
+
+
+def test_sft_continuous_and_resume_are_deterministic(tmp_path: Path) -> None:
+    continuous = _config(tmp_path / "continuous", max_steps=2)
+    continuous_trainer = SFTTrainer(continuous)
+    continuous_trainer.run()
+
+    staged = _config(tmp_path / "staged", max_steps=2)
+    SFTTrainer(staged).run(stop_after_steps=1)
+    resumed_trainer = SFTTrainer(staged)
+    resumed_trainer.resume(staged.run_dir / "checkpoints/latest.pt")
+    resumed_trainer.run()
+
+    assert resumed_trainer.sampler.state_dict() == continuous_trainer.sampler.state_dict()
+    assert (
+        resumed_trainer.validation_sampler.state_dict()
+        == continuous_trainer.validation_sampler.state_dict()
+    )
+    for continuous_parameter, resumed_parameter in zip(
+        continuous_trainer.model.parameters(), resumed_trainer.model.parameters(), strict=True
+    ):
+        assert torch.equal(continuous_parameter, resumed_parameter)
+
+
+def test_sft_validation_uses_same_fixed_subset_every_time(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    _write(
+        config.heldout_data,
+        [
+            _row("heldout-1", "heldout", "인사해 주세요", "안녕하세요"),
+            _row("heldout-2", "heldout", "이름을 말해 주세요", "LLMEX입니다"),
+        ],
+    )
+    trainer = SFTTrainer(config)
+    first_loss = trainer.validate()
+    first_state = trainer.validation_sampler.state_dict()
+    second_loss = trainer.validate()
+    assert second_loss == pytest.approx(first_loss, abs=0.0, rel=0.0)
+    assert trainer.validation_sampler.state_dict() == first_state
+    assert trainer.validation_batches_seen == 2
+
+
+def test_sft_max_steps_extension_preserves_original_scheduler_horizon(tmp_path: Path) -> None:
+    config = _config(tmp_path, max_steps=1)
+    SFTTrainer(config).run()
+    extended = config.model_copy(update={"max_steps": 3})
+    trainer = SFTTrainer(extended)
+    trainer.resume(config.run_dir / "checkpoints/latest.pt")
+    assert trainer.scheduler_horizon == 1
+    trainer.run()
+    events = [
+        json.loads(line)
+        for line in (config.run_dir / "metrics.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    learning_rates = [event["learning_rate"] for event in events if event["event"] == "sft"]
+    assert learning_rates == pytest.approx(
+        [
+            config.optimizer.learning_rate,
+            config.optimizer.min_learning_rate,
+            config.optimizer.min_learning_rate,
+        ]
+    )
+    payload = torch.load(
+        config.run_dir / "checkpoints/latest.pt", map_location="cpu", weights_only=True
+    )
+    assert payload["scheduler"] == {
+        "step": 3,
+        "horizon": 1,
+        "extension_policy": "hold-minimum",
+    }
+
+
+def test_sft_resume_rejects_corrupted_strict_state(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    trainer = SFTTrainer(config)
+    trainer.run()
+    checkpoint = config.run_dir / "checkpoints/latest.pt"
+    corruptions: dict[str, tuple[str, object]] = {
+        "precision": ("precision", "fp16"),
+        "micro-step": ("micro_step", 1),
+        "best-loss": ("best_validation_loss", float("nan")),
+        "validation-count": ("validation_batches_seen", -1),
+        "scheduler": (
+            "scheduler",
+            {"step": 99, "horizon": 1, "extension_policy": "hold-minimum"},
+        ),
+        "train-sampler": ("sampler", {"seed": config.seed, "epoch": 0, "cursor": 999}),
+        "validation-sampler": ("validation_sampler", {}),
+        "optimizer": ("optimizer", {}),
+        "scaler": ("scaler", {"scale": 1.0}),
+        "rng": ("rng", {}),
+    }
+    for name, (field, value) in corruptions.items():
+        payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+        payload[field] = value
+        damaged = tmp_path / name
+        from llmex.train.checkpoint import save_checkpoint
+
+        path = save_checkpoint(damaged, payload, step=1)
+        with pytest.raises(IntegrityError):
+            SFTTrainer(config).resume(path)
+
+
+def test_sft_checkpoint_is_rejected_inside_accumulation(tmp_path: Path) -> None:
+    trainer = SFTTrainer(_config(tmp_path))
+    trainer.micro_step = 1
+    with pytest.raises(IntegrityError, match="optimizer 경계"):
+        trainer.save()
+
+
+@pytest.mark.parametrize("operation", ["generate", "evaluate"])
+def test_sft_inference_rejects_corrupted_non_model_state(tmp_path: Path, operation: str) -> None:
+    config = _config(tmp_path)
+    result = SFTTrainer(config).run()
+    payload = torch.load(Path(str(result["checkpoint"])), map_location="cpu", weights_only=True)
+    payload["optimizer"] = {}
+    damaged = tmp_path / f"damaged-{operation}.pt"
+    torch.save(payload, damaged)
+    with pytest.raises(IntegrityError, match="optimizer"):
+        if operation == "generate":
+            generate_chat(config, damaged, "안녕")
+        else:
+            evaluate_chat(config, damaged)

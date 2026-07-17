@@ -3,8 +3,9 @@
 
 import bisect
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -71,6 +72,8 @@ class DeterministicBatchSampler:
     """epoch별 randperm와 cursor를 checkpoint로 완전 복구하는 batch sampler."""
 
     def __init__(self, size: int, batch_size: int, seed: int) -> None:
+        if size < batch_size:
+            raise IntegrityError("sampler dataset 크기가 batch_size보다 작습니다")
         self.size = size
         self.batch_size = batch_size
         self.seed = seed
@@ -95,13 +98,24 @@ class DeterministicBatchSampler:
     def state_dict(self) -> dict[str, int]:
         return {"seed": self.seed, "epoch": self.epoch, "cursor": self.cursor}
 
-    def load_state_dict(self, state: dict[str, int]) -> None:
-        if state.get("seed") != self.seed:
+    def load_state_dict(self, state: Mapping[str, object]) -> None:
+        if set(state) != {"seed", "epoch", "cursor"}:
+            raise IntegrityError("sampler checkpoint 구조가 올바르지 않습니다")
+        raw_seed, raw_epoch, raw_cursor = state["seed"], state["epoch"], state["cursor"]
+        for value in (raw_seed, raw_epoch, raw_cursor):
+            if not isinstance(value, int) or isinstance(value, bool):
+                raise IntegrityError("sampler checkpoint 값이 올바른 정수가 아닙니다")
+        seed = cast(int, raw_seed)
+        epoch = cast(int, raw_epoch)
+        cursor = cast(int, raw_cursor)
+        if seed != self.seed:
             raise IntegrityError("sampler seed가 checkpoint와 다릅니다")
-        self.epoch = int(state["epoch"])
-        self.cursor = int(state["cursor"])
-        if not 0 <= self.cursor <= self.size:
+        if epoch < 0:
+            raise IntegrityError("sampler epoch가 범위를 벗어났습니다")
+        if not 0 <= cursor <= self.size or cursor % self.batch_size != 0:
             raise IntegrityError("sampler cursor가 범위를 벗어났습니다")
+        self.epoch = epoch
+        self.cursor = cursor
         self._order = self._make_order()
 
 

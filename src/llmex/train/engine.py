@@ -4,20 +4,18 @@
 import json
 import math
 import os
-import random
 import signal
 import time
-from contextlib import nullcontext
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import torch
 from torch import Tensor
 
 from llmex.config import TrainingConfig
 from llmex.data.io import write_json
-from llmex.errors import ConfigError, IntegrityError
+from llmex.errors import IntegrityError
 from llmex.model import CausalLM, GenerationConfig
 from llmex.train.checkpoint import (
     TRAIN_CHECKPOINT_REQUIRED_STATE,
@@ -29,54 +27,12 @@ from llmex.train.checkpoint import (
 )
 from llmex.train.data import DeterministicBatchSampler, TokenShardDataset, batch
 from llmex.train.optim import learning_rate, parameter_groups
-
-
-def _device(name: str) -> torch.device:
-    if name == "auto":
-        name = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
-    if name == "cuda" and not torch.cuda.is_available():
-        raise ConfigError("CUDA를 사용할 수 없습니다")
-    if name == "mps" and not torch.backends.mps.is_available():
-        raise ConfigError("MPS를 사용할 수 없습니다")
-    return torch.device(name)
-
-
-def _precision(requested: str, device: torch.device) -> tuple[str, torch.dtype | None, bool]:
-    if requested == "auto":
-        if device.type == "cuda" and torch.cuda.is_bf16_supported():
-            requested = "bf16"
-        elif device.type == "cuda":
-            requested = "fp16"
-        else:
-            requested = "fp32"
-    if requested == "bf16":
-        supported = device.type == "cuda" and torch.cuda.is_bf16_supported()
-        supported |= device.type == "cpu"
-        if not supported:
-            raise ConfigError("선택한 장치가 bf16 autocast를 지원하지 않습니다")
-        return requested, torch.bfloat16, False
-    if requested == "fp16":
-        if device.type != "cuda":
-            raise ConfigError("fp16 학습은 CUDA에서만 지원합니다")
-        return requested, torch.float16, True
-    return "fp32", None, False
-
-
-def _seed_everything(seed: int, deterministic: bool) -> None:
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-    torch.use_deterministic_algorithms(deterministic)
-    if torch.backends.cudnn.is_available():
-        torch.backends.cudnn.benchmark = False
+from llmex.train.runtime import (
+    autocast_context,
+    resolve_device,
+    resolve_precision,
+    seed_everything,
+)
 
 
 class Trainer:
@@ -84,9 +40,11 @@ class Trainer:
 
     def __init__(self, config: TrainingConfig) -> None:
         self.config = config
-        _seed_everything(config.seed, config.deterministic)
-        self.device = _device(config.device)
-        self.precision, self.autocast_dtype, use_scaler = _precision(config.precision, self.device)
+        seed_everything(config.seed, config.deterministic)
+        self.device = resolve_device(config.device)
+        self.precision, self.autocast_dtype, use_scaler = resolve_precision(
+            config.precision, self.device
+        )
         manifest = json.loads(config.shards_manifest.read_text(encoding="utf-8"))
         self.fingerprints = checkpoint_fingerprints(config, manifest)
         if (
@@ -123,10 +81,8 @@ class Trainer:
         self.checkpoint_dir = self.run_dir / "checkpoints"
         self.metrics_path = self.run_dir / "metrics.jsonl"
 
-    def _autocast(self) -> Any:
-        if self.autocast_dtype is None:
-            return nullcontext()
-        return torch.autocast(self.device.type, dtype=self.autocast_dtype)
+    def _autocast(self) -> AbstractContextManager[Any]:
+        return autocast_context(self.device, self.autocast_dtype)
 
     def _checkpoint_payload(self) -> dict[str, object]:
         return {
@@ -159,6 +115,7 @@ class Trainer:
         checkpoint = load_checkpoint(
             path or self.checkpoint_dir / "latest.pt",
             self.fingerprints,
+            supported_schema_versions={1},
             required_state=TRAIN_CHECKPOINT_REQUIRED_STATE,
         )
         self.model.load_state_dict(checkpoint["model"])

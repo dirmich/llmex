@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.5.2 전체 Wikipedia baseline 완료 및 후속 평가
+## 1.5.3 SFT engine 강화 완료 및 후속 대화 학습
 
 ### 완료
 
@@ -16,6 +16,18 @@
 - [x] `train audit`: 완료/latest step 100,000, best step 82,000, SHA-256·strict fingerprint·schema·필수 상태·NaN/Inf 통과
 - [x] CUDA 1-batch baseline: validation PPL 17.4997869, test PPL 3.2870502, cloze 0.5
 - [x] 고정 생성: repetition 0.21875, UTF-8 통과, EOS 미도달
+- [x] SFT `auto`/`bf16`/`fp16`/`fp32` 정밀도와 gradient accumulation
+- [x] 주기적 heldout validation과 validation loss 기준 `best.pt`/`latest.pt`
+- [x] schema 2 모델·optimizer·scheduler·scaler·train/validation sampler·RNG·best 상태 완전 재개
+- [x] validation sampler/optimizer/RNG/model finite 무결성 검사와 optimizer 경계 저장
+- [x] 동일한 고정 heldout subset/order validation과 공정한 `best.pt` 비교
+- [x] `max_steps` 연장 시 원 scheduler horizon 보존과 이후 `min_learning_rate` 유지
+- [x] schema 1/2 `base_checkpoint` 가중치, immutable SHA-256와 원 학습 fingerprint provenance 결속
+- [x] SFT 평가·생성 전 schema 2 전체 상태 strict 무결성 검사
+- [x] 최종 전체 97 tests, Ruff, format, Pyright 검증
+- [x] 동일한 split별 128 batch 평가: best val/test PPL 13.288556/14.080648, repetition 0.549716, EOS 2/6
+- [x] 동일한 split별 128 batch 평가: latest val/test PPL 13.178043/13.952660, repetition 0.529836, EOS 3/6
+- [x] 모든 측정 축이 우세한 100k `latest`를 SFT 시작점으로 선택하되 대화 품질 gate와 분리
 
 ### 후속 전체 평가 대기
 
@@ -25,10 +37,10 @@
 
 ### 다음 계획
 
-1. [ ] SFT engine 강화
-2. [ ] teacher 10k pilot
+1. [x] SFT engine 강화
+2. [ ] 100k `latest`에서 teacher 10k pilot
 3. [ ] 공개 instruction + teacher 혼합 SFT
-4. [ ] conversation/EOS/repetition/safety/manual gate
+4. [ ] 대화/EOS/repetition/safety/manual gate
 5. [ ] GGUF 변환과 llama.cpp parity
 
 ## G003 한국어 대화 학습 경로 (1.5.0)

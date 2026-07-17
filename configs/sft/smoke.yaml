@@ -8,9 +8,13 @@ run_dir: runs/sft-smoke
 allowed_licenses: [CC-BY-4.0]
 base_checkpoint: null
 device: auto
+precision: auto
 sequence_length: 256
 micro_batch_size: 2
+gradient_accumulation_steps: 1
 max_steps: 50
+validation_interval: 10
+validation_batches: 4
 checkpoint_interval: 10
 log_interval: 1
 gradient_clip_norm: 1.0
