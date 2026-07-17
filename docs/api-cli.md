@@ -8,6 +8,7 @@
 | `data`, `tokenizer` | corpus와 token shard 생성 |
 | `model`, `train` | inspect, 학습, 재개, smoke |
 | `eval`, `generate`, `benchmark` | 품질·안전 평가와 추론 |
+| `distill` | teacher preflight/prepare/collect/resume/status/export/validate |
 | `pipeline` | preflight/run/status/drill/export |
 | `release` | audit/bundle/gate |
 

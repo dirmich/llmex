@@ -22,6 +22,17 @@ class Provenance(StrictModel):
     source: str = Field(min_length=1)
     license: str = Field(min_length=1)
     collected_at: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    source_dataset: str | None = None
+    source_license: str | None = None
+    teacher_model: str | None = None
+    teacher_output_license: str | None = None
+    request_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    response_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    raw_response_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    source_id: str | None = None
+    source_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    source_collected_at: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    source_metadata: dict[str, str | int] | None = None
 
 
 class ChatRow(StrictModel):
@@ -49,7 +60,7 @@ class ChatRow(StrictModel):
             {
                 "id": self.id,
                 "messages": [message.model_dump() for message in self.messages],
-                "provenance": self.provenance.model_dump(),
+                "provenance": self.provenance.model_dump(exclude_none=True),
                 "split": self.split,
             }
         )

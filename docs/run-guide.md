@@ -160,7 +160,31 @@ provenance와 corpus 경로를 설정하지 않으면 canary exposure, contamina
 미실행이며 최종 gate로 해석하지 않는다. 전체 평가에서는 해당 입력을 설정하고 split 전체,
 생성·암기·오염·수동 품질을 별도로 검증한다.
 
-## 9. 실행 전후 점검
+100k latest의 전체 shard 평가는 `runs/baseline-100m/evaluation-full-latest`에 보존했다. validation은
+4,223,967 predicted token, loss 2.553663, PPL 12.854105이고 test는 3,976,401 predicted token,
+loss 2.549981, PPL 12.806864다.
+
+## 9. teacher 10k 준비·수집·검증
+
+full latest 평가와 SFT 시작 checkpoint 선택 뒤 로컬 qwen36mtp teacher를 확인하고 v3 inventory를
+준비한다. 실제 수집은 장시간 실행이므로 status로 진행률과 ETA를 확인하고 중단 시 resume한다.
+
+```bash
+uv run llmex config validate configs/distill/qwen36mtp-10k.yaml --kind distillation
+uv run llmex distill preflight --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill prepare --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill collect --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill resume --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill export --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill validate --config configs/distill/qwen36mtp-10k.yaml
+```
+
+현재 `runs/distill/qwen36mtp-10k-v3`은 preflight와 10,000건 inventory 준비까지 통과했고 실제
+수집은 pending 10,000이다. collect 완료 전에는 export/validate를 실행 완료로 기록하지 않는다.
+상세 설정, 재개, 보안과 내부 전용 라이선스 경계는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)를 따른다.
+
+## 10. 실행 전후 점검
 
 명령 계약은 각 단계의 `--help`로 확인하고 문서 변경 뒤 Markdown 링크와 공백 오류를 검사한다.
 
@@ -172,6 +196,7 @@ uv run llmex train --help
 uv run llmex eval --help
 uv run llmex generate --help
 uv run llmex benchmark --help
+uv run llmex distill --help
 git diff --check -- docs/
 ```
 

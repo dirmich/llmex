@@ -12,6 +12,7 @@ import typer
 from llmex import __version__
 from llmex.config import (
     DataConfig,
+    DistillationConfig,
     EvaluationConfig,
     ModelConfig,
     PipelineConfig,
@@ -58,6 +59,9 @@ train_app = typer.Typer(help="M4 결정적 학습과 checkpoint 재개를 실행
 sft_app = typer.Typer(
     help="허가된 대화 데이터로 assistant-only SFT를 실행합니다.", no_args_is_help=True
 )
+distill_app = typer.Typer(
+    help="OpenAI 호환 teacher에서 재개 가능한 증류 데이터를 수집합니다.", no_args_is_help=True
+)
 pipeline_app = typer.Typer(
     help="M6 전체 파이프라인과 외부 게이트를 관리합니다.", no_args_is_help=True
 )
@@ -72,6 +76,7 @@ app.add_typer(tokenizer_app, name="tokenizer")
 app.add_typer(model_app, name="model")
 app.add_typer(train_app, name="train")
 app.add_typer(sft_app, name="sft")
+app.add_typer(distill_app, name="distill")
 app.add_typer(pipeline_app, name="pipeline")
 app.add_typer(release_app, name="release")
 
@@ -131,6 +136,7 @@ class ConfigKind(StrEnum):
     EVALUATION = "evaluation"
     PIPELINE = "pipeline"
     SFT = "sft"
+    DISTILLATION = "distillation"
 
 
 def _model(kind: ConfigKind) -> type[StrictModel]:
@@ -146,7 +152,71 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return PipelineConfig
     if kind is ConfigKind.SFT:
         return SFTConfig
+    if kind is ConfigKind.DISTILLATION:
+        return DistillationConfig
     return ModelConfig
+
+
+def _distill_call(config_path: Path, action: str) -> None:
+    try:
+        config = load_yaml(config_path, DistillationConfig)
+        from llmex.distill import collect, export, preflight, prepare, status, validate
+
+        operations = {
+            "preflight": preflight,
+            "prepare": prepare,
+            "collect": collect,
+            "resume": collect,
+            "status": status,
+            "export": export,
+            "validate": validate,
+        }
+        result = operations[action](config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@distill_app.command("preflight")
+def distill_preflight(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """`/v1/models`로 endpoint와 teacher model을 확인합니다."""
+    _distill_call(config_path, "preflight")
+
+
+@distill_app.command("prepare")
+def distill_prepare(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """공개 instruction과 Wikipedia에서 logical request inventory를 만듭니다."""
+    _distill_call(config_path, "prepare")
+
+
+@distill_app.command("collect")
+def distill_collect(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """아직 완료되지 않은 teacher request를 수집합니다."""
+    _distill_call(config_path, "collect")
+
+
+@distill_app.command("resume")
+def distill_resume(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """완료 spool은 재호출하지 않고 실패·미완료 request만 재개합니다."""
+    _distill_call(config_path, "resume")
+
+
+@distill_app.command("status")
+def distill_status(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """수집 진행률과 상태별 건수를 출력합니다."""
+    _distill_call(config_path, "status")
+
+
+@distill_app.command("export")
+def distill_export(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """필터를 통과한 응답을 결정적 ChatDataset JSONL로 압축합니다."""
+    _distill_call(config_path, "export")
+
+
+@distill_app.command("validate")
+def distill_validate(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """spool·checksum·라이선스·split 비누출을 실패-폐쇄로 검증합니다."""
+    _distill_call(config_path, "validate")
 
 
 def _sft_config(path: Path) -> SFTConfig:

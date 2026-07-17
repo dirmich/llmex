@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.5.3 SFT engine 강화 완료 및 후속 대화 학습
+## 1.6.0 teacher 증류 파이프라인 준비 완료 및 실제 수집 대기
 
 ### 완료
 
@@ -28,6 +28,15 @@
 - [x] 동일한 split별 128 batch 평가: best val/test PPL 13.288556/14.080648, repetition 0.549716, EOS 2/6
 - [x] 동일한 split별 128 batch 평가: latest val/test PPL 13.178043/13.952660, repetition 0.529836, EOS 3/6
 - [x] 모든 측정 축이 우세한 100k `latest`를 SFT 시작점으로 선택하되 대화 품질 gate와 분리
+- [x] full latest validation 4,223,967 token, loss 2.553663, PPL 12.854105와 test 3,976,401 token, loss 2.549981, PPL 12.806864
+- [x] schema 2 `distill preflight/prepare/collect/resume/status/export/validate`
+- [x] qwen36mtp 10k v3 inventory: raw/unique/duplicate 6,853/5,813/1,040, upstream heldout 630, Wikipedia 4,187
+- [x] 10k train/heldout 8,445/1,555, prompt·upstream source overlap 0, inventory SHA-256·fingerprint 고정
+- [x] 원자 spool, bounded concurrency/RPS/retry/body, progress/ETA, 중단 재개와 stale lock
+- [x] current spool export 결속, provenance, 내부 전용 라이선스와 release blocked
+- [x] redirect·환경 proxy·secret echo 차단과 strict teacher 응답 검증
+- [x] 독립 리뷰 최초 9개와 추가 5개 지적 수정 후 승인
+- [x] 최종 전체 123 tests, Ruff, format, Pyright, diff 검사
 
 ### 후속 전체 평가 대기
 
@@ -38,10 +47,11 @@
 ### 다음 계획
 
 1. [x] SFT engine 강화
-2. [ ] 100k `latest`에서 teacher 10k pilot
-3. [ ] 공개 instruction + teacher 혼합 SFT
-4. [ ] 대화/EOS/repetition/safety/manual gate
-5. [ ] GGUF 변환과 llama.cpp parity
+2. [ ] v3 run에서 teacher 10k 실제 collect/resume
+3. [ ] current spool export/validate
+4. [ ] 공개 instruction + teacher 혼합 SFT
+5. [ ] 대화/EOS/repetition/safety/manual gate
+6. [ ] GGUF 변환과 llama.cpp parity
 
 ## G003 한국어 대화 학습 경로 (1.5.0)
 

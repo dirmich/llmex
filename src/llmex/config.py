@@ -1,7 +1,9 @@
 """엄격한 YAML 설정 모델과 로더."""
 
+import re
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypeVar
+from urllib.parse import urlsplit
 
 import yaml
 from pydantic import (
@@ -11,6 +13,7 @@ from pydantic import (
     Field,
     HttpUrl,
     ValidationError,
+    field_validator,
     model_validator,
 )
 
@@ -252,6 +255,93 @@ class SFTConfig(StrictModel):
             raise ValueError("warmup_steps는 max_steps 이하여야 합니다")
         if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
             raise ValueError("allowed_licenses는 중복될 수 없습니다")
+        return self
+
+
+class UnsafeConceptConfig(StrictModel):
+    """공백·구두점 제거 skeleton에 적용할 위험 개념 정규식 묶음."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    patterns: list[str] = Field(min_length=1)
+
+    @field_validator("patterns")
+    @classmethod
+    def validate_patterns(cls, values: list[str]) -> list[str]:
+        for value in values:
+            try:
+                re.compile(value)
+            except re.error as exc:
+                raise ValueError(f"올바르지 않은 위험 개념 정규식: {value}") from exc
+        return values
+
+
+class DistillationConfig(StrictModel):
+    """OpenAI 호환 teacher에서 결정적으로 대화 응답을 수집하는 설정."""
+
+    schema_version: Literal[2] = 2
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    endpoint: str = Field(min_length=1)
+    model: str = Field(min_length=1)
+    api_key_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]*$")
+    run_dir: YamlPath
+    source_chat_files: list[YamlPath] = Field(min_length=1)
+    corpus: YamlPath
+    target_requests: int = Field(default=10_000, gt=0)
+    heldout_basis_points: int = Field(default=1_000, ge=1, le=9_999)
+    concurrency: int = Field(default=4, ge=1, le=32)
+    requests_per_second: float = Field(default=1.5, gt=0.0)
+    timeout_seconds: float = Field(default=120.0, gt=0.0)
+    max_response_bytes: int = Field(default=1_048_576, ge=1_024, le=16_777_216)
+    max_attempts: int = Field(default=5, ge=1, le=20)
+    retry_backoff_seconds: float = Field(default=1.0, ge=0.0)
+    max_retry_delay_seconds: float = Field(default=60.0, gt=0.0, le=300.0)
+    system_prompt: str = Field(
+        default="질문에 한국어로 정확하고 자연스럽게 답하세요.", min_length=1
+    )
+    max_tokens: int = Field(default=512, gt=0)
+    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+    source_collected_at: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    teacher_output_license: Literal["LicenseRef-LLMEX-Internal-Distillation"] = (
+        "LicenseRef-LLMEX-Internal-Distillation"
+    )
+    min_response_chars: int = Field(default=8, ge=1)
+    max_response_chars: int = Field(default=8_000, gt=0)
+    max_repetition_ratio: float = Field(default=0.65, ge=0.0, le=1.0)
+    max_prompt_copy_ratio: float = Field(default=0.9, ge=0.0, le=1.0)
+    unsafe_concepts: list[UnsafeConceptConfig] = Field(
+        default_factory=lambda: [
+            UnsafeConceptConfig(
+                name="self-harm",
+                patterns=[r"자살(?:의|을)?(?:하는)?(?:구체적)?(?:인)?(?:방법|하는법)"],
+            ),
+            UnsafeConceptConfig(name="explosive", patterns=[r"폭탄(?:을|를)?(?:제조|만들)"]),
+            UnsafeConceptConfig(name="personal-id", patterns=[r"주민등록번호"]),
+        ]
+    )
+
+    @field_validator("endpoint")
+    @classmethod
+    def validate_endpoint(cls, value: str) -> str:
+        parsed = urlsplit(value)
+        if parsed.scheme != "http" or not parsed.hostname:
+            raise ValueError("pilot endpoint는 loopback http 절대 URL이어야 합니다")
+        if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise ValueError("pilot endpoint는 loopback host만 허용됩니다")
+        if parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise ValueError("endpoint에 userinfo/query/fragment를 사용할 수 없습니다")
+        normalized_path = parsed.path.rstrip("/")
+        if not normalized_path.endswith("/v1"):
+            raise ValueError("endpoint 경로는 /v1로 끝나야 합니다")
+        return value.rstrip("/")
+
+    @model_validator(mode="after")
+    def validate_distillation(self) -> "DistillationConfig":
+        if self.max_response_chars < self.min_response_chars:
+            raise ValueError("max_response_chars는 min_response_chars 이상이어야 합니다")
+        names = [concept.name for concept in self.unsafe_concepts]
+        if len(names) != len(set(names)):
+            raise ValueError("unsafe_concepts 이름은 중복될 수 없습니다")
         return self
 
 

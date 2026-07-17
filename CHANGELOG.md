@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.6.0 - 2026-07-17
+
+- 로컬 OpenAI 호환 qwen36mtp teacher의 10k 데이터를 준비·수집·재개·export·검증하는 schema 2 CLI를 추가했다.
+- 원자 spool, bounded 동시성·요청률·retry, progress/ETA, stale lock과 current spool 결속으로 장기 수집을 안전하게 재개한다.
+- redirect·환경 proxy·secret echo·과대 body·무제한 retry를 차단하고 teacher 출력은 내부 전용·release blocked로 고정했다.
+- full latest baseline 평가와 v3 10k inventory·preflight 실행 결과를 보존했으며 실제 collect와 혼합 SFT는 후속으로 남겼다.
+- 독립 리뷰의 14개 지적을 수정하고 123 tests, Ruff, Pyright와 diff 검증을 통과했다.
+
 ## 1.5.3 - 2026-07-17
 
 - SFT에 명시적 정밀도 선택, gradient accumulation, 주기적 heldout validation과 validation loss 기준 best/latest checkpoint를 추가했다.

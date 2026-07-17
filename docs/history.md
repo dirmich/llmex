@@ -1,5 +1,36 @@
 # 구현 이력
 
+## 2026-07-17 · 1.6.0 teacher 10k 증류 수집 파이프라인
+
+### 완료: full latest baseline 평가
+
+- 100k `latest` checkpoint를 `runs/baseline-100m/evaluation-full-latest`에서 validation/test 전체 shard로 평가했다.
+- validation은 predicted token 4,223,967, loss 2.553663223356222, PPL 12.85410509996689이고 test는 predicted token 3,976,401, loss 2.5499812486981788, PPL 12.806863635046096이다.
+- `evaluation-report.json` SHA-256은 `1f7cbf7624003e76711fc74b3f59fddcc14387f77a1c073b78d4ec55dbb795ff`다. canary provenance와 corpus 경로가 없는 canary exposure·contamination·long train match는 계속 미실행이며 full PPL이 해당 gate를 대신하지 않는다.
+
+### 완료: schema 2 teacher 수집 구현과 v3 준비
+
+- `llmex distill preflight/prepare/collect/resume/status/export/validate`와 `configs/distill/qwen36mtp-10k.yaml`을 추가했다. 로컬 `http://localhost:8081/v1`의 `qwen36mtp`를 확인하고 모든 completion 요청에 thinking 비활성화를 명시한다.
+- 안전 run은 `runs/distill/qwen36mtp-10k-v3`다. source chat raw 6,853건에서 고유 prompt 5,813건을 남기고 중복 1,040건을 제거했으며 upstream heldout 630건을 보존했다. Wikipedia 4,187건을 보충해 총 10,000건, train/heldout 8,445/1,555, prompt와 upstream source overlap 0으로 준비했다.
+- inventory SHA-256은 `b6a02b20b76f698a7b292b54faf5c46c65fce246ff2cd79a21be99274bc42ea1`, fingerprint는 `46248ba32985f7102a4d401dfa019c43884011c7fb080014d6888e8e20593e7b`다.
+- 실제 preflight는 통과했고 현재 status는 pending 10,000, completed 0, progress 0, ETA 미산출이다. 따라서 pipeline과 inventory 준비 완료를 teacher 응답 수집 완료로 해석하지 않는다.
+- 요청별 schema 2 spool을 원자 저장하고 bounded concurrency·RPS·timeout·응답 크기·retry 횟수와 지연 상한을 강제한다. 진행률·누적 시간·실효 RPS·ETA를 기록하며 중단 뒤 검증된 spool만 건너뛰어 재개한다.
+- stale lock은 같은 host의 종료 PID와 동일 inode/내용을 재검증한 경우에만 회수한다. current config/inventory/request body와 spool hash가 다르면 실패-폐쇄한다.
+- export는 current inventory와 accepted spool 집합에 강결속하고 provenance와 request/response/raw-response hash를 보존한다. teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation`, 재배포 불가, release blocked다.
+- loopback HTTP `/v1`만 허용하고 redirect와 환경 proxy를 차단한다. 비밀정보는 환경변수에서만 읽으며 응답 echo를 탐지하면 본문과 hash를 기록하지 않는다. body·retry 상한과 strict completion schema를 적용한다.
+- 반복·prompt 복사·위험 패턴 검사는 휴리스틱 사전 필터이며 최종 safety gate가 아니다.
+
+### 독립 검토와 검증
+
+- 독립 리뷰의 최초 9개 지적과 추가 5개 지적을 수정한 뒤 최종 `APPROVE`를 받았다.
+- 전체 `uv run pytest -q` 123개 테스트, Ruff lint/format, Pyright 오류·경고 0건과 `git diff --check`를 통과했다.
+
+### 다음 순서
+
+1. v3 run에서 실제 teacher 10,000건을 `collect`하고 중단 시 `resume`한다.
+2. 완료된 current spool에서 `export`와 `validate`를 통과시킨다.
+3. 허가된 공개 instruction과 teacher 데이터를 혼합해 100k latest 기반 SFT를 수행한다.
+
 ## 2026-07-17 · 1.5.3 SFT 재개 무결성 강화와 100k 시작 checkpoint 선택
 
 ### 완료: SFT 학습과 검증 계약 강화

@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.6.0 - 2026-07-17
+
+- `distill preflight/prepare/collect/resume/status/export/validate` schema 2 teacher 수집 파이프라인과 qwen36mtp 10k v3 설정을 추가했다.
+- 결정적 10k inventory, 원자 spool, 진행률·ETA, bounded concurrency/RPS/retry, 중단 재개와 stale lock 회수를 구현했다.
+- current inventory/spool에 결속된 provenance export와 내부 전용 라이선스·release blocked 검증을 추가했다.
+- loopback endpoint, redirect·proxy 차단, secret echo 비보존, 응답 body/retry 상한과 strict teacher 응답 schema를 적용했다.
+- 100k latest full validation/test 평가와 v3 inventory 준비·preflight 실행 결과를 기록했다. 실제 10k collect는 대기 중이다.
+- 독립 리뷰 14개 지적 수정 뒤 승인받고 전체 123 tests, Ruff, Pyright와 diff 검사를 통과했다.
+
 ## 1.5.3 - 2026-07-17
 
 - SFT에 `auto`/`bf16`/`fp16`/`fp32` 정밀도, gradient accumulation, 주기적 heldout validation과 validation loss 기준 `best.pt`를 추가했다.

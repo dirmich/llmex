@@ -1,0 +1,127 @@
+# teacher 증류 데이터 실행 가이드
+
+LLMEX 1.6.0의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 현재 안전 실행은 `configs/distill/qwen36mtp-10k.yaml`, teacher는 `http://localhost:8081/v1`의 `qwen36mtp`, run은 `runs/distill/qwen36mtp-10k-v3`다. inventory 10,000건과 preflight는 준비됐지만 실제 응답 수집은 아직 시작하지 않았다.
+
+teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation` 내부 전용이다. export manifest는 `redistribution_allowed=false`, `release_gate=blocked`를 강제한다. 수집 성공이나 휴리스틱 필터 통과는 최종 안전성·법무·공개 승인이 아니다.
+
+## 실행 전 확인
+
+저장소 루트에서 잠긴 환경과 설정을 확인한다.
+
+```bash
+uv sync --frozen
+uv run llmex config validate configs/distill/qwen36mtp-10k.yaml --kind distillation
+uv run llmex distill preflight --config configs/distill/qwen36mtp-10k.yaml
+```
+
+preflight는 `GET /v1/models`에서 `qwen36mtp`가 실제 제공되는지 확인한다. 2026-07-17 실행 결과는 `status=ok`였으며 endpoint와 model이 설정과 일치했다.
+
+요청은 `POST /v1/chat/completions`로 전송하며 다음 조건을 고정한다.
+
+- system prompt: `질문에 한국어로 정확하고 자연스럽게 답하세요. 모르는 내용은 추측하지 마세요.`
+- `temperature=0.2`, `max_tokens=512`
+- `chat_template_kwargs.enable_thinking=false`
+- 응답 role은 `assistant`, `finish_reason`은 `stop`, `reasoning_content`는 비어 있어야 한다.
+
+## 실제 설정
+
+`configs/distill/qwen36mtp-10k.yaml`의 주요 값은 다음과 같다.
+
+| 항목 | 값 |
+|---|---|
+| schema | 2 |
+| endpoint / model | `http://localhost:8081/v1` / `qwen36mtp` |
+| run | `runs/distill/qwen36mtp-10k-v3` |
+| 요청 수 / heldout | 10,000 / 1,000 basis points |
+| 동시성 / 요청률 | 4 / 초당 1.5건 |
+| timeout / 최대 응답 | 120초 / 1,048,576 bytes |
+| 최대 시도 / retry 상한 | 5회 / 60초 |
+| 응답 길이 | 8–8,000자 |
+| repetition / prompt copy 상한 | 0.65 / 0.9 |
+| 출력 라이선스 | `LicenseRef-LLMEX-Internal-Distillation` |
+
+source chat 파일은 `/tmp/llmex-public-sft/data/train.jsonl`, `/tmp/llmex-public-sft/data/heldout.jsonl`이고 Wikipedia 보충 원천은 `data/processed/corpus-v1.jsonl.zst`다. `/tmp` 원천이 사라지거나 내용이 달라지면 기존 v3 run을 임의 재생성하지 말고 provenance와 fingerprint를 다시 검토한다.
+
+## inventory 준비 결과
+
+```bash
+uv run llmex distill prepare --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml
+```
+
+v3 inventory 실측은 다음과 같다.
+
+| 항목 | 결과 |
+|---|---:|
+| source chat raw | 6,853 |
+| 고유 prompt / 중복 제거 | 5,813 / 1,040 |
+| upstream heldout 보존 | 630 |
+| Wikipedia 보충 | 4,187 |
+| 총 inventory | 10,000 |
+| train / heldout | 8,445 / 1,555 |
+| prompt·upstream source overlap | 0 / 0 |
+
+- inventory SHA-256: `b6a02b20b76f698a7b292b54faf5c46c65fce246ff2cd79a21be99274bc42ea1`
+- inventory fingerprint: `46248ba32985f7102a4d401dfa019c43884011c7fb080014d6888e8e20593e7b`
+- 현재 status: total 10,000, pending 10,000, completed 0, progress 0, ETA 미산출
+
+upstream heldout 630건은 distill heldout에 그대로 보존한다. 나머지는 seed 기반 결정적 분할을 사용하며 train과 heldout의 prompt 및 upstream source가 겹치면 중단한다.
+
+## 실제 수집과 진행률
+
+```bash
+uv run llmex distill collect --config configs/distill/qwen36mtp-10k.yaml
+```
+
+`collect`는 최대 4개 요청만 동시에 유지하고 전체 요청률을 초당 1.5건으로 제한한다. 408/409/425/429/5xx와 네트워크 실패만 최대 5회 재시도하며 지수 backoff, 결정적 jitter, 유효한 `Retry-After`를 60초 상한 안에서 적용한다. 성공·거부·실패는 요청별 schema 2 JSON spool로 원자 저장된다.
+
+다른 터미널에서 진행률을 확인한다.
+
+```bash
+watch -n 10 'uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml'
+```
+
+status는 total/completed/pending/accepted/rejected/failed, progress, 누적 elapsed, effective RPS, ETA, 마지막 성공·오류 시각을 JSON으로 출력한다. 처리 표본이 없으면 ETA는 `null`이며 수집이 진행된 뒤 실제 처리율로 계산한다.
+
+## 중단과 재개
+
+`Ctrl-C` 또는 처리 가능한 예외가 발생하면 완료 future를 먼저 spool에 기록하고 lock과 상태를 정리한다. 강제 종료나 SIGTERM으로 정리 절차를 밟지 못하면 다음 실행이 종료된 PID의 stale lock을 엄격히 검사해 회수한다. 같은 명령 또는 명시적 resume 명령은 검증된 완료 spool을 건너뛰고 pending과 retry가 소진된 failed 항목만 이어서 처리한다.
+
+```bash
+uv run llmex distill resume --config configs/distill/qwen36mtp-10k.yaml
+```
+
+run lock에는 schema, PID, host와 시작 시각을 기록한다. 같은 host의 살아 있는 PID 또는 해석할 수 없는 lock은 거부하고, 종료된 PID의 stale lock만 inode와 내용을 재확인한 뒤 회수한다. config fingerprint, inventory checksum·fingerprint, request ID/body hash와 spool record hash가 다르면 재개하지 않는다.
+
+## export와 최종 검증
+
+수집 상태가 10,000건 모두 완료된 뒤에만 다음 순서로 실행한다.
+
+```bash
+uv run llmex distill export --config configs/distill/qwen36mtp-10k.yaml
+uv run llmex distill validate --config configs/distill/qwen36mtp-10k.yaml
+```
+
+export는 accepted 응답의 canonical 중복을 제거해 다음 파일을 원자적으로 만든다.
+
+- `runs/distill/qwen36mtp-10k-v3/export/train.jsonl`
+- `runs/distill/qwen36mtp-10k-v3/export/heldout.jsonl`
+- `runs/distill/qwen36mtp-10k-v3/export/manifest.json`
+
+각 행에는 source dataset/license/ID/hash/date, teacher model, request/response/raw-response SHA-256과 내부 전용 라이선스를 보존한다. manifest는 current inventory와 accepted spool ID·record/request/response hash 집합에 결속된다. export 이후 spool을 추가·교체·삭제하거나 stale export를 재사용하면 `validate`가 거부한다. 검증은 current spool에서 export를 다시 유도해 byte/hash 일치, JSONL schema/license, prompt와 upstream source overlap 0, 내부 전용 release gate를 확인한다.
+
+## 네트워크·비밀정보 안전 경계
+
+- endpoint는 loopback `http` 절대 URL과 `/v1` 경로만 허용한다. userinfo, query, fragment, 외부 host와 HTTPS endpoint는 거부한다.
+- 환경의 HTTP/HTTPS/all proxy를 사용하지 않으며 redirect를 추적하지 않는다. Authorization header가 proxy나 redirect 목적지로 전달되지 않는다.
+- API key는 `api_key_env`가 지정된 경우에만 환경변수에서 읽고 artifact·오류 문구에 값을 기록하지 않는다.
+- teacher가 credential 또는 `Bearer credential`을 echo하면 constant-time 검사로 `secret_leak` 처리하고 응답 본문과 raw/정규화 hash를 spool에 남기지 않는다.
+- `Content-Length`와 실제 읽기 모두 `max_response_bytes`를 넘으면 거부한다. 예상하지 않은 message field, role, finish reason, thinking content와 빈 응답도 거부한다.
+- 응답 길이, 반복, prompt 복사와 소수 위험 패턴 필터는 `heuristic_pre_filter_not_final_safety_gate`다. 독립 안전 평가와 수동 검토를 대체하지 않는다.
+
+## 이후 순서
+
+1. 현재 v3 run에서 실제 10,000건을 `collect`/`resume`한다.
+2. 완료 뒤 `export`와 `validate`를 통과시키고 manifest·checksum·거부 사유 분포를 보존한다.
+3. 허가된 공개 instruction과 검증된 teacher export를 혼합해 100k latest base에서 SFT한다.
+4. 대화 품질, EOS, repetition, safety와 수동 gate를 별도로 통과시킨다.

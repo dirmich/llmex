@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.5는 날짜가 고정된 한국어 Wikipedia 사전학습과 허가된 JSONL 대화 데이터의 assistant-only SFT를 위한 재현 가능한 교육·연구 도구다. 100k baseline 학습은 완료했지만 후속 전체 평가와 독립 안전/법무·공개 배포 승인은 대기 중이므로 가중치와 corpus의 외부 공개를 허가하지 않는다.
+LLMEX 1.6은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 100k baseline 학습과 full latest 평가, teacher 10k inventory 준비는 완료했지만 실제 수집·혼합 SFT와 독립 안전/법무·공개 배포 승인은 대기 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
 
 ## 빠른 시작
 
@@ -11,6 +11,7 @@ uv run llmex config validate configs/data/sample.yaml --kind data
 uv run llmex run create --config configs/model/smoke.yaml --kind model --dry-run
 uv run llmex train smoke --config configs/training/smoke.yaml --dry-run
 uv run llmex sft train --config configs/sft/smoke.yaml --dry-run
+uv run llmex distill --help
 make check
 uv run llmex release audit
 uv run llmex release bundle --output dist/reproducibility
@@ -27,6 +28,7 @@ Python 3.11 이상과 `uv`가 필요하다. 테스트는 네트워크와 GPU를 
 - `docs/environment.md`: 로컬·DGX Spark 환경 계약
 - `docs/history.md`: 구현·검증 이력
 - `docs/chat-sft.md`: JSONL 대화 데이터, SFT 재개, 평가·생성 계약
+- `docs/teacher-distillation.md`: teacher 10k 준비·수집·재개·export·검증 계약
 
 ## 컨테이너
 
