@@ -11,7 +11,7 @@ import yaml
 from tokenizers.trainers import BpeTrainer
 from typer.testing import CliRunner
 
-from llmex.chat.data import ChatRow, final_user_prompt_sha256
+from llmex.chat.data import ChatRow, final_user_prompt_sha256, provenance_source_key
 from llmex.chat.mixer import preflight_mix, prepare_mix, status_mix, validate_mix
 from llmex.chat.runtime import SFTTrainer, _datasets, evaluate_chat, preflight_sft
 from llmex.cli import app
@@ -466,6 +466,105 @@ def test_mix는_split_누출_중복_길이를_제외하고_release를_계승한�
         {row.provenance.source_sha256 for row in train}
         & {row.provenance.source_sha256 for row in heldout}
     )
+
+
+def test_mix는_source_id가_없는_public을_행별로_보존하고_teacher_원행만_격리한다(
+    tmp_path: Path,
+) -> None:
+    config, _ = _fixture(tmp_path)
+    baseline = preflight_mix(config)
+    public = "Apache-2.0"
+    internal = "LicenseRef-LLMEX-Internal-Distillation"
+
+    def public_without_identity(identifier: str, split: str, prompt: str) -> dict[str, object]:
+        row = _row(
+            identifier,
+            split,
+            prompt,
+            f"{prompt} 답변",
+            public,
+            "ignored-source-id",
+            source_sha256=False,
+        )
+        provenance = cast(dict[str, object], row["provenance"])
+        provenance.pop("source_id")
+        provenance["dataset"] = "pilot-public"
+        provenance["source"] = "shared-jsonl"
+        basis = {key: row[key] for key in ("id", "messages", "provenance", "split")}
+        row["sha256"] = fingerprint(basis)
+        return row
+
+    public_rows = [
+        public_without_identity("pilot-a", "train", "pilot 공개 질문 A"),
+        public_without_identity("pilot-b", "train", "pilot 공개 질문 B"),
+        public_without_identity("pilot-c", "train", "pilot 공개 질문 C"),
+    ]
+    linked_public_sha = cast(str, public_rows[1]["sha256"])
+    _write(config.public_train_data, [*_rows(config.public_train_data), *public_rows])
+    public_heldout = public_without_identity("pilot-heldout", "heldout", "pilot 공개 heldout 질문")
+    _write(config.public_heldout_data, [*_rows(config.public_heldout_data), public_heldout])
+
+    teacher_link = _row(
+        "teacher-linked-heldout",
+        "heldout",
+        "teacher가 결속한 pilot B 질문",
+        "teacher heldout 답변",
+        internal,
+        "teacher-linked",
+    )
+    teacher_provenance = cast(dict[str, object], teacher_link["provenance"])
+    teacher_provenance["source_sha256"] = linked_public_sha
+    teacher_basis = {key: teacher_link[key] for key in ("id", "messages", "provenance", "split")}
+    teacher_link["sha256"] = fingerprint(teacher_basis)
+    _write(
+        config.teacher_heldout_data,
+        [*_rows(config.teacher_heldout_data), teacher_link],
+    )
+    config = _refresh_teacher_binding(config)
+
+    preflight = preflight_mix(config)
+    baseline_selection = cast(dict[str, object], baseline["selection"])
+    selection = cast(dict[str, object], preflight["selection"])
+    assert selection["selected_train"] == cast(int, baseline_selection["selected_train"]) + 2
+    assert selection["selected_heldout"] == cast(int, baseline_selection["selected_heldout"]) + 2
+
+    assert prepare_mix(config)["reused"] is False
+    assert prepare_mix(config)["reused"] is True
+    train = [
+        ChatRow.model_validate(json.loads(line))
+        for line in (config.output_dir / "train.jsonl").read_text().splitlines()
+    ]
+    heldout = [
+        ChatRow.model_validate(json.loads(line))
+        for line in (config.output_dir / "heldout.jsonl").read_text().splitlines()
+    ]
+    train_text = "\n".join(message.content for row in train for message in row.messages)
+    assert "pilot 공개 질문 A" in train_text
+    assert "pilot 공개 질문 B" not in train_text
+    assert "pilot 공개 질문 C" in train_text
+
+    expected_identity = {
+        cast(str, public_rows[0]["sha256"]),
+        cast(str, public_rows[2]["sha256"]),
+    }
+    selected_public = [
+        row
+        for row in train
+        if any(
+            message.content in {"pilot 공개 질문 A", "pilot 공개 질문 C"}
+            for message in row.messages
+        )
+    ]
+    assert {row.provenance.source_sha256 for row in selected_public} == expected_identity
+    assert {row.provenance.source_id for row in selected_public} == {"pilot-a", "pilot-c"}
+    assert not (
+        {provenance_source_key(row.provenance) for row in train}
+        & {provenance_source_key(row.provenance) for row in heldout}
+    )
+    manifest = json.loads((config.output_dir / "manifest.json").read_text())
+    assert manifest["source_sha256_overlap"] == 0
+    assert manifest["prompt_overlap"] == 0
+    assert validate_mix(config)["status"] == "ok"
 
 
 def test_mix_manifest_tamper와_cli를_실패_폐쇄한다(tmp_path: Path) -> None:

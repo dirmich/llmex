@@ -1,8 +1,14 @@
 # LLMEX 개발 TODO
 
-## 1.9.1 민감 출력 선필터 완료 및 정식 teacher 수집 진행
+## 1.9.2 행별 원천 결속 완료 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] source SHA → 명시 source ID → 입력 원행 SHA의 source identity 우선순위
+- [x] 기존 provenance를 덮어쓰지 않는 mix 출력 원행 SHA/ID 계승
+- [x] teacher source SHA와 실제 공개 원행만 결속하고 동일 dataset URL의 다른 행 보존
+- [x] 실제 6,881행 pilot 사전검증 selected train 25 → 4,257, heldout 475 회복
+- [x] 최종 prompt/source overlap 0, 전체 160 tests·Ruff·Pyright·diff 검사 통과
 
 - [x] 공개 데이터 영구 경로에 Apache-2.0 원본·revision·provenance·SHA와 train 6,204/heldout 649행 보존
 - [x] 공개·teacher train/heldout의 모든 assistant turn에 완화 불가 주민번호·휴대전화·이메일·secret 선필터

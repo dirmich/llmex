@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.2 - 2026-07-18
+
+- 공개 행에 source identity가 없을 때 dataset/source 전체를 하나로 묶던 혼합 결함을 교정했다. `source_sha256 → 명시 source_id → 검증된 입력 행 SHA` 순서로 원행을 결속한다.
+- 기존 provenance identity는 보존하고 둘 다 없는 출력 행에만 원행 ID/SHA를 승격해 mixer와 SFT runtime의 split 누출 검사를 일치시켰다.
+- 모듈별 실습 교재의 혼합 장을 같은 원행 우선순위와 fallback 계약으로 동기화했다.
+- 실제 public 6,853 + teacher pilot 28 입력을 재유도해 train 25행의 비정상 결과를 train 4,257행, heldout 475행으로 회복했고 source/prompt overlap 0과 입력 수 보존을 확인했다.
+- 원행 하나만 teacher heldout에 결속되는 회귀를 포함해 전체 160 tests, Ruff, Pyright와 독립 재검토 `APPROVE`를 통과했다.
+
 ## 1.9.1 - 2026-07-18
 
 - 공개·teacher train/heldout의 모든 assistant turn에 완화 불가능한 주민번호·휴대전화·이메일·secret built-in 선필터를 추가했다.

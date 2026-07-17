@@ -73,15 +73,27 @@ generation_reserve_tokens: 128
 p = \operatorname{SHA256}(\operatorname{canonicalFinalUser}(messages))
 \]
 
-source identity는 `source_sha256`이 있으면 그것을 사용하고, 없으면 dataset/source/source_id의 fingerprint를 사용한다.
+source identity는 명시 정보가 있으면 그것을 우선한다. 공개 변환 행처럼 `source_id`와
+`source_sha256`이 모두 없으면 schema 검증을 통과한 입력 행 자체의 canonical SHA-256을
+fallback으로 사용한다. 그렇지 않고 dataset/source URL만 공유하는 행을 하나의 원천으로
+묶으면 heldout 한 행 때문에 공개 train 전체가 제외될 수 있다.
 
 ```python
-source_key = provenance.source_sha256 or fingerprint({
-    "dataset": provenance.dataset,
-    "source": provenance.source,
-    "source_id": provenance.source_id,
-})
+if provenance.source_sha256 is not None:
+    source_key = provenance.source_sha256
+elif provenance.source_id is not None:
+    source_key = fingerprint({
+        "dataset": provenance.dataset,
+        "source": provenance.source,
+        "source_id": provenance.source_id,
+    })
+else:
+    source_key = row.sha256
 ```
+
+출력에는 기존 identity를 덮어쓰지 않는다. 두 identity가 모두 없던 행에만 원행 ID와
+원행 SHA를 provenance로 승격한다. 그러면 mixer가 만든 split과 이후 SFT runtime이 같은
+원천 키를 사용해 누출을 이중 검사할 수 있다.
 
 prompt가 달라도 같은 원문에서 파생된 두 질문은 정보를 공유할 수 있다. 그래서 최종 조건은 둘 다 0이어야 한다.
 

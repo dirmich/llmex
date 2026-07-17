@@ -60,7 +60,7 @@ def _read_rows(
                         f"허가되지 않은 라이선스: {row.provenance.license}: {path}:{line_number}"
                     )
                 prompt_sha = final_user_prompt_sha256(row.messages)
-                source_key = provenance_source_key(row.provenance)
+                source_key = provenance_source_key(row.provenance, fallback_sha256=row.sha256)
                 rows.append(_Candidate(row, origin, prompt_sha, source_key))
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise IntegrityError(f"SFT mix JSONL schema 검증 실패: {path}: {exc}") from exc
@@ -131,6 +131,10 @@ def _serialized_row(candidate: _Candidate, split: str) -> dict[str, object]:
     )
     messages = [message.model_dump() for message in candidate.row.messages]
     provenance = candidate.row.provenance.model_dump(exclude_none=True)
+    if candidate.row.provenance.source_id is None:
+        provenance["source_id"] = candidate.row.id
+        if candidate.row.provenance.source_sha256 is None:
+            provenance["source_sha256"] = candidate.row.sha256
     basis = {"id": identifier, "messages": messages, "provenance": provenance, "split": split}
     return {"schema_version": 1, **basis, "sha256": fingerprint(basis)}
 

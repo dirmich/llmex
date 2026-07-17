@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
+LLMEX 1.9.2는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 학습 전 assistant 민감 출력 차단, 실제 SFT preflight, SHA 고정 자동 gate와 서명된 수동 blind review gate를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 gate 구현 완료는 실제 모델의 사람 품질·법무·외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -26,6 +26,7 @@ uv run llmex sft validate-mix --help
 ```
 
 - 어느 입력에서든 heldout인 canonical prompt와 provenance source는 train보다 우선해 격리한다.
+- source identity 우선순위는 명시 `source_sha256`, 명시 `source_id`의 dataset/source 결속 fingerprint, 둘 다 없을 때 입력 원행 SHA다. 원행 identity가 없던 공개 행은 출력 provenance에 원행 SHA와 ID를 추가하며 기존 identity는 덮어쓰지 않는다. 따라서 같은 dataset URL 전체를 하나의 source로 오인하지 않고 teacher가 실제로 파생된 공개 원행만 정확히 격리한다.
 - 동일 source+prompt 중복과 heldout prompt 중복은 정렬된 hash 순서로 결정적으로 하나만 남긴다.
 - prompt token과 생성 reserve 합 또는 전체 chat token이 `max_seq_len`을 넘으면 제외하고 사유별 수를 manifest에 기록한다.
 - teacher export manifest SHA, train/heldout SHA·행 수, inventory/config/accepted spool fingerprint와 tokenizer manifest SHA를 고정한다.
@@ -35,6 +36,8 @@ uv run llmex sft validate-mix --help
 - 출력 parent의 고유 lock과 sibling staging을 사용하고 세 파일이 완성·fsync된 디렉터리를 한 번에 교체한다. 부분 출력, 동시 실행, 변조된 manifest와 미완료 staging은 자동 복구·덮어쓰기 대신 실패-폐쇄한다.
 
 공개 instruction 원본은 임시 디렉터리에 의존하지 않도록 `data/chat/public/korean-instruction-v1`에 보존한다. Git에는 대용량 데이터가 아니라 이 경로와 검증 계약만 기록한다. 고정 원천은 `CarrotAI/ko-instruction-dataset` revision `5c0e2c0180b50400e401dd0b296043f18fc6cb3f`, Apache-2.0이며 train/heldout은 6,204/649행이다. SHA-256은 각각 `68e9a90e2f58288e135a00f4a86905273341771f7c266b19656e029ca8783c0f`, `735871877d8cbc518faee3f62b7f90f7940acd5ffd0d96a9ce0e0c71370d503b`다. `source/`에는 원본, 라이선스, revision, URL, provenance와 checksums를 함께 둔다.
+
+실제 공개 6,853행과 v5 30건 pilot export 사전검증에서 identity 보정 전에는 coarse dataset URL 하나가 heldout source로 예약되어 `input_rows=6,881` 중 train이 25행만 남았다. 보정 후에는 동일 입력에서 `selected_train=4,257`, `selected_heldout=475`가 남고 `heldout_source_from_train` 대량 오제외가 사라졌다. 남은 제외는 길이, 민감 출력, prompt 누출과 실제 source+prompt 중복 규칙에 따른다. 이 pilot 수치는 정식 10k mix의 최종 행 수가 아니다.
 
 정식 v5 export가 완료된 뒤 실제 teacher manifest SHA를 pin한 mix config와 별도 pilot/full SFT config를 작성한다. exact canonical prompt 검사는 의미가 같은 바꿔쓰기까지 판정하지 않으므로 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사 대상이다.
 

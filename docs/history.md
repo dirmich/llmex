@@ -1,5 +1,29 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.2 공개 원행과 teacher provenance 결속 교정
+
+### 실제 혼합 사전검증에서 발견한 원행 붕괴
+
+- 공개 instruction 6,853행과 완료된 v5 pilot teacher 28행을 함께 넣은 실제 사전검증에서 입력 6,881행 중 train이 25행만 남고 `heldout_source_from_train`으로 4,251행이 제외되는 이상을 확인했다.
+- 공개 변환 행은 `source_id`와 `source_sha256`이 없고 dataset/source URL을 공유한다. 기존 fallback은 이 두 필드만으로 원천 키를 만들어 공개 데이터 전체를 하나의 가상 upstream source로 취급했고, 공개 heldout 하나가 거의 모든 공개 train을 격리했다.
+- teacher 행은 원래 공개 `ChatRow.id`와 `ChatRow.sha256`을 `source_id`와 `source_sha256`으로 보존한다. 따라서 coarse dataset URL이 아니라 실제 입력 원행 identity를 fallback으로 써야 teacher heldout과 대응하는 공개 원행 하나만 정확히 결속할 수 있다.
+
+### 구현한 identity 우선순위와 출력 계약
+
+- provenance 원천 키를 `source_sha256 → 명시 source_id의 canonical fingerprint → 호출자가 검증한 입력 행 SHA-256 → 기존 coarse fingerprint` 순서로 결정한다. 명시 source ID는 fallback 변화와 무관하고, 명시 source SHA는 언제나 최우선이다.
+- mixer는 schema와 canonical row SHA를 검증한 `ChatRow.sha256`만 fallback으로 넘긴다. 출력에는 기존 `source_id`/`source_sha256`을 절대 덮어쓰지 않으며, 둘 다 없는 행에만 원행 ID와 원행 SHA를 승격해 이후 SFT runtime도 동일 identity로 split overlap을 재검사하게 한다.
+- heldout source를 train 선택 전에 예약하는 기존 실패-폐쇄 계약, prompt/source 최종 교집합 0, teacher export manifest와 입력 파일 SHA 결속, 결정적 정렬·재사용·재유도 검증은 유지했다.
+
+### 실제 재유도 결과와 검증
+
+- 수정 후 같은 pilot 입력 6,881행에서 train 4,257행(public 4,238 + teacher 19), heldout 475행(public 472 + teacher 3)을 선택했다. 선택 4,732행과 제외 2,149행의 합이 입력과 정확히 일치한다.
+- 제외는 sequence 초과 1,743, heldout prompt의 train 대응 255, prompt 초과 77, 민감 assistant 출력 39, 동일 source+prompt 중복 19, heldout prompt 중복 16이다. 수정 전 발생한 4,251행의 원천 일괄 격리는 사라졌다.
+- 동일 dataset/source를 공유하지만 identity가 없는 공개 행은 서로 다른 원행으로 남고, teacher heldout의 `source_sha256`이 가리키는 공개 train 원행 하나만 제외되는 회귀를 추가했다. 출력 4,732행에 runtime용 identity가 모두 존재하며 source/prompt overlap은 0이다.
+- 모듈별 실습 교재의 public+teacher 혼합 장도 같은 identity 우선순위, 행 SHA fallback과 출력 identity 승격 계약으로 갱신해 구현과 학습 자료가 어긋나지 않게 했다.
+- 전체 160 tests, Ruff lint/format, Pyright strict와 `git diff --check`를 통과했다. 독립 code review는 실제 pilot 설정을 읽기 전용으로 재유도한 뒤 HIGH/MEDIUM 없이 `APPROVE`했다.
+- `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 문서 단위 hash split, attribution 보존과 split 누출 즉시 중단 원칙을 실제 원행 단위로 적용했다. provenance의 의미적 진실성은 여전히 입력 파일과 teacher manifest의 무결성에 의존하며 외부 서명을 새로 가정하지 않는다.
+- 정식 qwen36mtp v5 10k 수집은 계속 진행 중이다. 완료 후 정식 export/validate와 동일 mix gate를 다시 수행하고 실제 선택 행 수로 pilot·fresh full SFT step을 확정한다.
+
 ## 2026-07-18 · 1.9.1 SFT 민감 출력 선필터와 원자 산출물 강화
 
 ### 학습 데이터 민감 출력 차단

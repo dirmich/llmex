@@ -106,10 +106,14 @@ def final_user_prompt_sha256(messages: tuple[Message, ...] | list[Message]) -> s
     return hashlib.sha256(canonical_final_user_prompt(messages).encode("utf-8")).hexdigest()
 
 
-def provenance_source_key(provenance: Provenance) -> str:
-    """실제 source SHA가 없을 때도 동일 upstream source를 안정적으로 결속한다."""
+def provenance_source_key(provenance: Provenance, *, fallback_sha256: str | None = None) -> str:
+    """source SHA, 명시 ID, 호출자가 제공한 행 fallback 순으로 원천을 결속한다."""
 
-    return provenance.source_sha256 or fingerprint(
+    if provenance.source_sha256 is not None:
+        return provenance.source_sha256
+    if provenance.source_id is None and fallback_sha256 is not None:
+        return fallback_sha256
+    return fingerprint(
         {
             "dataset": provenance.dataset,
             "source": provenance.source,
