@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.7.0 비누출 SFT mix 완료 및 정식 teacher 수집 진행
+## 1.7.1 SFT 실제 preflight 완료 및 정식 teacher 수집 진행
 
 ### 완료
 
@@ -53,6 +53,12 @@
 - [x] mix 배타 lock·staging·fsync·원자 publish, 부분 출력·변조 거부
 - [x] 내부 teacher release blocked를 SFT checkpoint·평가에 계승하고 legacy resume 유지
 - [x] 독립 리뷰 HIGH 3건+MEDIUM 및 추가 HIGH 수정 후 승인, 전체 133 tests·Ruff·Pyright 통과
+- [x] `sft preflight --measure-baseline/--no-measure-baseline` 실제 전체 초기화 검증
+- [x] device·precision·고유 parameters·data fingerprint·base provenance·release·유효 batch 출력
+- [x] 고정 heldout subset의 target-token 가중 step-0 loss/PPL/token 측정
+- [x] run 디렉터리·sampler·RNG·model mode·deterministic enabled/warn-only·cuDNN 상태 무변경
+- [x] preflight 입력·초기화·baseline 오류 실패-폐쇄
+- [x] 독립 리뷰 warn-only MEDIUM 수정 후 승인, 전체 137 tests·Ruff·Pyright 통과
 - [x] 독립 재검토 승인과 최종 전체 129 tests, Ruff lint/format, Pyright, 참조 코드 checksum·diff 검사
 
 ### 후속 전체 평가 대기
@@ -67,11 +73,13 @@
 2. [ ] 정식 v5 run에서 teacher 10k collect/resume 완료 여부를 `distill status`로 확인
 3. [ ] current spool export/validate 뒤 teacher manifest SHA-256 고정
 4. [ ] 실제 export 경로를 사용하는 mix config와 pilot/full SFT config 작성
-5. [ ] preflight-mix → prepare-mix → validate-mix와 별도 pilot 실행
-6. [ ] pilot gate 통과 뒤 fresh full SFT와 best/latest 비교
-7. [ ] 대화/EOS/repetition/safety/manual gate
-8. [ ] semantic paraphrase contamination·수동 감사와 step-0 loss 평가 설계
-9. [ ] GGUF 변환과 llama.cpp parity
+5. [ ] preflight-mix → prepare-mix → validate-mix 통과
+6. [ ] `sft preflight --measure-baseline`으로 step-0 기준선과 실제 초기화 검증
+7. [ ] 별도 pilot 뒤 같은 heldout·설정으로 step-0 대비 평가
+8. [ ] pilot gate 통과 뒤 fresh full SFT와 best/latest 비교
+9. [ ] 대화/EOS/repetition/safety/manual gate
+10. [ ] semantic paraphrase contamination·수동 감사
+11. [ ] GGUF 변환과 llama.cpp parity
 
 ## G003 한국어 대화 학습 경로 (1.5.0)
 

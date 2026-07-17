@@ -18,7 +18,7 @@ from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
 from llmex.chat.template import render_chat, tokenize_chat
 from llmex.config import SFTConfig
 from llmex.data.io import write_json
-from llmex.errors import IntegrityError
+from llmex.errors import IntegrityError, LlmexError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.model import CausalLM, GenerationConfig
 from llmex.tokenizer.core import SPECIAL_IDS, load_tokenizer
@@ -610,26 +610,45 @@ class SFTTrainer:
         return inputs.to(self.device), labels.to(self.device)
 
     def validate(self) -> float:
+        return float(self.validation_metrics(mutate_state=True)["loss"])
+
+    def validation_metrics(self, *, mutate_state: bool) -> dict[str, float | int]:
+        sampler_state = self.validation_sampler.state_dict()
+        batches_seen = self.validation_batches_seen
         was_training = self.model.training
         self.model.eval()
         self.validation_sampler.load_state_dict(_expected_sampler_state(self.validation_sampler, 0))
         weighted_loss = 0.0
         target_total = 0
-        with torch.no_grad():
-            for _ in range(self.config.validation_batches):
-                inputs, labels = self._next_batch(self.heldout_data, self.validation_sampler)
-                with autocast_context(self.device, self.autocast_dtype):
-                    loss = self.model(inputs, targets=labels).loss
-                if loss is None or not bool(torch.isfinite(loss)):
-                    raise IntegrityError(f"SFT 검증 loss가 유한하지 않습니다: step={self.step}")
-                target_count = int((labels[:, 1:] != -100).sum())
-                weighted_loss += float(loss) * target_count
-                target_total += target_count
-                self.validation_batches_seen += 1
-        self.model.train(was_training)
+        try:
+            with torch.no_grad():
+                for _ in range(self.config.validation_batches):
+                    inputs, labels = self._next_batch(self.heldout_data, self.validation_sampler)
+                    target_count = int((labels[:, 1:] != -100).sum())
+                    if target_count == 0:
+                        raise IntegrityError("SFT heldout batch에 assistant 검증 token이 없습니다")
+                    with autocast_context(self.device, self.autocast_dtype):
+                        loss = self.model(inputs, targets=labels).loss
+                    if loss is None or not bool(torch.isfinite(loss)):
+                        raise IntegrityError(f"SFT 검증 loss가 유한하지 않습니다: step={self.step}")
+                    weighted_loss += float(loss) * target_count
+                    target_total += target_count
+                    self.validation_batches_seen += 1
+        finally:
+            self.model.train(was_training)
+            if not mutate_state:
+                self.validation_sampler.load_state_dict(sampler_state)
+                self.validation_batches_seen = batches_seen
         if target_total == 0:
             raise IntegrityError("SFT heldout batch에 assistant 검증 token이 없습니다")
-        return weighted_loss / target_total
+        loss = weighted_loss / target_total
+        if not math.isfinite(loss):
+            raise IntegrityError("SFT heldout weighted loss가 유한하지 않습니다")
+        return {
+            "loss": loss,
+            "perplexity": math.exp(min(loss, 80.0)),
+            "target_tokens": target_total,
+        }
 
     def run(self, *, stop_after_steps: int | None = None) -> dict[str, object]:
         if stop_after_steps is not None and stop_after_steps <= 0:
@@ -739,6 +758,53 @@ def train_sft(config: SFTConfig, *, resume: Path | None = None) -> dict[str, obj
     if resume is not None:
         trainer.resume(resume)
     return trainer.run()
+
+
+def preflight_sft(config: SFTConfig, *, measure_baseline: bool = False) -> dict[str, object]:
+    """학습 파일을 만들지 않고 SFT 전체 초기화와 선택적 step-0 평가를 검증한다."""
+
+    previous_rng = rng_state()
+    deterministic_enabled = torch.are_deterministic_algorithms_enabled()
+    deterministic_warn_only = torch.is_deterministic_algorithms_warn_only_enabled()
+    cudnn_benchmark = torch.backends.cudnn.benchmark
+    try:
+        trainer = SFTTrainer(config)
+        parameters = {id(parameter): parameter for parameter in trainer.model.parameters()}
+        baseline = trainer.validation_metrics(mutate_state=False) if measure_baseline else None
+        return {
+            "schema_version": 1,
+            "status": "ok",
+            "device": trainer.device.type,
+            "precision": trainer.precision,
+            "unique_parameter_count": sum(parameter.numel() for parameter in parameters.values()),
+            "train": {
+                "rows": len(trainer.train_data.examples),
+                "fingerprint": trainer.train_data.fingerprint,
+                "file_sha256": trainer.train_data.file_sha256,
+            },
+            "heldout": {
+                "rows": len(trainer.heldout_data.examples),
+                "fingerprint": trainer.heldout_data.fingerprint,
+                "file_sha256": trainer.heldout_data.file_sha256,
+            },
+            "fingerprints": trainer.fingerprints,
+            "base_checkpoint": trainer.base_checkpoint_provenance,
+            "redistribution_allowed": trainer.release_policy["redistribution_allowed"],
+            "release_gate": trainer.release_policy["release_gate"],
+            "expected_effective_batch_size": (
+                config.micro_batch_size * config.gradient_accumulation_steps
+            ),
+            "baseline_measured": measure_baseline,
+            "baseline": baseline,
+        }
+    except LlmexError:
+        raise
+    except (OSError, RuntimeError, TypeError, ValueError) as exc:
+        raise IntegrityError(f"SFT preflight 초기화에 실패했습니다: {exc}") from exc
+    finally:
+        restore_rng_state(previous_rng)
+        torch.use_deterministic_algorithms(deterministic_enabled, warn_only=deterministic_warn_only)
+        torch.backends.cudnn.benchmark = cudnn_benchmark
 
 
 def _load_sft(

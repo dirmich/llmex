@@ -292,6 +292,23 @@ def _sft_train(config_path: Path, resume: Path | None, dry_run: bool) -> None:
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
+@sft_app.command("preflight")
+def sft_preflight(
+    config_path: Annotated[Path, typer.Option("--config")],
+    measure_baseline: Annotated[
+        bool, typer.Option("--measure-baseline/--no-measure-baseline")
+    ] = False,
+) -> None:
+    """SFT 전체 초기화와 선택적 step-0 baseline을 출력 생성 없이 검증합니다."""
+    try:
+        from llmex.chat import preflight_sft
+
+        result = preflight_sft(_sft_config(config_path), measure_baseline=measure_baseline)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
 @sft_app.command("train")
 def sft_train(
     config_path: Annotated[Path, typer.Option("--config")],

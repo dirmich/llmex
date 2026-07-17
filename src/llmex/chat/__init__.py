@@ -2,7 +2,7 @@
 
 from llmex.chat.data import ChatDataset, ChatExample, load_chat_jsonl
 from llmex.chat.mixer import preflight_mix, prepare_mix, status_mix, validate_mix
-from llmex.chat.runtime import evaluate_chat, generate_chat, train_sft
+from llmex.chat.runtime import evaluate_chat, generate_chat, preflight_sft, train_sft
 from llmex.chat.template import render_chat, tokenize_chat
 
 __all__ = [
@@ -12,6 +12,7 @@ __all__ = [
     "generate_chat",
     "load_chat_jsonl",
     "preflight_mix",
+    "preflight_sft",
     "prepare_mix",
     "render_chat",
     "status_mix",

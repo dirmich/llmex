@@ -201,9 +201,22 @@ uv run llmex sft validate-mix --help
 ```
 
 실제 mix config와 pilot/full SFT config는 export가 완료되어 경로와 manifest SHA가 확정된 뒤 만든다.
-순서는 `preflight-mix → prepare-mix → validate-mix → 별도 pilot → fresh full`이다. mix manifest의
+순서는 `preflight-mix → prepare-mix → validate-mix → SFT baseline preflight → 별도 pilot → fresh full`이다. mix manifest의
 `prompt_overlap=0`, `source_sha256_overlap=0`, `release_gate=blocked`를 확인하기 전에는 학습하지 않는다.
 canonical exact prompt 검사는 semantic paraphrase 누출을 판정하지 않으므로 contamination과 수동 감사를 후속 수행한다.
+
+mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
+export 완료 후 새로 만드는 실제 pilot config로 바꾼다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/smoke.yaml --no-measure-baseline
+uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
+```
+
+두 명령 모두 실제 data/tokenizer/source manifest/release/길이/base/device/precision과 모델·optimizer 초기화를
+검증한다. baseline 측정 명령은 고정 heldout subset의 target-token 가중 step-0 loss·PPL·token 수를 더 출력한다.
+run 디렉터리나 파일을 만들지 않고 sampler·RNG·model mode와 deterministic enabled/warn-only·cuDNN 상태를
+보존하며 오류는 실패-폐쇄한다. pilot 뒤 같은 heldout과 평가 설정으로 step-0 결과와 비교한다.
 
 ## 11. 실행 전후 점검
 

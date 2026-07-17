@@ -7,7 +7,7 @@
 | `config`, `fingerprint`, `run` | 설정·입력·실행 identity |
 | `data`, `tokenizer` | corpus와 token shard 생성 |
 | `model`, `train` | inspect, 학습, 재개, smoke |
-| `sft` | 공개·teacher mix prepare/preflight/status/validate, SFT train/resume/eval/generate |
+| `sft` | 공개·teacher mix, 실제 SFT preflight, train/resume/eval/generate |
 | `eval`, `generate`, `benchmark` | 품질·안전 평가와 추론 |
 | `distill` | teacher preflight/prepare/collect/resume/status/export/validate |
 | `pipeline` | preflight/run/status/drill/export |
@@ -35,3 +35,14 @@ uv run llmex sft validate-mix --help
 ```
 
 정식 v5 수집이 완료되기 전에는 mix config에 임시 manifest SHA를 넣지 않는다. export/validate 뒤 생성된 teacher manifest의 SHA-256을 `expected_teacher_manifest_sha256`에 고정한다.
+
+## SFT 실제 preflight CLI
+
+```bash
+uv run llmex sft preflight --config configs/sft/smoke.yaml --no-measure-baseline
+uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
+```
+
+`--no-measure-baseline`은 실제 data/tokenizer/source manifest/release/length/base/device/precision와 모델·optimizer 초기화까지만 검증한다. 기본값이다. `--measure-baseline`은 같은 검증에 고정 validation subset의 assistant target-token 가중 step-0 loss, perplexity와 target token 수를 추가한다.
+
+성공 결과는 device, precision, `unique_parameter_count`, train/heldout rows·fingerprint·file SHA, 전체 fingerprints, base checkpoint provenance, release 상태, `expected_effective_batch_size`, baseline 측정 여부와 결과를 JSON으로 출력한다. run 디렉터리·sampler·RNG·model mode·deterministic enabled/warn-only·cuDNN 상태는 성공과 오류 모두 변경하지 않으며 입력 또는 초기화 오류는 기존 종료 코드로 실패-폐쇄한다.

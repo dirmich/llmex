@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.7.1 - 2026-07-17
+
+- `llmex sft preflight --config ... --measure-baseline|--no-measure-baseline`으로 실제 SFT 전체 초기화와 선택적 step-0 기준선을 출력 생성 없이 검증한다.
+- device·precision·고유 파라미터 수, train/heldout 행·fingerprint, base provenance, release 상태와 유효 batch를 출력한다.
+- baseline은 고정 validation subset의 assistant target token 가중 loss·PPL·token 수를 기록하고 run 디렉터리, sampler·RNG·model mode와 deterministic/cuDNN 상태를 보존한다.
+- 독립 리뷰의 `warn_only` 상태 복원 MEDIUM 지적을 수정한 뒤 승인받고 전체 137 tests, Ruff와 Pyright를 통과했다.
+
 ## 1.7.0 - 2026-07-17
 
 - 공개 instruction 자체의 train/heldout canonical prompt overlap 152개와 공개 train·teacher heldout overlap 658개(공개 train 879행 영향)를 실측해 단순 concat을 금지했다.

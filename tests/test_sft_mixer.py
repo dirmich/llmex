@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 
 from llmex.chat.data import ChatRow, final_user_prompt_sha256
 from llmex.chat.mixer import preflight_mix, prepare_mix, status_mix, validate_mix
-from llmex.chat.runtime import SFTTrainer, _datasets, evaluate_chat
+from llmex.chat.runtime import SFTTrainer, _datasets, evaluate_chat, preflight_sft
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig, SFTMixConfig
 from llmex.errors import ConflictError, IntegrityError, LlmexError
@@ -365,6 +365,7 @@ def test_runtime은_prompt와_source_cross_split을_차단한다(tmp_path: Path)
     with pytest.raises(ValueError, match="expected_source_manifest_sha256"):
         SFTConfig.model_validate(missing_pin)
     trainer = SFTTrainer(sft)
+    assert preflight_sft(sft)["release_gate"] == "blocked"
     with pytest.raises(IntegrityError, match="sequence 길이"):
         SFTTrainer(sft.model_copy(update={"sequence_length": 4}))
     tampered_manifest = tmp_path / "tokenizer-tampered-manifest.json"
@@ -372,7 +373,7 @@ def test_runtime은_prompt와_source_cross_split을_차단한다(tmp_path: Path)
     tampered["tokenizer_manifest_sha256"] = "0" * 64
     tampered_manifest.write_text(json.dumps(tampered), encoding="utf-8")
     with pytest.raises(IntegrityError, match="source manifest"):
-        SFTTrainer(sft.model_copy(update={"source_manifest": tampered_manifest}))
+        preflight_sft(sft.model_copy(update={"source_manifest": tampered_manifest}))
 
     forged_manifest = tmp_path / "forged-lower-length-manifest.json"
     forged = json.loads((config.output_dir / "manifest.json").read_text())

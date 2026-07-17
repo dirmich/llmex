@@ -1,5 +1,14 @@
 # 구현 이력
 
+## 2026-07-17 · 1.7.1 SFT 실제 preflight와 step-0 기준선
+
+- `llmex sft preflight --config <경로> --measure-baseline|--no-measure-baseline`을 추가했다. 기존 `train --dry-run`의 설정 fingerprint 확인보다 강하게 실제 train/heldout schema·license·canonical 누출, tokenizer와 source manifest 결속·release·길이 gate, base checkpoint, device·precision 및 모델/optimizer 초기화를 수행한다.
+- 성공 출력은 확정 device·precision, 중복 없이 센 고유 파라미터 수, train/heldout 행 수·fingerprint·파일 SHA-256, 전체 fingerprint, base provenance, redistribution/release 상태와 `micro_batch_size × gradient_accumulation_steps` 유효 batch를 기록한다.
+- `--measure-baseline`은 학습과 같은 seed의 고정 validation subset에서 assistant target token 수로 가중한 step-0 loss, perplexity와 target token 수를 측정한다. `--no-measure-baseline`은 전체 초기화 검증만 수행하며 기본값이다.
+- 측정은 run 디렉터리와 파일을 만들지 않고 validation sampler·누적 batch 수, Python/NumPy/PyTorch RNG, 모델 train/eval mode, deterministic algorithms의 enabled·warn-only와 cuDNN benchmark 상태를 성공·오류 모두 원래대로 복원한다. 입력·device·precision·base·길이 또는 비유한 loss 오류는 실패-폐쇄한다.
+- 독립 리뷰의 deterministic `warn_only` 복원 MEDIUM 지적을 수정한 뒤 최종 승인을 받았다. 전체 137 tests, Ruff와 Pyright를 통과했다.
+- `../knowledge_base/Codex/LLMEX/프로젝트 계획.md`의 split 누출·checkpoint 복구 실패 즉시 중단과 smoke 선행 품질 gate를 따른다. 정식 v5 진행 건수는 고정하지 않고 `distill status`로 확인하며, 이후 순서는 `export/validate → mix → baseline 측정 preflight → pilot → 동일 heldout 평가 비교`다.
+
 ## 2026-07-17 · 1.7.0 공개·teacher 비누출 SFT mix
 
 ### 실측한 concat 차단 근거

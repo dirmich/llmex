@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.7.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습과 공개·teacher 비누출 mix 경로를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 checkpoint 선택이 대화 품질 또는 외부 공개 승인을 대신하지 않는다.
+LLMEX 1.7.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix와 실제 SFT preflight 경로를 제공한다. 전체 Wikipedia corpus/tokenizer와 100k baseline 학습을 완료했으며, 동일 조건 평가에서 100k `latest`를 SFT 시작점으로 선택했다. teacher 데이터는 [teacher 증류 데이터 실행 가이드](teacher-distillation.md)의 정식 v5 내부 전용 export 검증과 mix 검증을 모두 통과한 뒤에만 학습한다. SFT 실행이나 checkpoint 선택이 대화 품질 또는 외부 공개 승인을 대신하지 않는다.
 
 ## JSONL 계약
 
@@ -33,6 +33,25 @@ uv run llmex sft validate-mix --help
 - 부분 출력, 동시 실행, 변조된 manifest와 미완료 staging은 자동 복구·덮어쓰기 대신 실패-폐쇄한다.
 
 정식 v5 export가 완료된 뒤 실제 teacher manifest SHA를 pin한 mix config와 별도 pilot/full SFT config를 작성한다. exact canonical prompt 검사는 의미가 같은 바꿔쓰기까지 판정하지 않으므로 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사 대상이다.
+
+## 실제 SFT preflight와 step-0 baseline
+
+`sft preflight`는 설정만 읽는 dry-run이 아니라 실제 train/heldout 데이터, tokenizer, 선택적 source manifest와 release·길이 gate, base checkpoint, device·precision, 모델과 optimizer 초기화를 모두 수행한다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/smoke.yaml --no-measure-baseline
+uv run llmex sft preflight --config configs/sft/smoke.yaml --measure-baseline
+```
+
+성공 JSON에는 다음이 포함된다.
+
+- 확정된 device와 precision, 고유 parameter 수
+- train/heldout 행 수, dataset fingerprint와 파일 SHA-256, 전체 학습 fingerprint
+- base checkpoint SHA·schema·kind·step과 원 학습 provenance
+- `redistribution_allowed`, `release_gate`와 예상 유효 batch 크기
+- baseline 선택 여부와, 측정한 경우 고정 validation subset의 target-token 가중 step-0 loss·perplexity·target token 수
+
+baseline은 매 학습 validation과 같은 seed·고정 subset을 사용한다. 측정 전후 run 디렉터리와 파일, validation sampler·누적 batch 수, Python/NumPy/PyTorch RNG, 모델 train/eval mode, deterministic algorithms enabled·warn-only와 cuDNN benchmark 상태는 바뀌지 않는다. 입력·base·device·precision·길이·초기화 또는 비유한 loss 오류는 성공처럼 축소하지 않고 해당 오류 코드로 실패-폐쇄한다.
 
 ## 시작 checkpoint 선택
 
@@ -102,4 +121,4 @@ loader는 schema 2 전용 재개 상태의 필수 키, optimizer parameter group
 
 ## 이후 gate
 
-heldout 평가는 assistant-only NLL/perplexity와 생성별 반복률, 금지 문자열, EOS 도달을 기록한다. step-0 loss를 별도 기준선으로 비교하는 평가는 아직 설계 대기다. 이후 순서는 `정식 teacher export/validate → manifest SHA pin → mix config와 pilot/full config → mix 검증 → 별도 pilot → fresh full → 대화/EOS/repetition/safety/manual gate → GGUF/llama.cpp parity`다. 기능 smoke와 100k `latest` 선택은 독립적인 한국어 안전성 평가나 실제 사용자 배포 승인을 대신하지 않는다.
+heldout 평가는 assistant-only NLL/perplexity와 생성별 반복률, 금지 문자열, EOS 도달을 기록한다. 이후 순서는 `정식 teacher export/validate → manifest SHA pin → mix config와 pilot/full config → mix 검증 → baseline 측정 preflight → 별도 pilot → 동일 heldout 평가 비교 → fresh full → 대화/EOS/repetition/safety/manual gate → GGUF/llama.cpp parity`다. 기능 smoke와 100k `latest` 선택은 독립적인 한국어 안전성 평가나 실제 사용자 배포 승인을 대신하지 않는다.

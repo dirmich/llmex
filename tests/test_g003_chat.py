@@ -1,21 +1,26 @@
-# pyright: reportUnknownMemberType=false
+# pyright: reportPrivateUsage=false, reportUnknownMemberType=false
 import json
+import random
 from pathlib import Path
+from typing import cast
 
+import numpy as np
 import pytest
 import torch
+import yaml
 from tokenizers.trainers import BpeTrainer
 from typer.testing import CliRunner
 
-from llmex.chat.data import Message, load_chat_jsonl
-from llmex.chat.runtime import SFTTrainer, evaluate_chat, generate_chat
+from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
+from llmex.chat.runtime import SFTTrainer, evaluate_chat, generate_chat, preflight_sft
 from llmex.chat.template import tokenize_chat
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
-from llmex.errors import IntegrityError
+from llmex.errors import ConfigError, InputError, IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
 from llmex.train.checkpoint import load_checkpoint, save_checkpoint
+from llmex.train.data import DeterministicBatchSampler
 
 
 def _tokenizer(path: Path) -> int:
@@ -156,6 +161,142 @@ def test_chat_template_masks_everything_except_assistant(tmp_path: Path) -> None
         2,
     ]
     assert encoded.labels == tuple(expected_labels)
+
+
+def test_sft_preflight_baseline은_결정적이고_상태와_파일을_남기지_않는다(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _config(tmp_path)
+    random.seed(991)
+    np.random.seed(992)
+    torch.manual_seed(993)
+    python_before = random.getstate()
+    numpy_before = np.random.get_state()
+    numpy_expected = float(np.random.random())
+    np.random.set_state(numpy_before)
+    torch_before = torch.get_rng_state().clone()
+
+    first = preflight_sft(config, measure_baseline=True)
+    second = preflight_sft(config, measure_baseline=True)
+
+    assert first == second
+    assert first["schema_version"] == 1
+    assert first["status"] == "ok"
+    assert first["device"] == "cpu"
+    assert first["precision"] == "fp32"
+    parameter_count = first["unique_parameter_count"]
+    assert isinstance(parameter_count, int) and parameter_count > 0
+    train = cast(dict[str, object], first["train"])
+    heldout = cast(dict[str, object], first["heldout"])
+    assert train["rows"] == 2
+    assert heldout["rows"] == 1
+    assert first["expected_effective_batch_size"] == 1
+    assert first["baseline_measured"] is True
+    baseline = cast(dict[str, float | int], first["baseline"])
+    assert baseline["target_tokens"] > 0
+    assert baseline["loss"] > 0
+    assert baseline["perplexity"] > 1
+    assert not config.run_dir.exists()
+    assert random.getstate() == python_before
+    assert float(np.random.random()) == numpy_expected
+    assert torch.equal(torch.get_rng_state(), torch_before)
+
+    trainer = SFTTrainer(config)
+    sampler_before = trainer.validation_sampler.state_dict()
+    batches_before = trainer.validation_batches_seen
+    trainer.validation_metrics(mutate_state=False)
+    assert trainer.validation_sampler.state_dict() == sampler_before
+    assert trainer.validation_batches_seen == batches_before
+
+    original_next_batch = trainer._next_batch
+
+    def empty_target_batch(
+        dataset: ChatDataset, sampler: DeterministicBatchSampler
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        inputs, labels = original_next_batch(dataset, sampler)
+        return inputs, torch.full_like(labels, -100)
+
+    monkeypatch.setattr(trainer, "_next_batch", empty_target_batch)
+    with pytest.raises(IntegrityError, match="assistant 검증 token"):
+        trainer.validation_metrics(mutate_state=False)
+
+
+def test_sft_preflight는_base_data_device_precision_length를_차단한다(
+    tmp_path: Path,
+) -> None:
+    config = _config(tmp_path)
+    with pytest.raises(ConfigError, match="fp16"):
+        preflight_sft(config.model_copy(update={"precision": "fp16"}))
+    if not torch.cuda.is_available():
+        with pytest.raises(ConfigError, match="CUDA"):
+            preflight_sft(config.model_copy(update={"device": "cuda"}))
+    with pytest.raises(IntegrityError, match="sequence 길이"):
+        preflight_sft(config.model_copy(update={"sequence_length": 4}))
+
+    invalid_base = tmp_path / "invalid-base.pt"
+    torch.save(
+        {
+            "schema_version": 1,
+            "model": {"invalid.weight": torch.ones(1)},
+            "fingerprints": {},
+            "step": 0,
+        },
+        invalid_base,
+    )
+    with pytest.raises(IntegrityError, match="base checkpoint"):
+        preflight_sft(config.model_copy(update={"base_checkpoint": invalid_base}))
+
+    damaged = json.loads(config.train_data.read_text().splitlines()[0])
+    damaged["sha256"] = "0" * 64
+    _write(config.train_data, [damaged])
+    with pytest.raises(IntegrityError, match="schema"):
+        preflight_sft(config)
+
+
+def test_sft_preflight는_deterministic_warn_only를_성공과_실패에서_복원한다(
+    tmp_path: Path,
+) -> None:
+    config = _config(tmp_path)
+    previous_enabled = torch.are_deterministic_algorithms_enabled()
+    previous_warn_only = torch.is_deterministic_algorithms_warn_only_enabled()
+    try:
+        torch.use_deterministic_algorithms(True, warn_only=True)
+        assert preflight_sft(config)["status"] == "ok"
+        assert torch.are_deterministic_algorithms_enabled() is True
+        assert torch.is_deterministic_algorithms_warn_only_enabled() is True
+
+        missing = config.model_copy(update={"train_data": tmp_path / "missing.jsonl"})
+        with pytest.raises(InputError, match="chat JSONL"):
+            preflight_sft(missing)
+        assert torch.are_deterministic_algorithms_enabled() is True
+        assert torch.is_deterministic_algorithms_warn_only_enabled() is True
+    finally:
+        torch.use_deterministic_algorithms(previous_enabled, warn_only=previous_warn_only)
+
+
+def test_sft_preflight_cli는_JSON과_오류코드를_출력한다(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    config_path = tmp_path / "sft-preflight.yaml"
+    config_path.write_text(
+        yaml.safe_dump(config.model_dump(mode="json"), allow_unicode=True), encoding="utf-8"
+    )
+    runner = CliRunner()
+    success = runner.invoke(
+        app,
+        ["sft", "preflight", "--config", str(config_path), "--measure-baseline"],
+    )
+    assert success.exit_code == 0
+    payload = json.loads(success.stdout)
+    assert payload["status"] == "ok"
+    assert payload["baseline_measured"] is True
+    assert not config.run_dir.exists()
+
+    missing = config.model_copy(update={"train_data": tmp_path / "missing.jsonl"})
+    config_path.write_text(
+        yaml.safe_dump(missing.model_dump(mode="json"), allow_unicode=True), encoding="utf-8"
+    )
+    failure = runner.invoke(app, ["sft", "preflight", "--config", str(config_path)])
+    assert failure.exit_code == 3
 
 
 def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
