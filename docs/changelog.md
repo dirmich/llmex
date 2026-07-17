@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.9.0 - 2026-07-18
+
+- README와 00~15장, 총 17개 Markdown으로 된 [수학 기반 이론·Python 실습 교재](book/README.md)를 추가했다. 모든 장은 11개 공통 학습 섹션을 가지며 실제 코드·설정·CLI를 현재 권위로 사용한다.
+- 결정적 corpus 생성기와 tokenizer/pretrain/evaluation YAML 3종으로 production과 분리된 `book-smoke-bpe` E2E를 제공한다.
+- 실제 pack·assistant-only chat, artifact 경로, 최소 100개 blind review·단일 trust context와 네 release gate 계약을 교재 전 장에 동기화했다.
+- split 6/6/6, requested/actual vocab 16,000, CPU 10-step 학습과 validation/test 평가를 실행하고 독립 재검토 APPROVE, 157개 링크, 표적 45 tests, Ruff·Pyright·config schema 통과를 확인했다.
+
 ## 1.8.1 - 2026-07-18
 
 - 자동 full-row·artifact SHA·sampling challenge에 결속된 `quality-review-template`, `quality-gate`, `quality-review-validate`를 추가했다.

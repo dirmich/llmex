@@ -1,0 +1,35 @@
+name: book-pretrain
+seed: 42
+model:
+  name: book-pretrain
+  # 고정 smoke corpus의 tokenizer manifest actual vocab과 정확히 일치한다.
+  vocab_size: 16000
+  max_seq_len: 256
+  n_layers: 2
+  d_model: 128
+  n_heads: 4
+  n_kv_heads: 2
+  ffn_hidden_size: 352
+  dropout: 0.0
+shards_manifest: artifacts/tokenizers/book-smoke-bpe/shards/manifest.json
+run_dir: runs/book-pretrain
+device: cpu
+precision: fp32
+sequence_length: 256
+micro_batch_size: 2
+gradient_accumulation_steps: 1
+max_steps: 10
+gradient_clip_norm: 1.0
+validation_interval: 5
+validation_batches: 1
+checkpoint_interval: 5
+log_interval: 1
+optimizer:
+  learning_rate: 0.0003
+  min_learning_rate: 0.00003
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 0.00000001
+  warmup_steps: 1
+deterministic: true

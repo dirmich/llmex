@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.8.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 결정적 SFT mix와 자동 대화 품질 gate에 더해 최소 100개 blind response를 독립 서명 검토하는 수동 품질 gate를 제공한다. 정식 v5 teacher 수집과 혼합 SFT, 실제 모델 대상 사람 검토, 독립 법무·공개 배포 승인은 아직 진행 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
+LLMEX 1.9.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 결정적 SFT mix와 자동·수동 대화 품질 gate를 제공하며, 현재 구현을 처음부터 재현하는 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 정식 v5 teacher 수집과 혼합 SFT, 실제 모델 대상 사람 검토, 독립 법무·공개 배포 승인은 아직 진행 중이므로 가중치·corpus·teacher 출력을 외부 공개하지 않는다.
 
 ## 빠른 시작
 
@@ -33,6 +33,7 @@ Python 3.11 이상과 `uv`가 필요하다. 테스트는 네트워크와 GPU를 
 - `data/`, `artifacts/`, `runs/`: Git에 넣지 않는 host 영속 데이터
 - `docs/environment.md`: 로컬·DGX Spark 환경 계약
 - `docs/history.md`: 구현·검증 이력
+- `docs/book/`: 환경부터 release까지 이어지는 16장 실습 교재와 결정적 smoke 예제
 - `docs/chat-sft.md`: JSONL 대화 데이터, SFT 재개, 평가·생성 계약
 - `docs/teacher-distillation.md`: teacher 10k 준비·수집·재개·export·검증 계약
 

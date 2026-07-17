@@ -1,8 +1,15 @@
 # LLMEX 개발 TODO
 
-## 1.8.1 수동 대화 품질 gate 완료 및 정식 teacher 수집 진행
+## 1.9.0 실습 교재 완료 및 정식 teacher 수집 진행
 
 ### 완료
+
+- [x] 교재 README와 00~15장, 총 17개 Markdown 작성
+- [x] 각 장의 11개 공통 학습 섹션과 실제 코드·설정·CLI 연결
+- [x] 결정적 smoke corpus 생성기와 tokenizer/pretrain/evaluation YAML 3종
+- [x] production과 분리된 `artifacts/tokenizers/book-smoke-bpe` E2E
+- [x] split 6/6/6, requested/actual vocab 16,000, 10-step CPU 학습과 validation/test 평가
+- [x] 링크 157개, 표적 45 tests, Ruff·Pyright·config schema 검증과 독립 APPROVE
 
 - [x] Wikipedia dump `20260701` 고정 및 SHA-256 검증
 - [x] extraction 753,081 → clean 747,718 → dedup 747,532(exact duplicates 186) → split 732,393/7,521/7,618

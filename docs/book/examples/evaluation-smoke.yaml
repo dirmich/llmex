@@ -1,0 +1,21 @@
+name: book-pretrain
+seed: 42
+checkpoint: runs/book-pretrain/checkpoints/best.pt
+training_config: docs/book/examples/pretrain-smoke.yaml
+tokenizer_dir: artifacts/tokenizers/book-smoke-bpe
+shards_manifest: artifacts/tokenizers/book-smoke-bpe/shards/manifest.json
+corpus: data/book/smoke-corpus/corpus-v1.jsonl.zst
+output_dir: runs/book-pretrain/evaluation
+device: cpu
+splits: [validation, test]
+batch_size: 1
+max_batches: 1
+prompts: ["대한민국의 수도는"]
+max_new_tokens: 16
+temperature: 0.0
+top_k: null
+top_p: 1.0
+repetition_penalty: 1.0
+use_cache: true
+benchmark_warmup: 0
+benchmark_iterations: 1

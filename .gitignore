@@ -48,6 +48,7 @@ data/interim/
 data/processed/
 data/cache/
 data/downloads/
+data/book/
 *.xml.bz2
 *.jsonl
 *.jsonl.zst

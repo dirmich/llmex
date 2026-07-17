@@ -23,5 +23,5 @@ uv run llmex release audit
 uv run llmex release bundle --output dist/reproducibility
 ```
 
-외부 세 gate가 미승인이면 종료 코드 5가 의도된 결과다. 실제 독립 승인 artifact 없이 공개 gate를
+외부 네 gate가 미승인이면 종료 코드 5가 의도된 결과다. 실제 독립 승인 artifact 없이 공개 gate를
 통과시키는 예시는 제공하지 않는다.

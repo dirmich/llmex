@@ -118,7 +118,7 @@ def release_gate(
     approvals: Annotated[Path, typer.Option("--approvals")],
     repository: Annotated[Path, typer.Option("--repository-root")] = Path("."),
 ) -> None:
-    """법무·장기 baseline·공개 배포의 외부 승인을 검증합니다."""
+    """법무·장기 baseline·수동 품질·공개 배포의 외부 승인을 검증합니다."""
     try:
         from llmex.release import external_gate
 

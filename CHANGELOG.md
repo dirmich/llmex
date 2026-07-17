@@ -1,5 +1,13 @@
 # 변경 기록
 
+## 1.9.0 - 2026-07-18
+
+- [《LLMEX 수학 기반 이론과 Python 실습》](docs/book/README.md)을 추가했다. README와 00~15장까지 17개 Markdown이 환경·재현성·데이터·tokenizer·Transformer·사전학습·평가·증류·SFT·자동/수동 품질·release capstone을 실제 구현 계약과 연결한다.
+- 각 장은 학습 목표부터 연습문제까지 11개 공통 학습 섹션을 제공한다. 외부 `knowledge_base` 계획은 날짜·SHA가 고정된 역사 참고이며 현재 저장소 코드·설정·문서·CLI를 권위로 명시했다.
+- 결정적 smoke corpus 생성기와 YAML 3종을 추가했다. production tokenizer와 분리된 `artifacts/tokenizers/book-smoke-bpe`에서 split 6/6/6, requested/actual vocab 16,000 일치와 tokenizer→10-step CPU pretrain→validation/test 평가 실행을 검증했다.
+- pack/chat template, 장 사이 artifact 경로, 최소 100개 수동 review와 단일 trust context, 법무·baseline·quality-release·release 네 gate 계약을 실제 코드에 맞춰 교정했다.
+- 독립 아키텍처 재검토에서 APPROVE를 받았고 교재 링크 157개, 표적 45 tests, Ruff, Pyright와 예제 config schema 검증을 통과했다.
+
 ## 1.8.1 - 2026-07-18
 
 - `sft quality-review-template`, `quality-gate`, `quality-review-validate`를 추가해 자동 평가의 full-row hash·artifact SHA·sampling challenge에 결속된 blind review를 생성·검증한다.

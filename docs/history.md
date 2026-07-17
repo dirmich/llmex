@@ -1,5 +1,33 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.0 수학 기반 이론·Python 실습 교재
+
+### 교재 구성과 권위 경계
+
+- [교재 README](book/README.md)와 00~15장까지 총 17개 Markdown을 추가했다. 모든 장은 학습 목표, 선행지식, 관련 실제 파일, 핵심 개념, 단계별 구현, 실제 명령, 예상 산출물, 검증 테스트, 흔한 실패와 해결, 체크리스트, 연습문제의 11개 공통 학습 섹션을 갖는다.
+- `docs/book/examples/build-smoke-corpus.py`와 tokenizer·pretrain·evaluation YAML 3종을 추가했다. 생성 data, tokenizer artifact와 training run은 Git 제외 경로에만 만들며 교재에는 재현 가능한 source와 설정만 포함한다.
+- 외부 `knowledge_base`의 프로젝트 계획은 작성 날짜와 당시 SHA에 결속된 역사 참고 snapshot으로 한정했다. 현재 동작의 권위는 이 저장소의 `src/llmex`, `configs`, `docs`와 CLI `--help`이며, 과거 절대 경로나 M0 지시를 현재 실행 계약으로 복제하지 않는다.
+
+### 실제 구현 계약 교정
+
+- tokenizer pack은 BOS 없이 문서 text와 EOS를 이어 고정 크기 little-endian `.bin`으로 기록하고 문서가 shard를 넘을 수 있는 실제 전역 boundary 계약으로 설명했다.
+- chat template은 role prefix와 content를 분리 encode하고 assistant content와 assistant EOS만 label로 남기며, 왼쪽 truncation 뒤 assistant label이 없으면 실패하는 실제 계약에 맞췄다.
+- tokenizer→pretrain→evaluation, teacher→mix→SFT→자동·수동 품질→release의 상대 경로와 SHA 전달을 연결했다. production `artifacts/tokenizers/bpe-16k`와 교재 smoke `artifacts/tokenizers/book-smoke-bpe`를 분리해 기존 실물 artifact와 충돌하지 않는다.
+- 수동 review는 population 100 미만 즉시 실패, 최소 100개와 safety 전수, 단일 effective matrix와 invocation당 하나의 `TrustContext`를 사용한다. release는 법무·baseline·quality-release·release 네 외부 gate와 strict manual evidence 의미를 검증한다.
+
+### 결정적 smoke E2E 실행 결과
+
+- 합성 corpus는 완전한 provenance schema 문서를 train/validation/test에 6/6/6개로 고정하고 두 번 생성한 compressed corpus SHA가 동일했다.
+- 요청/실제 tokenizer vocab은 16,000/16,000으로 일치했다. shard token은 train 25,445, validation 97,959, test 105,216으로 각 split이 sequence length 256을 충분히 넘었다.
+- 격리 CPU 10-step pretrain은 최종 loss 9.7193, best validation loss 9.6789로 완료됐다. evaluation은 validation/test에서 각각 predicted token 255를 실제 계산했다.
+- canary provenance는 smoke 예제에 의도적으로 넣지 않아 `미실행/실패`로 유지했다. 이는 안전 증거 부재를 통과로 바꾸지 않는 실패-폐쇄 계약이며 E2E 명령 실패가 아니다.
+
+### 검증과 승인
+
+- 교재 17개 Markdown의 로컬 링크 157개를 검사해 깨진 링크 0개를 확인했다.
+- M1/M2/M4/M5 표적 회귀 45 tests, generator Ruff lint/format, Pyright, tokenizer/training/evaluation config schema 검증을 통과했다.
+- 독립 아키텍처 재검토의 HIGH/MEDIUM 지적을 모두 폐쇄하고 최종 `APPROVE`를 받았다.
+
 ## 2026-07-18 · 1.8.1 서명된 수동 blind review와 release 결속
 
 ### 구현 완료: 수동 review 입력과 결정적 표본

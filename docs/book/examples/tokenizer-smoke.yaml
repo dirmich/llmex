@@ -1,0 +1,7 @@
+name: book-bpe-16k
+seed: 42
+vocab_size: 16000
+corpus: data/book/smoke-corpus/corpus-v1.jsonl.zst
+output_dir: artifacts/tokenizers/book-smoke-bpe
+shard_tokens: 100000
+evaluation_samples: 100
