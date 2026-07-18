@@ -1,8 +1,12 @@
 # LLMEX 개발 TODO
 
-## 1.9.8 fresh full SFT와 자동 품질 실측 완료
+## 1.9.9 파생 SFT release block 계승 완료
 
 ### 완료
+
+- [x] assistant-only SFT base checkpoint release policy immutable snapshot 검증
+- [x] 내부 teacher base의 blocked/redistribution 상태를 공개 데이터 추가 학습에도 단조 계승
+- [x] 실제 내부 SFT → 공개 SFT 2단계 checkpoint 회귀로 release 우회 차단
 
 - [x] 100M latest에서 직접 시작한 CUDA bf16 410-step·약 3 epoch SFT
 - [x] step-410 validation loss/PPL 2.204719/9.0677과 best/latest/final SHA 일치

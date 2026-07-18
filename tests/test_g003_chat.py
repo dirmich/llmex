@@ -745,6 +745,61 @@ def test_sft_pilot과_full은_동일_base에서_서로_다른_fresh_run을_시�
         SFTTrainer(pilot_config).run()
 
 
+def test_내부_SFT_base의_release_block은_공개_data_추가학습에도_계승된다(
+    tmp_path: Path,
+) -> None:
+    internal_license = "LicenseRef-LLMEX-Internal-Distillation"
+    base_config = _config(tmp_path / "base")
+    _write(
+        base_config.train_data,
+        [_row("internal-train", "train", "내부 질문", "내부 답변", internal_license)],
+    )
+    _write(
+        base_config.heldout_data,
+        [_row("internal-heldout", "heldout", "내부 검증", "검증 답변", internal_license)],
+    )
+    base_config = base_config.model_copy(update={"allowed_licenses": [internal_license]})
+    base_result = SFTTrainer(base_config).run()
+    base_checkpoint = Path(cast(str, base_result["checkpoint"]))
+
+    forged_checkpoint = tmp_path / "forged-base.pt"
+    forged = torch.load(base_checkpoint, map_location="cpu", weights_only=True)
+    forged["redistribution_allowed"] = True
+    torch.save(forged, forged_checkpoint)
+    with pytest.raises(IntegrityError, match="base SFT checkpoint release policy"):
+        SFTTrainer(
+            base_config.model_copy(
+                update={
+                    "base_checkpoint": forged_checkpoint,
+                    "run_dir": tmp_path / "forged-run",
+                }
+            )
+        )
+
+    public_train = tmp_path / "public-train.jsonl"
+    public_heldout = tmp_path / "public-heldout.jsonl"
+    _write(public_train, [_row("public-train", "train", "공개 질문", "공개 답변")])
+    _write(public_heldout, [_row("public-heldout", "heldout", "공개 검증", "검증 답변")])
+    continued_config = base_config.model_copy(
+        update={
+            "train_data": public_train,
+            "heldout_data": public_heldout,
+            "allowed_licenses": ["CC-BY-4.0"],
+            "base_checkpoint": base_checkpoint,
+            "run_dir": tmp_path / "continued-run",
+        }
+    )
+    continued = SFTTrainer(continued_config)
+    assert continued.base_checkpoint_provenance["release_gate"] == "blocked"
+    assert continued.release_policy["redistribution_allowed"] is False
+    assert continued.release_policy["release_gate"] == "blocked"
+    result = continued.run()
+    checkpoint_path = Path(cast(str, result["checkpoint"]))
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    assert checkpoint["redistribution_allowed"] is False
+    assert checkpoint["release_gate"] == "blocked"
+
+
 def test_sft_validation_uses_same_fixed_subset_every_time(tmp_path: Path) -> None:
     config = _config(tmp_path)
     _write(

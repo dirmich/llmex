@@ -1,5 +1,14 @@
 # 구현 이력
 
+## 2026-07-18 · 1.9.9 파생 SFT release block 계승
+
+### 내부 base에서 공개 추가 학습으로 이어지는 우회 차단
+
+- 이전 runtime은 현재 train/heldout license와 source manifest만으로 release policy를 계산했다. 내부 teacher가 포함된 full SFT checkpoint를 base로 두고 공개 curriculum만 추가 학습하면 파생 checkpoint가 `not_blocked`로 잘못 완화될 수 있었다.
+- base checkpoint의 immutable snapshot에서 `kind=assistant-only-sft`인 경우 `redistribution_allowed`와 `release_gate`를 엄격히 검증해 provenance에 결속한다. base가 blocked이면 현재 데이터 policy가 더 느슨해도 최종 policy는 항상 `redistribution_allowed=false`, `release_gate=blocked`다.
+- 내부 teacher SFT를 실제 한 step 학습한 뒤 공개 데이터만으로 별도 fresh SFT를 실행하는 회귀에서 base provenance, trainer policy와 새 checkpoint의 block이 모두 보존됨을 확인했다. 잘못된 blocked/redistribution 조합은 초기화 전에 실패한다.
+- 전체 `167 passed`, Ruff lint/71파일 format, Pyright strict 오류 0, release audit와 `git diff --check`를 통과했다.
+
 ## 2026-07-18 · 1.9.8 fresh full SFT와 자동 품질 실측
 
 ### 약 3 epoch 본 학습 완료

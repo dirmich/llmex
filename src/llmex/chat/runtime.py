@@ -78,58 +78,67 @@ def _require_fresh_run_dir(run_dir: Path) -> None:
 
 
 def _release_policy(
-    config: SFTConfig, train: ChatDataset, heldout: ChatDataset
+    config: SFTConfig,
+    train: ChatDataset,
+    heldout: ChatDataset,
+    base_provenance: Mapping[str, object],
 ) -> dict[str, object]:
     internal = "LicenseRef-LLMEX-Internal-Distillation" in set(train.licenses + heldout.licenses)
     if config.source_manifest is None:
-        return {
+        current_policy: dict[str, object] = {
             "redistribution_allowed": not internal,
             "release_gate": "blocked" if internal else "not_blocked",
             "source_manifest_sha256": fingerprint({"source_manifest": None}),
         }
-    try:
-        source_manifest_bytes = config.source_manifest.read_bytes()
-        source_manifest_sha256 = hashlib.sha256(source_manifest_bytes).hexdigest()
-        if source_manifest_sha256 != config.expected_source_manifest_sha256:
-            raise ValueError("source manifest checksum")
-        value = json.loads(source_manifest_bytes)
-        outputs = value["outputs"]
-        length_gate = value["length_gate"]
-        mix_max_seq_len = length_gate["max_seq_len"]
-        generation_reserve = length_gate["generation_reserve_tokens"]
-        current_tokenizer_sha = sha256_file(config.tokenizer_dir / "tokenizer-manifest.json")
-        if (
-            value.get("schema_version") != 1
-            or value.get("kind") != "sft-public-teacher-mix"
-            or value.get("fingerprint")
-            != fingerprint({key: item for key, item in value.items() if key != "fingerprint"})
-            or outputs["train"]["sha256"] != train.file_sha256
-            or outputs["heldout"]["sha256"] != heldout.file_sha256
-            or value.get("tokenizer_manifest_sha256") != current_tokenizer_sha
-            or not isinstance(mix_max_seq_len, int)
-            or isinstance(mix_max_seq_len, bool)
-            or mix_max_seq_len <= 2
-            or not isinstance(generation_reserve, int)
-            or isinstance(generation_reserve, bool)
-            or generation_reserve <= 0
-            or config.sequence_length < mix_max_seq_len
-            or config.model.max_seq_len < mix_max_seq_len
-            or config.max_new_tokens > generation_reserve
-            or not isinstance(value.get("redistribution_allowed"), bool)
-            or value.get("release_gate") not in {"blocked", "not_blocked"}
+    else:
+        try:
+            source_manifest_bytes = config.source_manifest.read_bytes()
+            source_manifest_sha256 = hashlib.sha256(source_manifest_bytes).hexdigest()
+            if source_manifest_sha256 != config.expected_source_manifest_sha256:
+                raise ValueError("source manifest checksum")
+            value = json.loads(source_manifest_bytes)
+            outputs = value["outputs"]
+            length_gate = value["length_gate"]
+            mix_max_seq_len = length_gate["max_seq_len"]
+            generation_reserve = length_gate["generation_reserve_tokens"]
+            current_tokenizer_sha = sha256_file(config.tokenizer_dir / "tokenizer-manifest.json")
+            if (
+                value.get("schema_version") != 1
+                or value.get("kind") != "sft-public-teacher-mix"
+                or value.get("fingerprint")
+                != fingerprint({key: item for key, item in value.items() if key != "fingerprint"})
+                or outputs["train"]["sha256"] != train.file_sha256
+                or outputs["heldout"]["sha256"] != heldout.file_sha256
+                or value.get("tokenizer_manifest_sha256") != current_tokenizer_sha
+                or not isinstance(mix_max_seq_len, int)
+                or isinstance(mix_max_seq_len, bool)
+                or mix_max_seq_len <= 2
+                or not isinstance(generation_reserve, int)
+                or isinstance(generation_reserve, bool)
+                or generation_reserve <= 0
+                or config.sequence_length < mix_max_seq_len
+                or config.model.max_seq_len < mix_max_seq_len
+                or config.max_new_tokens > generation_reserve
+                or not isinstance(value.get("redistribution_allowed"), bool)
+                or value.get("release_gate") not in {"blocked", "not_blocked"}
+            ):
+                raise ValueError("manifest binding")
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+            raise IntegrityError("SFT source manifest 결속이 올바르지 않습니다") from exc
+        if internal and (
+            value["redistribution_allowed"] is not False or value["release_gate"] != "blocked"
         ):
-            raise ValueError("manifest binding")
-    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-        raise IntegrityError("SFT source manifest 결속이 올바르지 않습니다") from exc
-    if internal and (
-        value["redistribution_allowed"] is not False or value["release_gate"] != "blocked"
-    ):
-        raise IntegrityError("내부 teacher 데이터의 release gate가 차단되지 않았습니다")
-    return {
-        "redistribution_allowed": value["redistribution_allowed"],
-        "release_gate": value["release_gate"],
-        "source_manifest_sha256": source_manifest_sha256,
-    }
+            raise IntegrityError("내부 teacher 데이터의 release gate가 차단되지 않았습니다")
+        current_policy = {
+            "redistribution_allowed": value["redistribution_allowed"],
+            "release_gate": value["release_gate"],
+            "source_manifest_sha256": source_manifest_sha256,
+        }
+    base_blocked = base_provenance.get("release_gate") == "blocked"
+    if base_blocked:
+        current_policy["redistribution_allowed"] = False
+        current_policy["release_gate"] = "blocked"
+    return current_policy
 
 
 def _fingerprints(
@@ -210,6 +219,17 @@ def _load_base(path: Path | None) -> tuple[dict[str, torch.Tensor] | None, dict[
             "step": step,
             "training_fingerprints": dict(raw_fingerprints),
         }
+        if provenance["kind"] == "assistant-only-sft":
+            redistribution_allowed = value.get("redistribution_allowed")
+            release_gate = value.get("release_gate")
+            if (
+                not isinstance(redistribution_allowed, bool)
+                or release_gate not in {"blocked", "not_blocked"}
+                or (release_gate == "blocked" and redistribution_allowed is not False)
+            ):
+                raise IntegrityError("base SFT checkpoint release policy가 올바르지 않습니다")
+            provenance["redistribution_allowed"] = redistribution_allowed
+            provenance["release_gate"] = release_gate
         return state, provenance
     except IntegrityError:
         raise
@@ -444,8 +464,13 @@ class SFTTrainer:
             self.heldout_tokenized,
             self.token_cache_stats,
         ) = self._validate_runtime_lengths()
-        self.release_policy = _release_policy(config, self.train_data, self.heldout_data)
         base_state, self.base_checkpoint_provenance = _load_base(config.base_checkpoint)
+        self.release_policy = _release_policy(
+            config,
+            self.train_data,
+            self.heldout_data,
+            self.base_checkpoint_provenance,
+        )
         self.fingerprints = _fingerprints(
             config,
             self.train_data,

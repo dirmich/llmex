@@ -1,4 +1,4 @@
-# 1.9.8 릴리스 체크리스트
+# 1.9.9 릴리스 체크리스트
 
 ## 자동 통과 항목
 
@@ -28,7 +28,7 @@
 - [ ] 공개 배포 결정: 승인된 대상·채널·버전·철회 책임자
 
 네 항목은 승인자, ISO 8601 시각, 근거 artifact를 가진 JSON과 각 품질·`release gate`가 필요하다. 현재 판정은
-**1.9.8 fresh 410-step full SFT 완료, 162응답 자동 품질 gate 실패로 범주별 보강 증류와 추가 SFT 진행 중, 외부 공개 승인 전 공개 금지**다.
+**1.9.9 내부 SFT base의 release block 계승 완료, 162응답 자동 품질 gate 실패로 범주별 보강 증류와 추가 SFT 진행 중, 외부 공개 승인 전 공개 금지**다.
 
 release gate의 필수 집합은 법무, 장기 baseline, 수동 품질 평가, 공개 배포 결정 네 개다. 수동 품질 manifest/report는 exact key, canonical fingerprint, report SHA, 최소 표본, 모든 점수와 worst 값, reviewer/submission/adjudication 교차 의미, release version·commit·config target을 검증한다. 네 gate는 한 invocation에서 한 번 snapshot한 Git commit·서명 trust policy·issuer map으로 검증한다. production `.llmex/trust-policy.json`에는 `quality-release`, `quality-reviewer`, `safety-reviewer`, `quality-adjudicator` 역할이 아직 없으며 고정 root private key 없이 policy를 수정하지 않는다.
 

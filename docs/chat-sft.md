@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.8은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 v5 mix로 100M latest 기반 410-step full을 완료했지만 162응답 자동 품질 gate는 EOS·정확도·안전 거부·멀티턴·반복에서 실패했다. 이는 대화 가능 모델이 아니며 실패 범주 보강 증류, 추가 SFT와 실제 사람 품질·법무·외부 공개 승인이 남아 있다.
+LLMEX 1.9.9는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 v5 mix로 100M latest 기반 410-step full을 완료했지만 162응답 자동 품질 gate는 EOS·정확도·안전 거부·멀티턴·반복에서 실패했다. 이는 대화 가능 모델이 아니며 실패 범주 보강 증류, 추가 SFT와 실제 사람 품질·법무·외부 공개 승인이 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 ## JSONL 계약
 
@@ -102,6 +102,8 @@ validation best 갱신, `checkpoint_interval`, 현재 실행의 final/stop-after
 ## 실행
 
 기존 사전학습 checkpoint는 `base_checkpoint`로 초기화한다. schema 1과 schema 2 checkpoint의 모델 가중치를 지원한다. immutable bytes SHA-256, schema/kind/step과 원 학습 fingerprint를 SFT fingerprint와 `data-manifest.json`에 결속한다. mix 입력은 `source_manifest`와 `expected_source_manifest_sha256`를 함께 지정해 mix 출력·길이 gate·release 상태를 추가 결속한다. 같은 경로의 파일이 다른 가중치로 바뀌거나 `weights_only` 역직렬화 실패, 비어 있거나 비유한 모델 tensor, 모델 형상 불일치가 있으면 중단한다.
+
+base가 assistant-only SFT checkpoint이면 저장된 `redistribution_allowed`와 `release_gate`도 검증한다. 내부 teacher base의 block은 현재 추가 학습 데이터가 공개 데이터뿐이어도 단조롭게 계승되며, 공개 데이터로 release 제한을 세탁할 수 없다.
 
 ```bash
 uv run llmex config validate configs/sft/smoke.yaml --kind sft

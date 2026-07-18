@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.9.9 - 2026-07-18
+
+- assistant-only SFT checkpoint를 후속 SFT의 base로 사용할 때 원 release policy를 immutable checkpoint snapshot에서 검증한다.
+- 내부 teacher base가 `release_gate=blocked`이면 현재 추가 학습 데이터가 공개 데이터뿐이어도 redistribution을 허용하지 않고 block을 계승한다.
+- 잘못된 base SFT policy 조합을 학습 초기화 전에 거부하고 실제 2단계 SFT checkpoint 회귀로 차단 상태 보존을 검증한다.
+
 ## 1.9.8 - 2026-07-18
 
 - 100M latest에서 직접 시작한 CUDA bf16 410-step SFT로 train 8,746행을 약 3 epoch 학습했다.
