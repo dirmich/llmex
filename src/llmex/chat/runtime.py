@@ -1057,6 +1057,8 @@ def _generated(
         decoding,
         generator=generator,
     )[0, len(ids) :].tolist()
+    if SPECIAL_IDS["<eos>"] not in output:
+        output.append(SPECIAL_IDS["<eos>"])
     return output, tokenizer.decode(output, skip_special_tokens=True)
 
 

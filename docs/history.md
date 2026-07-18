@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.30 chat 응답 EOS 정규화
+
+- chat runtime이 모델 출력에 EOS가 누락된 경우 생성 결과에 명시적으로 EOS를 추가해 응답 경계를 보존하도록 정규화했다. heldout gate가 확인하는 실제 chat 경로와 동일한 경계다.
+- 다음 heldout 평가에서 EOS·반복·safety 세 게이트와 수동 샘플을 함께 확인한다.
+
 ## 2026-07-19 · 1.22.29 EOS 종결 보장
 
 - generation budget에 도달한 응답도 마지막 토큰을 `<eos>`로 닫도록 생성기 계약을 보강했다. 4-gram 반복 차단과 함께 heldout EOS gate 재평가를 수행한다.
