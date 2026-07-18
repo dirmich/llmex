@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.38 clean curriculum quality 결과
+
+- CarrotAI 제거 clean curriculum checkpoint의 162응답 quality suite를 완료했다.
+- benign compliance `0.2460`, benign false-refusal `0.0079`로 개선됐지만 machine correctness `0.1543`, harmful refusal `0.0`, multi-turn retention `0.0556`, Unicode `0.9938`로 gate가 실패했다.
+- EOS·반복·artifact·context는 통과했으나 전체 대화 가능 수준과 수동 review 조건을 충족하지 못해 승인하지 않는다.
+
 ## 2026-07-19 · 1.22.37 CarrotAI 오염 제거 curriculum
 
 - public train에서 CarrotAI 2,156행을 제외하고 Qwen 증류 10,450행에 remediation 1,045행(10%)만 추가한 clean curriculum 11,495행을 구성했다.
