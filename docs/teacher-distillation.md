@@ -1,6 +1,22 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.22.21의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. Qwen natural-v4 v3는 310건 조기 분포 감사에서 세 번역 방향 accepted 0을 확인해 중단·기각했다. 결함 run은 resume·export·학습 입력 사용을 금지하며, 다음 fresh 계약은 `강가`·`강변`, `conference room`·`meeting room`, `건넵니다`·`건네`처럼 의미가 같은 동의어·활용형을 결속해야 한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이고 Hugging Face에는 공개·비공개 모두 업로드하지 않는다.
+LLMEX 1.22.22의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. Qwen natural-v4 v3는 세 번역 방향 accepted 0으로 기각했고, 새 natural-v5는 영어·한국어 동사 활용, 보수적 장소 동의어와 ASCII 단어 경계를 fresh source 계약에 결속했다. Qwen·Gemma v4 inventory의 prepare와 실제 endpoint preflight가 통과했다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이고 Hugging Face에는 공개·비공개 모두 업로드하지 않는다.
+
+## 1.22.22 natural-v5 번역 계약
+
+- source fingerprint: `4a51db8e4f53aabe83bf387fc00b7d52dbaafa248144cb9ac4066172b7054f98`
+- Qwen/Gemma source SHA: `1ae61b980c91d0930c4696eeaecd67dd7a418085f17844ed8b8a812e41c694fc` / `b89b4045588b53b96e29d9bb73f9a4542d351037ddbcb48750abfc5e827b4b27`
+- Qwen inventory fingerprint: `b48f0c530b092d7d38d7995778120a505177353a866ee17217a3b76103cd9005` (train 1,466/heldout 534)
+- Gemma inventory fingerprint: `9b9d7481df9ef39e0f1855f074db022face45710a24e90ea3f5c775478c53887` (train 1,488/heldout 512)
+
+Qwen v4를 먼저 수집한다. 초기 300건 안팎에서 여섯 task 모두 accepted가 존재하는지 분포를 감사하고, 하나라도 0이면 전체 수집 전에 중단한다. 전체 2,000건 완료 후 독립 표본 감사를 통과한 경우에만 export한다.
+
+```bash
+uv run llmex distill collect \
+  --config configs/distill/qwen36mtp-multilingual-natural-2000-v4.yaml
+uv run llmex distill status \
+  --config configs/distill/qwen36mtp-multilingual-natural-2000-v4.yaml
+```
 
 ## 1.22.20 natural-v4 대화 행위 계약
 

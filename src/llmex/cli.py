@@ -1250,7 +1250,7 @@ def data_multilingual_prompts(
     train_rows_per_task: Annotated[int, typer.Option("--train-rows-per-task")] = 150,
     heldout_rows_per_task: Annotated[int, typer.Option("--heldout-rows-per-task")] = 30,
     profile: Annotated[
-        Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"],
+        Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4", "natural-v5"],
         typer.Option("--profile"),
     ] = "compact-v1",
 ) -> None:

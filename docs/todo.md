@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.21 한국어·다국어 SFT와 로컬 모델 실행 준비
+## 1.22.22 한국어·다국어 SFT와 로컬 모델 실행 준비
 
 ### 완료
 
@@ -48,7 +48,8 @@
 - [x] metadata-v1 Qwen 다국어 v2 2,000건 완결과 독립 50건 표본 감사 기각·미export
 - [x] natural-v4 question/suggestion act 계약·6,000행 teacher별 source·Qwen/Gemma fresh inventory와 endpoint preflight
 - [x] Qwen natural-v4 v3 310건 조기 분포 감사, 세 번역 방향 accepted 0 확인과 중단·미export
-- [ ] 번역 동의어·활용형을 결속한 fresh source/run과 Qwen 재수집·독립 표본 감사
+- [x] natural-v5 번역 동의어·활용형·ASCII 단어 경계와 fresh source/run·두 endpoint preflight
+- [ ] Qwen natural-v5 v4 재수집·조기 여섯 task 분포 감사·독립 표본 감사
 - [ ] Gemma 한국어 v3와 Gemma 다국어 fresh collect→독립 표본 감사→export→validate
 - [ ] 새 teacher 데이터 비누출 혼합·재학습·통합 품질 평가
 - [ ] 390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint 선별

@@ -273,3 +273,51 @@ def test_natural_v4는_검증가능한_conversation_act를_metadata에_결속한
         for task in ("conversation-en", "conversation-ja")
         for act in ("question", "suggestion")
     }
+
+
+def test_natural_v5는_fresh_prompt와_확장_번역_계약을_결속한다(tmp_path: Path) -> None:
+    inventory = tmp_path / "natural-v5"
+    result = prepare_multilingual_prompts(
+        inventory,
+        train_rows_per_task=800,
+        heldout_rows_per_task=200,
+        profile="natural-v5",
+    )
+
+    assert result["profile"] == "natural-v5"
+    assert result["rows_per_teacher"] == 6000
+    assert result["outputs"] == {
+        "qwen": {
+            "path": str(inventory / "qwen.jsonl"),
+            "sha256": "1ae61b980c91d0930c4696eeaecd67dd7a418085f17844ed8b8a812e41c694fc",
+        },
+        "gemma": {
+            "path": str(inventory / "gemma.jsonl"),
+            "sha256": "b89b4045588b53b96e29d9bb73f9a4542d351037ddbcb48750abfc5e827b4b27",
+        },
+    }
+    rows = [row for teacher in ("qwen", "gemma") for row in _rows(inventory / f"{teacher}.jsonl")]
+    prompts = [row.messages[0].content for row in rows]
+    assert len(prompts) == len(set(prompts)) == 12000
+    assert all(
+        cast(dict[str, str | int], row.provenance.source_metadata)["profile"] == "natural-v5"
+        for row in rows
+    )
+    assert all(
+        "directly relevant" in prompt
+        or "直接関係する" in prompt
+        or "두 동작의 의미" in prompt
+        or "both actions" in prompt
+        or "二つの動作" in prompt
+        for prompt in prompts
+    )
+    en_ko_rows = [
+        row
+        for row in rows
+        if cast(dict[str, str | int], row.provenance.source_metadata)["task"] == "en-ko"
+    ]
+    notebook_row = next(row for row in en_ko_rows if "2 notebooks" in row.messages[0].content)
+    contract = notebook_row.provenance.response_quality
+    assert contract is not None
+    assert ["노트"] in contract.required_terms
+    assert ["책"] not in contract.required_terms

@@ -13,6 +13,9 @@ from llmex.fingerprint import fingerprint, sha256_file
 _TASKS = ("conversation-en", "conversation-ja", "ko-en", "en-ko", "ko-ja", "ja-ko")
 _TEACHERS = ("qwen", "gemma")
 _COLLECTED_AT = "2026-07-18"
+_MultilingualProfile = Literal[
+    "compact-v1", "expanded-v2", "natural-v3", "natural-v4", "natural-v5"
+]
 
 _ENTITY_MAPS: dict[str, dict[str, tuple[str, ...]]] = {
     "ko-en": {
@@ -214,8 +217,126 @@ _CONTEXT_TERM_MAPS: dict[str, dict[str, tuple[str, ...]]] = {
     },
 }
 
+_KO_RECEIVE_FORMS_V5 = (
+    "받아",
+    "받아서",
+    "받고",
+    "받은",
+    "받을",
+    "받습니다",
+    "수령해",
+    "수령해서",
+    "수령하여",
+    "수령하고",
+    "수령합니다",
+    "수거해",
+    "수거해서",
+    "수거하여",
+    "수거하고",
+    "수거합니다",
+    "수집해",
+    "수집해서",
+    "수집하여",
+    "수집하고",
+    "수집합니다",
+)
+_KO_GIVE_FORMS_V5 = (
+    "주고",
+    "줍니다",
+    "건네어",
+    "건네서",
+    "건네고",
+    "건넬",
+    "건넵니다",
+    "건넸",
+    "전해",
+    "전해서",
+    "전하여",
+    "전하고",
+    "전할",
+    "전합니다",
+    "전달해",
+    "전달해서",
+    "전달하여",
+    "전달하고",
+    "전달할",
+    "전달합니다",
+)
+_EN_GIVE_FORMS_V5 = (
+    "give them to",
+    "gives them to",
+    "gave them to",
+    "giving them to",
+    "deliver them to",
+    "delivers them to",
+    "delivered them to",
+    "delivering them to",
+    "pass them to",
+    "passes them to",
+    "passed them to",
+    "passing them to",
+    "send them to",
+    "sends them to",
+    "sent them to",
+    "sending them to",
+    "forward them to",
+    "forwards them to",
+    "forwarded them to",
+    "forwarding them to",
+    "hand them to",
+    "hands them to",
+    "handed them to",
+    "handing them to",
+)
+_V5_CONTEXT_TERM_ALIASES: dict[str, dict[str, tuple[str, ...]]] = {
+    "ko-en": {
+        "미술관": ("art gallery",),
+        "강변": ("riverbank",),
+        "회의실": ("conference room",),
+        "받아": (
+            "receives",
+            "received",
+            "receiving",
+            "collects",
+            "collected",
+            "collecting",
+            "picks up",
+            "picked up",
+            "picking up",
+        ),
+    },
+    "en-ko": {
+        "museum": ("박물관",),
+        "riverside": ("강가",),
+        "station": ("기차역",),
+    },
+    "ja-ko": {
+        "美術館": ("박물관",),
+        "駅": ("기차역",),
+    },
+}
+_V5_CONTEXT_TERM_REPLACEMENTS: dict[str, dict[str, tuple[str, ...]]] = {
+    "ko-en": {"전합니다": _EN_GIVE_FORMS_V5},
+    "en-ko": {"collect": _KO_RECEIVE_FORMS_V5, "give": _KO_GIVE_FORMS_V5},
+    "ja-ko": {"受け取り": _KO_RECEIVE_FORMS_V5, "渡します": _KO_GIVE_FORMS_V5},
+}
 
-def _detected_groups(prompt: str, mapping: dict[str, tuple[str, ...]]) -> list[list[str]]:
+_V5_PROMPT_SUFFIXES = {
+    "conversation-en": " Keep the response directly relevant.",
+    "conversation-ja": "内容に直接関係する返答にしてください。",
+    "ko-en": " 모든 이름·시각·수량·장소·물체와 두 동작의 의미를 보존하세요.",
+    "en-ko": " Preserve every name, time, quantity, place, object, and both actions.",
+    "ko-ja": " 모든 이름·시각·수량·장소·물체와 두 동작의 의미를 보존하세요.",
+    "ja-ko": "人名・時刻・数量・場所・物と二つの動作の意味をすべて保ってください。",
+}
+
+
+def _detected_groups(
+    prompt: str,
+    mapping: dict[str, tuple[str, ...]],
+    *,
+    strict_ascii_boundaries: bool = False,
+) -> list[list[str]]:
     def present(source: str) -> bool:
         if source == "本":
             return f"{source}を" in prompt
@@ -225,6 +346,11 @@ def _detected_groups(prompt: str, mapping: dict[str, tuple[str, ...]]) -> list[l
                     r"(?<![가-힣])역(?=(?:에서|에|으로|은|는|이|가|을|를|과|와|도|의)?(?:[^가-힣]|$))",
                     prompt,
                 )
+                is not None
+            )
+        if strict_ascii_boundaries and source.isascii() and source[:1].isalnum():
+            return (
+                re.search(rf"(?<![A-Za-z0-9]){re.escape(source)}(?![A-Za-z0-9])", prompt)
                 is not None
             )
         return source in prompt
@@ -237,6 +363,7 @@ def response_quality_contract(
     prompt: str,
     *,
     conversation_act: Literal["question", "suggestion"] | None = None,
+    translation_contract: Literal["base", "natural-v5"] = "base",
 ) -> ResponseQualityContract:
     target = cast(
         Literal["ko", "en", "ja"],
@@ -261,15 +388,29 @@ def response_quality_contract(
         )
     number_source = re.sub(r"(?<=\d):00\b", "", prompt)
     numbers = list(dict.fromkeys(re.findall(r"(?<!\d)\d+(?!\d)", number_source)))
+    term_maps = _CONTEXT_TERM_MAPS[task]
+    if translation_contract == "natural-v5":
+        aliases = _V5_CONTEXT_TERM_ALIASES.get(task, {})
+        replacements = _V5_CONTEXT_TERM_REPLACEMENTS.get(task, {})
+        term_maps = {
+            source: replacements.get(
+                source,
+                tuple(dict.fromkeys((*targets, *aliases.get(source, ())))),
+            )
+            for source, targets in term_maps.items()
+        }
+    strict_detection = translation_contract == "natural-v5"
     return ResponseQualityContract(
         mode="translation-only",
         target_language=target,
         max_sentences=2,
         required_numbers=[_number_group(target, number) for number in numbers],
-        required_entities=_detected_groups(prompt, _ENTITY_MAPS[task]),
+        required_entities=_detected_groups(
+            prompt, _ENTITY_MAPS[task], strict_ascii_boundaries=strict_detection
+        ),
         required_terms=[
-            *_detected_groups(prompt, _TERM_MAPS[task]),
-            *_detected_groups(prompt, _CONTEXT_TERM_MAPS[task]),
+            *_detected_groups(prompt, _TERM_MAPS[task], strict_ascii_boundaries=strict_detection),
+            *_detected_groups(prompt, term_maps, strict_ascii_boundaries=strict_detection),
         ],
     )
 
@@ -742,19 +883,21 @@ def _row(
     task: str,
     index: int,
     split: Literal["train", "heldout"],
-    profile: Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"] = "compact-v1",
+    profile: _MultilingualProfile = "compact-v1",
     prompt_index: int | None = None,
 ) -> ChatRow:
     identifier = f"multilingual-{teacher}-{split}-{task}-{index:05d}"
-    if profile in {"natural-v3", "natural-v4"}:
+    if profile in {"natural-v3", "natural-v4", "natural-v5"}:
         if prompt_index is None:
             raise IntegrityError(f"{profile} prompt index가 누락되었습니다")
         prompt = _natural_prompt(
             teacher,
             task,
             prompt_index,
-            contracted_conversation=profile == "natural-v4",
+            contracted_conversation=profile in {"natural-v4", "natural-v5"},
         )
+        if profile == "natural-v5":
+            prompt += _V5_PROMPT_SUFFIXES[task]
     elif profile == "expanded-v2":
         prompt = _expanded_prompt(teacher, task, index, split)
     else:
@@ -765,11 +908,11 @@ def _row(
     source_metadata: dict[str, str | int] = {"teacher_pool": teacher, "task": task}
     if profile != "compact-v1":
         source_metadata["profile"] = profile
-    if profile in {"natural-v3", "natural-v4"}:
+    if profile in {"natural-v3", "natural-v4", "natural-v5"}:
         absolute_prompt_index = (prompt_index or 0) + (1024 if teacher == "gemma" else 0)
         source_metadata["prompt_index"] = absolute_prompt_index
         source_metadata["combination_index"] = (absolute_prompt_index * 641) % 2048
-        if profile == "natural-v4" and task.startswith("conversation-"):
+        if profile in {"natural-v4", "natural-v5"} and task.startswith("conversation-"):
             d = ((absolute_prompt_index * 641) % 2048) // 64 % 4
             source_metadata["conversation_act"] = "question" if d % 2 == 0 else "suggestion"
     provenance = Provenance(
@@ -792,8 +935,9 @@ def _row(
                     Literal["question", "suggestion"] | None,
                     source_metadata.get("conversation_act"),
                 ),
+                translation_contract="natural-v5" if profile == "natural-v5" else "base",
             )
-            if profile in {"natural-v3", "natural-v4"}
+            if profile in {"natural-v3", "natural-v4", "natural-v5"}
             else None
         ),
     )
@@ -821,7 +965,7 @@ def _payload(
     teacher: Literal["qwen", "gemma"],
     train_rows: int,
     heldout_rows: int,
-    profile: Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"],
+    profile: _MultilingualProfile,
 ) -> bytes:
     split_counts: tuple[tuple[Literal["train", "heldout"], int], ...] = (
         ("train", train_rows),
@@ -835,7 +979,7 @@ def _payload(
             split,
             profile,
             index + train_rows
-            if profile in {"natural-v3", "natural-v4"} and split == "heldout"
+            if profile in {"natural-v3", "natural-v4", "natural-v5"} and split == "heldout"
             else index,
         )
         for split, count in split_counts
@@ -859,12 +1003,12 @@ def prepare_multilingual_prompts(
     *,
     train_rows_per_task: int = 150,
     heldout_rows_per_task: int = 30,
-    profile: Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"] = "compact-v1",
+    profile: _MultilingualProfile = "compact-v1",
 ) -> dict[str, object]:
     """두 teacher에 겹치지 않는 결정적 prompt inventory를 게시한다."""
     if train_rows_per_task < 1 or heldout_rows_per_task < 1:
         raise IntegrityError("다국어 task별 train/heldout 행 수는 1 이상이어야 합니다")
-    if profile in {"natural-v3", "natural-v4"} and (
+    if profile in {"natural-v3", "natural-v4", "natural-v5"} and (
         train_rows_per_task + heldout_rows_per_task > 1024
     ):
         raise IntegrityError(f"{profile}는 teacher별 task당 최대 1,024개 prompt를 지원합니다")

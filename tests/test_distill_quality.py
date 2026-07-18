@@ -1506,3 +1506,120 @@ def test_번역문_표현의_역은_station_계약으로_오인하지_않는다(
 
     assert ["station"] not in contract.required_terms
     assert ["library"] in contract.required_terms
+
+
+@pytest.mark.parametrize(
+    ("task", "prompt", "response"),
+    [
+        (
+            "ko-en",
+            "영어 번역문만 답하세요: 서연은 목요일 12시에 회의실에서 보고서 8부를 받아 "
+            "수아에게 전합니다.",
+            "Seoyeon receives eight copies of the report from the conference room at "
+            "12:00 on Thursday and passes them to Sua.",
+        ),
+        (
+            "en-ko",
+            "Give only a natural Korean translation: At 9:00 on Monday, Riley will collect "
+            "4 books at the riverside and give them to Jordan.",
+            "월요일 오전 9시에 라이리는 강가에서 책 4권을 수거하여 조던에게 건넬 것입니다.",
+        ),
+        (
+            "ja-ko",
+            "自然な韓国語の訳文だけ答えてください。凛は水曜日11時にカフェで\u30ceートを2冊受け取り、"
+            "蓮に渡します。",
+            "린은 수요일 오전 11시에 카페에서 노트 두 권을 받아 렌에게 건넵니다.",
+        ),
+    ],
+)
+def test_natural_v5만_정상_번역_동의어와_활용형을_허용한다(
+    tmp_path: Path, task: str, prompt: str, response: str
+) -> None:
+    base_contract = response_quality_contract(task, prompt)
+    v5_contract = response_quality_contract(task, prompt, translation_contract="natural-v5")
+
+    assert (
+        filter_logical_response(_request(prompt, base_contract), response, _config(tmp_path))
+        == "quality:term"
+    )
+    assert (
+        filter_logical_response(_request(prompt, v5_contract), response, _config(tmp_path)) is None
+    )
+    assert fingerprint(v5_contract.model_dump(mode="json")) != fingerprint(
+        base_contract.model_dump(mode="json")
+    )
+
+
+def test_natural_v5는_notebooks에서_books를_별도_계약으로_오인하지_않는다(
+    tmp_path: Path,
+) -> None:
+    prompt = (
+        "Give only a natural Korean translation: At 11:00 on Wednesday, Riley will collect "
+        "2 notebooks at the community center and give them to Alex."
+    )
+    contract = response_quality_contract(
+        task="en-ko", prompt=prompt, translation_contract="natural-v5"
+    )
+
+    assert ["책"] not in contract.required_terms
+    assert ["노트"] in contract.required_terms
+    reason = filter_logical_response(
+        _request(prompt, contract),
+        "수요일 오전 11시에 라이리는 커뮤니티 센터에서 노트북 2권을 수거하여 "
+        "알렉스에게 전달합니다.",
+        _config(tmp_path),
+    )
+    assert reason == "quality:term"
+
+
+def test_natural_v5는_오역과_이름_훼손을_계속_거절한다(tmp_path: Path) -> None:
+    prompt = "영어 번역문만 답하세요: 지호는 월요일 9시에 공원에서 표 9장을 받아 수아에게 전합니다."
+    contract = response_quality_contract(
+        task="ko-en", prompt=prompt, translation_contract="natural-v5"
+    )
+    table_reason = filter_logical_response(
+        _request(prompt, contract),
+        "Jiho receives nine copies of the table at the park on Monday at 9 a.m. and "
+        "passes them to Sua.",
+        _config(tmp_path),
+    )
+
+    assert table_reason == "quality:term"
+    name_reason = filter_logical_response(
+        _request(prompt, contract),
+        "Jiho receives nine tickets at the park on Monday at 9 a.m. and passes them to Sue.",
+        _config(tmp_path),
+    )
+    assert name_reason == "quality:entity"
+
+
+def test_natural_v5는_주와_hands_문맥으로_전달_동작을_우회할_수_없다(
+    tmp_path: Path,
+) -> None:
+    en_ko_prompt = (
+        "Give only a natural Korean translation: At 9:00 on Monday, Riley will collect "
+        "4 books at the riverside and give them to Jordan."
+    )
+    en_ko_contract = response_quality_contract(
+        "en-ko", en_ko_prompt, translation_contract="natural-v5"
+    )
+    week_reason = filter_logical_response(
+        _request(en_ko_prompt, en_ko_contract),
+        "월요일 오전 9시에 라이리는 강가에서 책 4권을 수거하고, 이번 주에 조던을 만납니다.",
+        _config(tmp_path),
+    )
+
+    ko_en_prompt = (
+        "영어 번역문만 답하세요: 지호는 월요일 9시에 공원에서 표 9장을 받아 수아에게 전합니다."
+    )
+    ko_en_contract = response_quality_contract(
+        "ko-en", ko_en_prompt, translation_contract="natural-v5"
+    )
+    hands_reason = filter_logical_response(
+        _request(ko_en_prompt, ko_en_contract),
+        "Jiho receives 9 tickets at the park on Monday at 9 a.m. while Sua's hands are cold.",
+        _config(tmp_path),
+    )
+
+    assert week_reason == "quality:term"
+    assert hands_reason == "quality:term"

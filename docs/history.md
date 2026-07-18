@@ -1,5 +1,15 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.22 natural-v5 번역 계약 보강
+
+- 기존 natural-v3/v4 bytes와 고정 SHA를 바꾸지 않고 `natural-v5` profile을 추가했다. 모든 prompt에 언어별 의미 보존·직접 관련성 지시를 추가해 teacher별 6,000개, 전체 12,000개가 고유하고 과거 source prompt와 겹치지 않게 했다.
+- ko-en은 `receives/delivers/passes`, `conference room`, `art gallery`, `riverbank`를, en-ko·ja-ko는 `받아/수거하여/수집하여`, `건넵니다/전달합니다`, `강가/박물관/기차역`을 새 계약에서만 허용한다. 이름 훼손, `table` 오역, `노트북` 오역과 언어 혼입은 계속 거절한다.
+- v5의 ASCII source 단어 경계는 `notebooks` 내부의 `books`를 별도 필수어로 탐지하던 결함을 제거한다. natural-v3/v4의 과거 직렬화와 fingerprint는 그대로 유지한다.
+- 과거 Qwen 310응답을 v5 계약으로 재판정해 conversation-en 22, conversation-ja 39, ko-en 39, en-ko 43, ko-ja 18, ja-ko 15 accepted를 확인했다. 기존 v3의 세 번역 방향 0은 계약 결함이었으며, 이름·언어·물체 오류는 계속 rejected다.
+- natural-v5 source fingerprint는 `4a51db8e4f53aabe83bf387fc00b7d52dbaafa248144cb9ac4066172b7054f98`, Qwen SHA는 `1ae61b980c91d0930c4696eeaecd67dd7a418085f17844ed8b8a812e41c694fc`, Gemma SHA는 `b89b4045588b53b96e29d9bb73f9a4542d351037ddbcb48750abfc5e827b4b27`이다.
+- Qwen v4 inventory는 train 1,466/heldout 534, fingerprint `b48f0c530b092d7d38d7995778120a505177353a866ee17217a3b76103cd9005`, Gemma v4는 train 1,488/heldout 512, fingerprint `9b9d7481df9ef39e0f1855f074db022face45710a24e90ea3f5c775478c53887`이며 두 실제 endpoint preflight가 통과했다. 다음 작업은 Qwen v4 수집과 조기 여섯 task 분포 감사다. Hugging Face 업로드는 공개·비공개 모두 금지한다.
+- 독립 code reviewer가 `이번 주에`의 `주`와 명사 `hands`로 전달 동작을 우회하는 두 blocker를 찾아냈다. v5에서 단축 stem union을 폐기하고 완결 활용형·`... them to` 관계형으로 교체한 뒤 두 우회와 이름 훼손 회귀를 통과해 최종 `APPROVE`를 받았다. `make release-check`는 408 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다.
+
 ## 2026-07-18 · 1.22.21 Qwen 번역 계약 조기 감사 기각
 
 - `qwen36mtp-multilingual-natural-2000-v3`를 실제 수집해 310/2,000에서 accepted 79/rejected 231/pending 1,690을 기록했다. accepted는 conversation-en 22, conversation-ja 39, ko-ja 18이었고 ko-en·en-ko·ja-ko는 모두 0이었다.

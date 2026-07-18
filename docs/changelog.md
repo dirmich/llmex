@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.22.22 - 2026-07-18
+
+- 기존 natural-v3/v4 bytes를 보존하고 새 natural-v5에만 영어·한국어 동사 활용과 보수적 장소 동의어를 결속했다.
+- ASCII 단어 경계로 `notebooks` 안의 `books`를 별도 필수어로 오인하던 계약을 수정했다.
+- 과거 Qwen 310응답 재판정에서 여섯 task accepted를 확인하고 fresh Qwen·Gemma 각 2,000 inventory의 prepare와 endpoint preflight를 통과했다.
+- natural-v4 기반 미수집 Gemma v3 설정을 rejected 이름으로 격리했다.
+
 ## 1.22.21 - 2026-07-18
 
 - Qwen natural-v4 v3를 310건에서 조기 감사해 accepted 79/rejected 231 상태와 세 번역 방향 accepted 0을 확인했다.

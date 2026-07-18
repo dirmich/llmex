@@ -1,14 +1,14 @@
 schema_version: 2
-name: gemma4-multilingual-natural-2000-v3
-seed: 241
+name: gemma4-multilingual-natural-2000-v4
+seed: 257
 endpoint: http://macmini:11434/v1
 allowed_endpoint_hosts:
   - macmini
 model: gemma4-26b-a4b-uncensored-hauhaucs-balanced
 api_key_env: null
-run_dir: runs/distill/gemma4-multilingual-natural-2000-v3
+run_dir: runs/distill/gemma4-multilingual-natural-2000-v4
 source_chat_files:
-  - data/chat/multilingual-teacher-prompts-natural-v4/gemma.jsonl
+  - data/chat/multilingual-teacher-prompts-natural-v5/gemma.jsonl
 corpus: data/processed/corpus-v1.jsonl.zst
 target_requests: 2000
 heldout_basis_points: 1000
