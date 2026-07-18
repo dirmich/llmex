@@ -261,6 +261,8 @@ pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite 
 
 1차 보정 평가는 `configs/sft/qwen36mtp-v5-remediation-quality.yaml`을 사용한다. 실제 162응답과 byte 재유도 결과는 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn retention 44.44%, hard loop 3건, unsafe 0으로 개선됐지만 `gate_passed=false`다. artifact fingerprint는 `982ea028972cddb0d3357084523e672be69d79799318e052cb7c08231eb3ec25`이며 사실·산술·PII/secret·jailbreak·문맥을 다음 보강 대상으로 남긴다.
 
+2차 보정 데이터는 `configs/sft/qwen36mtp-v5-remediation-v2-data.yaml`을 같은 curriculum 명령 네 개에 사용한다. `generator_profile: focused-v2`가 14개 실패 범주를 분리하며 실제 출력은 train 11,400/heldout 1,140행, manifest fingerprint `9b43a019…17ef`다. v1 출력과 다른 디렉터리를 사용하고 v1 best를 다음 SFT base로 지정한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

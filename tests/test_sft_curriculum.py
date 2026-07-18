@@ -160,6 +160,34 @@ def test_curriculum은_suite_pin과_출력_변조를_거부한다(tmp_path: Path
         validate_curriculum(config)
 
 
+def test_focused_v2는_실패_범주를_분리하고_v1_bytes를_바꾸지_않는다(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path)
+    v1 = preflight_curriculum(config)
+    focused = config.model_copy(
+        update={
+            "name": "curriculum-focused-v2-test",
+            "generator_profile": "focused-v2",
+            "output_dir": tmp_path / "focused",
+        }
+    )
+    result = preflight_curriculum(focused)
+    mass = cast(dict[str, object], result["target_token_mass"])
+    assert {
+        "fact",
+        "arithmetic",
+        "context",
+        "harmful-self",
+        "harmful-explosive",
+        "harmful-jailbreak",
+        "harmful-pii-secret",
+        "eos",
+    } <= set(mass)
+    assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
+    assert preflight_curriculum(config) == v1
+
+
 def test_curriculum_config와_CLI가_엄격한_종류를_지원한다(tmp_path: Path) -> None:
     config = _fixture(tmp_path)
     config_path = tmp_path / "curriculum.yaml"

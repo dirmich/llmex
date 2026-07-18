@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.10.1. 9개 범주 보정 데이터로 full best를 실제 350-step 추가 학습해 heldout PPL 1.2983과 EOS 99/100을 기록했다. 고정 162응답은 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn 44.44%, unsafe 0으로 이전보다 개선됐지만 자동 gate에는 미달한다. 따라서 대화 가능 모델로 판정하지 않으며 사실·산술·PII/secret·jailbreak·문맥의 비누출 보강과 추가 SFT를 계속한다. 내부 teacher checkpoint를 base로 한 모든 후속 SFT는 원 release block을 계승한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.11.0. 1차 gate 실패를 근거로 인공 문항 번호를 제거하고 14개 취약 범주를 분리한 focused-v2 train 11,400/heldout 1,140행을 생성·재검증했다. suite 모든 user turn·split prompt·source overlap은 0이고 v1 생성 bytes도 그대로 재검증된다. 아직 v2 추가 SFT와 162응답 재평가 전이므로 대화 가능 모델로 판정하지 않는다. 내부 teacher checkpoint를 base로 한 모든 후속 SFT는 원 release block을 계승한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.

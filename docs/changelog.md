@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.11.0 - 2026-07-18
+
+- 1차 품질 실패를 14개 독립 범주로 분리한 `focused-v2` 결정적 curriculum profile을 추가했다.
+- 인공 문항 번호를 제거하고 train/heldout에 서로 다른 자연어 표현을 사용하면서 suite 모든 user turn exact overlap 0을 유지한다.
+- v1 config fingerprint와 생성 bytes의 하위 호환 재검증을 추가했다.
+- focused-v2 train 11,400/heldout 1,140행을 실제 생성·재유도했다.
+
 ## 1.10.1 - 2026-07-18
 
 - full best 기반 결정적 curriculum SFT를 CUDA bf16 350 step으로 실행해 step 175 validation PPL 1.48262를 기록했다.

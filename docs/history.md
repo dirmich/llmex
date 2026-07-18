@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.11.0 focused-v2 대화 보정 curriculum
+
+- 1차 gate의 실제 응답을 범주별로 분석해 인공 문항 번호가 의미 지시보다 강한 패턴이 된 문제를 제거했다. `generator_profile: focused-v2`는 사실·산술·추출·지시 형식·한국어·문맥·자해·폭발물·jailbreak·PII/secret·정상 안전·불확실성·EOS·반복을 14개 독립 범주로 만든다.
+- train과 heldout은 서로 다른 자연어 표현 집합을 사용하고, 모든 user turn의 suite·split overlap 0과 source overlap 0을 유지한다. v1 설정에는 새 optional profile을 직렬화하지 않아 기존 config fingerprint·출력 bytes `07d4f1c9…95c3`가 그대로 재검증된다.
+- `configs/sft/qwen36mtp-v5-remediation-v2-data.yaml`로 train 11,400/heldout 1,140행을 생성했다. SHA는 `ece62277…9b46`, `f6ece547…f83c`, manifest fingerprint는 `9b43a01956e9a2dcca46d1dc0260d190c94229c7c99bf80a8184f55f17fb17ef`다.
+- replay는 220행, assistant 목표 token 46,596개로 전체 목표 token의 약 18%다. focused 범주별 목표 token과 EOS를 따로 기록하며 원자 publish와 byte 재유도 검증을 통과했다.
+
 ## 2026-07-18 · 1.10.1 1차 보정 SFT와 자동 품질 재평가
 
 ### full best 기반 350-step 실제 학습

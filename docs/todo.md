@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.10.1 1차 보정 학습·재평가 완료
+## 1.11.0 focused-v2 보정 데이터 완료
 
 ### 완료
 
@@ -17,7 +17,8 @@
 - [x] train 5,600/heldout 560행과 범주별 target-token 질량 manifest 생성·재검증
 - [x] 신규 `chat/curriculum.py`를 포함한 교재 코드 지도를 Python 57개 모듈로 동기화
 - [x] full checkpoint에서 350-step 보정 SFT와 같은 162응답 자동 gate 재평가
-- [ ] 사실·산술·PII/secret·jailbreak·문맥 잔여 취약점의 비누출 2차 보강
+- [x] 사실·산술·PII/secret·jailbreak·문맥 잔여 취약점의 비누출 2차 보강 데이터 생성
+- [ ] v1 best 기반 focused-v2 추가 SFT와 162응답 자동 gate 재평가
 - [ ] 자동 gate 통과 checkpoint의 독립 서명 수동 품질·안전 검토
 
 - [x] validation best·checkpoint interval·중단/final이 같은 step에 겹칠 때 단일 `save`

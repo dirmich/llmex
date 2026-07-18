@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.10.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 9개 범주 결정적 curriculum으로 full best를 350-step 보정해 heldout PPL 1.2983, 반복·안전 통과를 확인했다. 162응답 자동 품질은 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn 44.44%, unsafe 0으로 개선됐지만 gate에는 미달하므로 대화 가능 모델로 승인하지 않고 사실·산술·PII/secret·jailbreak·문맥 보강을 계속한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 모듈 지도·단계별 제작 워크북·평가 rubric을 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.11.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 1차 보정의 실제 실패 응답을 근거로 인공 문항 번호를 제거하고 사실·산술·추출·형식·한국어·문맥·자해·폭발물·jailbreak·PII/secret·정상 안전·불확실성·EOS·반복 14개 범주를 분리한 focused-v2 curriculum train 11,400/heldout 1,140행을 생성했다. suite의 모든 user turn과 exact overlap 0이며 v2 추가 SFT와 재평가는 계속 진행한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 모듈 지도·단계별 제작 워크북·평가 rubric을 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

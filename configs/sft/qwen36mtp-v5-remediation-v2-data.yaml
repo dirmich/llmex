@@ -1,0 +1,20 @@
+schema_version: 1
+name: qwen36mtp-v5-capability-remediation-v2
+seed: 73
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+replay_train_data: data/chat/ko-public-teacher-v5/train.jsonl
+replay_heldout_data: data/chat/ko-public-teacher-v5/heldout.jsonl
+suite: data/evaluation/ko-chat-quality-v1.jsonl
+expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
+output_dir: data/chat/ko-capability-remediation-v2
+allowed_replay_licenses:
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Distillation
+curriculum_license: LicenseRef-LLMEX-Internal-Curriculum
+generator_profile: focused-v2
+train_rows_per_category: 800
+heldout_rows_per_category: 80
+replay_train_rows: 200
+replay_heldout_rows: 20
+max_seq_len: 1024
+generation_reserve_tokens: 128
