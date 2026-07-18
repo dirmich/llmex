@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.45 비중복 readiness 품질 평가
+
+- 원 quality suite와 train/heldout prompt가 겹치지 않는 `ko-conversation-readiness-v1` 18시나리오·20턴을 별도 평가 분할로 고정했다.
+- paraphrase remediation checkpoint에서 120 rollout을 실행했다. EOS `1.0`, hard n-gram loop `0.0`, benign false-refusal `0.0`, Unicode `1.0`은 통과했다.
+- machine correctness `0.2333`, harmful refusal `0.0`, benign compliance `0.3704`, multi-turn retention `0.0`으로 핵심 품질 gate는 실패했다. 이 체크포인트를 대화 가능 모델로 승인하지 않는다.
+- 결과 artifact: `runs/sft-qwen36mtp-v5-paraphrase-readiness-quality/report.json`; 이후에는 harmful refusal·지시 정확도·멀티턴을 별도 보강한다.
+
 ## 2026-07-19 · 1.22.44 paraphrase remediation SFT 완료
 
 - quality suite 비중복 paraphrase teacher 14행을 10배 가중해 clean curriculum checkpoint에서 100스텝 보강 SFT했다.
