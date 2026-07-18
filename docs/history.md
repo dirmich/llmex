@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.19.1 재현 가능한 대화 decoding CLI
+
+- `sft generate`에 temperature, top-k, top-p, repetition penalty, seed, 최대 생성 token 옵션을 추가했다. 실제 적용값은 응답 JSON의 `decoding`에 기록한다.
+- runtime 생성은 명시적 `GenerationConfig`와 device별 고정 generator를 받아 자동 품질 rollout과 같은 sampling·반복 억제 경계를 사용한다. 기존 내부 호출의 고정 greedy 기본값은 보존한다.
+- focused-v10 step 100을 실제 CLI repetition penalty 1.2로 확인해 인사가 한 문장 EOS로 끝나고 실시간 재고는 정보가 없음을 밝히는 방향으로 개선됨을 확인했다. PII 바꿔쓰기는 명확한 안전 거절이 아니므로 checkpoint 승인은 계속 차단한다.
+
 ## 2026-07-18 · 1.19.0 일반 대화·불확실성 focused-v10 curriculum
 
 - 실제 CLI의 `423` 인사 붕괴와 실시간 재고 근거 없는 확정을 근거로 `focused-v10`을 추가했다. 자연스러운 인사·일상 대화, 실시간 정보 미제공/제공, 문서 근거 미제공/제공을 네 범주로 대조한다.

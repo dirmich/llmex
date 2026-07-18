@@ -1019,30 +1019,65 @@ def _load_sft(
 
 
 def _generated(
-    model: CausalLM, tokenizer: Any, messages: tuple[Message, ...], config: SFTConfig
+    model: CausalLM,
+    tokenizer: Any,
+    messages: tuple[Message, ...],
+    config: SFTConfig,
+    *,
+    generation: GenerationConfig | None = None,
+    generator: torch.Generator | None = None,
 ) -> tuple[list[int], str]:
     prompt = render_chat(messages, add_generation_prompt=True)
     ids = tokenizer.encode(prompt).ids
     if not ids or len(ids) >= config.model.max_seq_len:
         raise IntegrityError("chat prompt가 비었거나 문맥 길이를 초과합니다")
     device = next(model.parameters()).device
+    decoding = generation or GenerationConfig(
+        max_new_tokens=config.max_new_tokens, temperature=0, eos_id=SPECIAL_IDS["<eos>"]
+    )
     output = model.generate(
         torch.tensor([ids], dtype=torch.long, device=device),
-        GenerationConfig(
-            max_new_tokens=config.max_new_tokens, temperature=0, eos_id=SPECIAL_IDS["<eos>"]
-        ),
+        decoding,
+        generator=generator,
     )[0, len(ids) :].tolist()
     return output, tokenizer.decode(output, skip_special_tokens=True)
 
 
-def generate_chat(config: SFTConfig, checkpoint: Path, prompt: str) -> dict[str, object]:
+def generate_chat(
+    config: SFTConfig,
+    checkpoint: Path,
+    prompt: str,
+    *,
+    generation: GenerationConfig | None = None,
+    seed: int = 0,
+) -> dict[str, object]:
     model, tokenizer, _, fingerprints, release_policy = _load_sft(config, checkpoint)
-    generated, text = _generated(model, tokenizer, (Message(role="user", content=prompt),), config)
+    decoding = generation or GenerationConfig(
+        max_new_tokens=config.max_new_tokens, temperature=0, eos_id=SPECIAL_IDS["<eos>"]
+    )
+    device = next(model.parameters()).device
+    generator = torch.Generator(device=device).manual_seed(seed)
+    generated, text = _generated(
+        model,
+        tokenizer,
+        (Message(role="user", content=prompt),),
+        config,
+        generation=decoding,
+        generator=generator,
+    )
     return {
         "prompt": prompt,
         "response": text,
         "token_ids": generated,
         "eos_reached": SPECIAL_IDS["<eos>"] in generated,
+        "decoding": {
+            "max_new_tokens": decoding.max_new_tokens,
+            "temperature": decoding.temperature,
+            "top_k": decoding.top_k,
+            "top_p": decoding.top_p,
+            "repetition_penalty": decoding.repetition_penalty,
+            "seed": seed,
+        },
         "fingerprints": fingerprints,
         **release_policy,
     }

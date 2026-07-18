@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.19.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v10은 고정 gate 밖에서 확인한 인사·실시간 조회 실패를 자연스러운 일상 대화와 근거 유무 대조로 보정한다. 이는 아직 학습·실제 검증 전이며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.19.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 실제 생성 CLI는 온도·top-k/p·반복 억제·seed·최대 길이를 명시해 품질 평가와 같은 decoding을 재현한다. focused-v10은 고정 gate 밖에서 확인한 인사·실시간 조회 실패를 자연스러운 일상 대화와 근거 유무 대조로 보정한다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 focused-v7은 최신 날짜만 출력하는 assistant turn을 한 문맥에서 세 번 배치하고 PII/secret 거절을 별도 생성한다. `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`의 실제 출력은 train 8,400/heldout 840행, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap은 0이다.
 

@@ -531,12 +531,34 @@ def sft_generate(
     config_path: Annotated[Path, typer.Option("--config")],
     checkpoint: Annotated[Path, typer.Option("--checkpoint")],
     prompt: Annotated[str, typer.Option("--prompt")],
+    temperature: Annotated[float, typer.Option("--temperature", min=0.0, max=2.0)] = 0.0,
+    top_k: Annotated[int | None, typer.Option("--top-k", min=1)] = None,
+    top_p: Annotated[float, typer.Option("--top-p", min=0.001, max=1.0)] = 1.0,
+    repetition_penalty: Annotated[float, typer.Option("--repetition-penalty", min=0.01)] = 1.2,
+    seed: Annotated[int, typer.Option("--seed", min=0)] = 0,
+    max_new_tokens: Annotated[int | None, typer.Option("--max-new-tokens", min=1)] = None,
 ) -> None:
-    """고정 chat template으로 assistant 응답을 생성합니다."""
+    """고정 chat template과 명시적 decoding으로 assistant 응답을 생성합니다."""
     try:
         from llmex.chat import generate_chat
+        from llmex.model import GenerationConfig
+        from llmex.tokenizer.core import SPECIAL_IDS
 
-        result = generate_chat(_sft_config(config_path), checkpoint, prompt)
+        config = _sft_config(config_path)
+        result = generate_chat(
+            config,
+            checkpoint,
+            prompt,
+            generation=GenerationConfig(
+                max_new_tokens=max_new_tokens or config.max_new_tokens,
+                temperature=temperature,
+                top_k=top_k,
+                top_p=top_p,
+                repetition_penalty=repetition_penalty,
+                eos_id=SPECIAL_IDS["<eos>"],
+            ),
+            seed=seed,
+        )
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))

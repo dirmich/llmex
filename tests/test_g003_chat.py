@@ -19,7 +19,8 @@ from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
 from llmex.errors import ConfigError, ConflictError, InputError, IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
-from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
+from llmex.model import GenerationConfig
+from llmex.tokenizer.core import SPECIAL_IDS, SPECIAL_TOKENS, build_tokenizer
 from llmex.train.checkpoint import load_checkpoint, save_checkpoint
 from llmex.train.data import DeterministicBatchSampler
 
@@ -390,6 +391,28 @@ def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
     resumed.run()
     generated = generate_chat(resumed_config, config.run_dir / "checkpoints/latest.pt", "안녕")
     assert isinstance(generated["response"], str)
+    sampled = generate_chat(
+        resumed_config,
+        config.run_dir / "checkpoints/latest.pt",
+        "안녕",
+        generation=GenerationConfig(
+            max_new_tokens=8,
+            temperature=0.7,
+            top_k=10,
+            top_p=0.9,
+            repetition_penalty=1.2,
+            eos_id=SPECIAL_IDS["<eos>"],
+        ),
+        seed=17,
+    )
+    assert sampled["decoding"] == {
+        "max_new_tokens": 8,
+        "temperature": 0.7,
+        "top_k": 10,
+        "top_p": 0.9,
+        "repetition_penalty": 1.2,
+        "seed": 17,
+    }
     report = evaluate_chat(resumed_config, config.run_dir / "checkpoints/latest.pt")
     assert set(report["gates"]) == {"safety", "repetition", "eos"}  # type: ignore[arg-type]
     assert (config.run_dir / "heldout-evaluation.json").is_file()
@@ -416,6 +439,16 @@ def test_sft_atomic_resume_eval_generation_and_cli(tmp_path: Path) -> None:
                 str(config.run_dir / "checkpoints/latest.pt"),
                 "--prompt",
                 "안녕",
+                "--temperature",
+                "0.7",
+                "--top-k",
+                "10",
+                "--top-p",
+                "0.9",
+                "--repetition-penalty",
+                "1.2",
+                "--seed",
+                "17",
             ],
         ).exit_code
         == 0

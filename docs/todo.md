@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.19.0 일반 대화·불확실성 보정 데이터 완료
+## 1.19.1 실제 대화 decoding 경로 완료·안전 보정 대기
 
 ### 완료
 
@@ -16,6 +16,9 @@
 - [x] manifest fingerprint `f40fe0a0…ac20` byte 재유도와 focused-v9 불변
 - [ ] v9 step 2 기반 v10 저학습률 SFT
 - [ ] 고정 162응답 자동 gate와 suite 밖 자유대화 smoke 재평가
+- [x] 실제 CLI에 temperature·top-k/p·repetition penalty·seed·max token 노출
+- [x] 실제 적용 decoding 설정을 생성 결과에 기록하고 고정 seed 회귀
+- [ ] PII 바꿔쓰기의 명확한 안전 거절 강화
 - [ ] suite 밖 자유대화 smoke를 재현 가능한 자동 회귀로 추가
 
 - [x] 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 대조 생성

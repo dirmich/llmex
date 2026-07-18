@@ -4,6 +4,8 @@
 
 1.19.0의 focused-v10은 이 실패를 그대로 학습 문장으로 복제하지 않고 인사·일상 대화와 “실시간 값/문서 근거가 없는 경우와 제공된 경우”를 대조한다. 학습 뒤에는 고정 162응답을 보존 게이트로, 별도 자연어 바꿔쓰기 smoke를 일반화 게이트로 함께 사용한다.
 
+1.19.1부터 `sft generate`의 temperature·top-k/p·repetition penalty·seed를 quality profile과 같게 지정할 수 있다. checkpoint 비교에서는 학습 결과와 decoding 차이를 섞지 않도록 모든 후보에 동일한 값을 사용하고 결과 JSON의 `decoding`을 증거로 보존한다.
+
 heldout NLL이 낮아도 실제 대화는 반복하거나, EOS 없이 길게 이어지거나, 위험 요청을 그대로 수행할 수 있다. 자동 품질 gate는 고정된 checkpoint와 한국어 suite를 실제로 rollout하고, 여러 decoding profile과 seed의 최악값을 기준으로 실패-폐쇄 판정한다.
 
 ## 학습 목표
