@@ -1,5 +1,10 @@
 # 변경 기록
 
+## 1.22.25 - 2026-07-18
+
+- Qwen natural-v5 정식 10,000건 수집·감사·export/validate를 완료했다(승인 5,096, 거절 4,904, 실패 0).
+- teacher 내부 라이선스 때문에 재배포 게이트는 차단 상태이며 Hugging Face 업로드는 하지 않는다.
+
 ## 1.22.24 - 2026-07-18
 
 - 최신 natural-v5 조사 계약을 반영해 teacher별 10,002행 multilingual prompt inventory를 만들었다.

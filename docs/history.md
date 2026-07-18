@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.25 Qwen natural-v5 정식 10k 완료
+
+- 요청 10,000건, 승인 5,096건, 거절 4,904건, 실패/대기 0건으로 수집을 완료했다. 마지막 실패 spool 1건은 재수집했다.
+- 독립 표본 감사 50건 승인 artifact SHA `fbf095bb05457d22db0f2f0fe891c10ad809f9012aa7e2785f5cc65863fae844`.
+- train/heldout export SHA는 각각 `d5d33fb029200a275329a7c331b68f59fec332c75b1e06db4da4d99258a44465`, `6c5c2d1b6c876aa6ed4e94520e66a2dd92dfb2e36273e7b317a45c2e14742611`이며 validate는 `status=ok`이다.
+- 내부 teacher 라이선스로 redistribution gate는 blocked이며 Hugging Face에는 업로드하지 않는다. 다음은 public+teacher 로컬 혼합과 100M SFT다.
+
 ## 2026-07-18 · 1.22.24 Qwen 정식 10k inventory 결속
 
 - `natural-v5`의 한국어 수령인 `에게/께` 계약과 오래된 JSONL의 계약 재결속 경계를 구현했다. 일본어 다문자 이름도 정확히 매칭한다.

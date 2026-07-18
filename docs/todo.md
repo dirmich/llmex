@@ -1,5 +1,11 @@
 # LLMEX 개발 TODO
 
+## 1.22.25 Qwen natural-v5 수집·검증 완료
+
+- [x] 10,000건 수집 및 실패 재시도 완료(승인 5,096, 거절 4,904, 대기 0).
+- [x] 독립 표본 50건 감사와 export/validate 완료.
+- [ ] public+teacher 혼합 데이터 구성 및 100M SFT 진행.
+
 ## 1.22.24 Qwen multilingual 정식 10k 수집
 
 - [x] 최신 `natural-v5` 계약으로 teacher별 10,002행(6 task, train 8,400/heldout 1,602) prompt를 생성했다.
