@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.22.15, frozen sync | 통과 가능 |
+| 버전·lock | 1.22.16, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -14,7 +14,7 @@
 | 수동 대화 품질 | 최소 100 blind review, full-row/응답 hash, 독립 서명 quality·safety 검토 | 구현 통과, 실제 모델 사람 검토 필요 |
 | SFT 민감 출력 | built-in 완화 불가, 안전한 추가 규칙, 전 assistant turn 선필터, 원자 directory publish | 구현 통과, 실제 mix별 집계 확인 필요 |
 | SFT 원천 identity | source SHA·ID·원행 SHA 우선순위, teacher 원행 결속, 최종 source overlap 0 | 구현·실제 pilot 통과 |
-| teacher 응답 계약 | typed target language/mode/문장/숫자/entity/term 계약, 수집·spool 재검증 동일 적용 | 구현·과거 Qwen/Gemma spool 역감사 통과, v2 신규 수집 대기 |
+| teacher 응답 계약 | typed target language/mode/문장/숫자/entity/term 계약, 수집·spool 재검증 동일 적용 | 구현·과거 spool 역감사 통과, Qwen 다국어 v2·Gemma 한국어 v3 수집 중 |
 | SFT curriculum manifest | kind·fingerprint·train/heldout SHA·tokenizer·길이·release 정책 SHA 결속 | 구현·통합 회귀 통과 |
 | SFT fresh run | 미존재 run 디렉터리 원자 선점, 기존 경로 보존, strict resume만 연속 기록 | 구현·회귀 통과 |
 | SFT token cache | 전체 길이·값 2-pass 결속, 연속 int32/offset storage, 완화 불가 128 MiB 상한 | 구현·실제 pilot preflight 통과 |
@@ -27,7 +27,7 @@
 | focused-v12 LR A/B | 2e-6/4e-6 각 25 step·390응답, SHA 고정·byte 재유도 | 둘 다 gate 실패, 4e-6을 안전 우선 정식 후보로 선택 |
 | focused-v12 정식 학습 | 150 step, step 50·150 각 390응답, 한국어·영어·일본어 suite 밖 smoke | 실패, 안전은 개선됐으나 정확도 37.69%·멀티턴 46.67%·비문 잔존 |
 | expanded 1차 자연대화 tranche | Qwen 1,296/2,000·Gemma 다국어 433/2,000·Gemma 한국어 369/3,000 표본 감사 | source 결함으로 중단, export 없음 |
-| natural-v3/v2 증류 입력 | `prompt_index` 전단사 순열로 split·teacher 의미 범위 분리, canonical 본문 교집합 0, 모든 의미 축 양 split 분포, Qwen/Gemma 다국어 2,000씩·한국어 3,000, 고유 request target·Wikipedia 0·endpoint preflight | 독립 전수 감사·prepare 통과, collect 대기 |
+| natural 증류 입력 | `prompt_index` 전단사 순열로 split·teacher 의미 범위 분리, canonical 본문 교집합 0, 모든 의미 축 양 split 분포, Qwen/Gemma 다국어 2,000씩·한국어 3,000, 고유 request target·Wikipedia 0·endpoint preflight | Qwen 다국어 v2 수집 중, 결함 Gemma 한국어 v2 격리, 강화 gate Gemma 한국어 v3 fresh 수집 |
 | SFT 보정 curriculum | v1~v4, 접미 v5, 핵심 앞부분 v6, exact 문맥·PII v7, 값-only v8, PII·정상 안전 v9, 일반 대화·불확실성 v10, 대화·안전 결합 v11, 모든 user turn suite 비누출 | v11 train 13,200/heldout 1,320행과 150-step 학습·평가 완료, 최소 보정 필요 |
 | v12 진단 trial | v11 저학습률 20-step, v10→v9 안전 복원 20-step, SHA 고정 162응답 재검증 | 둘 다 기각, 안전 복원 최악 정확도 88.89%·유해 거절 83.33%·unsafe 1 |
 | 모듈별 교재 | 57개 Python 모듈 카드, 환경별 0~20장 준비표, 실행 가능한 offline mix·SFT·추론·품질 실습, capstone rubric | 구현·실제 CPU E2E·일대일 회귀 통과 |

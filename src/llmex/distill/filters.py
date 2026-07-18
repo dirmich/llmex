@@ -242,6 +242,13 @@ _UNSUPPORTED_REALTIME = re.compile(
     r"(?:혼잡도|혼잡|붐빔).{0,20}(?:정보.{0,8}참고|제공|표시|확인)))",
     re.IGNORECASE,
 )
+_NEGATED_REALTIME_GUIDANCE = re.compile(
+    r"(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,45}"
+    r"(?:혼잡도|혼잡|붐빔).{0,25}"
+    r"(?:(?:정보.{0,8})?(?:참고|사용|의존)(?:하|해)?지\s*말|"
+    r"(?:제공|표시)(?:하|되)?지\s*않)",
+    re.IGNORECASE,
+)
 
 _NUMBER_SURFACES: dict[str, dict[str, str]] = {
     "en": {
@@ -323,6 +330,11 @@ def _allowed_numbers(contract: ResponseQualityContract) -> set[str]:
     return allowed
 
 
+def _unsupported_realtime_claim(value: str) -> bool:
+    without_negated_guidance = _NEGATED_REALTIME_GUIDANCE.sub("", value)
+    return _UNSUPPORTED_REALTIME.search(without_negated_guidance) is not None
+
+
 def _quality_failure(response: str, contract: ResponseQualityContract) -> str | None:
     normalized = unicodedata.normalize("NFKC", response).strip()
     if _language_failure(normalized, contract.target_language):
@@ -351,7 +363,7 @@ def _quality_failure(response: str, contract: ResponseQualityContract) -> str | 
             normalized
         ):
             return "quality:uncertainty_boundary"
-        if _UNSUPPORTED_REALTIME.search(normalized):
+        if _unsupported_realtime_claim(normalized):
             return "quality:unsupported_realtime_claim"
     return None
 

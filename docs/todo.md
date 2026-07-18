@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.15 한국어·다국어 SFT와 private 모델 배포 준비
+## 1.22.16 한국어·다국어 SFT와 private 모델 배포 준비
 
 ### 완료
 
@@ -44,8 +44,8 @@
 - [x] natural 첫 Qwen 261건·Gemma 한국어 251건 label 감사 실패와 collector 중단·미export
 - [x] source metadata 유실 수정과 typed response contract의 inventory·export 보존
 - [x] 목표 언어·문장 수·번역 숫자/이름/용어·writing 직접성·uncertainty 경계 gate
-- [x] v2 inventory 재생성과 실제 endpoint preflight, 과거 spool 역감사
-- [ ] metadata-v1 v2 Qwen36mtp·Gemma4 collect→독립 표본 감사→export→validate
+- [x] Qwen 다국어 v2·Gemma 한국어 v3 inventory와 실제 endpoint preflight, 과거 spool 역감사
+- [ ] metadata-v1 Qwen 다국어 v2·Gemma 한국어 v3 collect→독립 표본 감사→export→validate
 - [ ] 새 teacher 데이터 비누출 혼합·재학습·통합 품질 평가
 - [ ] 390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint 선별
 - [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity

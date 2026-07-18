@@ -314,7 +314,7 @@ uv run llmex sft eval \
 
 대화 품질 보강용 정식 확장에서는 `docs/teacher-distillation.md`의 1.22.11 절에 따라 한국어 10,000개와 Qwen/Gemma 다국어 각 6,000개를 생성·수집한다. 단순히 기존 한국어 config의 target만 늘리면 Wikipedia fallback이 섞이므로 금지한다. 세 export는 통합 suite 비누출 curriculum을 만든 뒤에만 재학습 입력으로 사용한다.
 
-1.22.14 이후 natural 수집은 `quality_gate_version: metadata-v1`인 v2 run만 사용한다. Qwen v1 261건과 Gemma 한국어 v1 251건은 일반 휴리스틱상 accepted였지만 목표 언어·번역 의미·writing/uncertainty 표본 감사를 실패했으므로 resume/export하지 않는다. 새 run도 `status`의 accepted 수만 보지 말고 `distill audit-sample --reviewer <식별자> --approve`로 task/category 균등 최대 50개 표본을 실제 검토해 현재 accepted spool 집합에 결속한 뒤에만 export·validate한다. 표본 artifact가 없거나 미승인·변조·stale이면 export가 실패한다.
+1.22.14 이후 natural 수집은 `quality_gate_version: metadata-v1`을 사용한다. 현재 Qwen 다국어는 v2를 계속 수집하고, 지도 혼잡도 우회가 섞인 Gemma 한국어 v2는 보존·격리해 resume/export하지 않으며 강화 gate의 v3를 fresh 수집한다. `status`의 accepted 수만 보지 말고 `distill audit-sample --reviewer <식별자> --approve`로 task/category 균등 최대 50개 표본을 실제 검토해 현재 accepted spool 집합에 결속한 뒤에만 export·validate한다. 표본 artifact가 없거나 미승인·변조·stale이면 export가 실패한다.
 
 pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite SHA-256을 먼저 고정한다. suite는 repository의 `data/evaluation/ko-chat-quality-v1.jsonl`이며 MIT 24 scenarios·27 unique turns다. 공개 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다. 품질 설정 파일에는 `SFTQualityConfig`의 모든 필드와 SHA를 기록하고 SFT 설정은 `deterministic: true`로 유지한다.
 
