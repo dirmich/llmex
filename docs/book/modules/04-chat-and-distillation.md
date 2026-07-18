@@ -56,6 +56,14 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 - 검증: `uv run pytest -q tests/test_multilingual.py`와 `uv run llmex data multilingual-prompts`를 실행한다.
 - 완료 산출물: teacher별 1,080개 prompt JSONL, SHA가 고정된 manifest와 독립 108응답 평가 suite다.
 
+### `src/llmex/chat/korean_prompts.py`
+
+- 책임: Gemma4 teacher가 답할 한국어 자연대화 prompt를 10개 범주로 결정적으로 만든다.
+- 구현 순서: 범주별 문형·조합 → train/heldout 고유 ID → MIT provenance → exact 중복 검사 → canonical JSONL·manifest 원자 게시 순서다.
+- 실패 사례: 기존 합성 행의 user prompt 중복을 행 수로 오인하거나, target 부족분을 Wikipedia 질문으로 자동 보충하면 자연대화 학습량이 부풀려진다.
+- 검증: `uv run pytest -q tests/test_korean_prompts.py`와 `uv run llmex data korean-conversation-prompts`를 실행하고 `distill prepare`의 `source_chat_unique_prompts=target_requests`, `wikipedia_rows_examined=0`을 확인한다.
+- 완료 산출물: train 8,000·heldout 2,000 고유 prompt, SHA와 범주·split 통계가 고정된 manifest다.
+
 ### `src/llmex/chat/runtime.py`
 
 - 책임: SFT token cache, 학습·재개·평가·생성을 `SFTTrainer`로 조립한다.

@@ -5,7 +5,7 @@ import logging
 import subprocess
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Never
+from typing import Annotated, Literal, Never
 
 import typer
 
@@ -1231,6 +1231,9 @@ def data_multilingual_prompts(
     ),
     train_rows_per_task: Annotated[int, typer.Option("--train-rows-per-task")] = 150,
     heldout_rows_per_task: Annotated[int, typer.Option("--heldout-rows-per-task")] = 30,
+    profile: Annotated[
+        Literal["compact-v1", "expanded-v2"], typer.Option("--profile")
+    ] = "compact-v1",
 ) -> None:
     """Qwen·Gemma용 영어·일본어 대화/번역 prompt inventory를 생성합니다."""
     try:
@@ -1240,6 +1243,31 @@ def data_multilingual_prompts(
             output,
             train_rows_per_task=train_rows_per_task,
             heldout_rows_per_task=heldout_rows_per_task,
+            profile=profile,
+        )
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@data_app.command("korean-conversation-prompts")
+def data_korean_conversation_prompts(
+    output: Annotated[Path, typer.Option("--output")] = Path(
+        "data/chat/korean-conversation-teacher-prompts-expanded-v1"
+    ),
+    train_rows_per_category: Annotated[int, typer.Option("--train-rows-per-category", min=1)] = 800,
+    heldout_rows_per_category: Annotated[
+        int, typer.Option("--heldout-rows-per-category", min=1)
+    ] = 200,
+) -> None:
+    """Gemma4용 한국어 자연대화 prompt inventory를 생성합니다."""
+    try:
+        from llmex.chat.korean_prompts import prepare_korean_conversation_prompts
+
+        result = prepare_korean_conversation_prompts(
+            output,
+            train_rows_per_category=train_rows_per_category,
+            heldout_rows_per_category=heldout_rows_per_category,
         )
     except LlmexError as error:
         _emit_error(error)

@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.11 대규모 자연대화 증류 준비
+
+- focused-v12 실패 원인을 조사해 기존 한국어 source 11,880행의 고유 user prompt가 2,294개뿐이고 단순 10,000 요청 설정은 Wikipedia 7,706개를 보충한다는 사실을 실제 `distill prepare`로 확인했다. 이 잘못된 경로는 수집하지 않았다.
+- 10개 범주의 한국어 자연대화 prompt를 train 8,000·heldout 2,000으로 생성했다. 10,000개가 모두 고유하며 SHA는 `40175685…4baf`, manifest fingerprint는 `ff546202…15d`다.
+- 기존 다국어 v1 payload를 byte 그대로 보존하고, 영어·일본어 공감 대화와 네 번역 방향의 문형을 확장한 v2를 teacher별 train 4,800·heldout 1,200으로 생성했다. Qwen SHA는 `1cf390a8…6033`, Gemma SHA는 `87982980…fa27`, manifest fingerprint는 `3a63e661…870a`다.
+- Qwen 다국어 6,000개는 최종 split train 4,338·heldout 1,662, Gemma 다국어는 train 4,334·heldout 1,666, Gemma 한국어는 train 7,239·heldout 2,761이다. 세 inventory 모두 고유 prompt 수가 target과 같고 Wikipedia 보충·prompt/source overlap은 0이다.
+- `localhost:8081/v1`의 qwen36mtp와 `macmini:11434/v1`의 Gemma4 모델 preflight를 실제 통과했다. teacher 출력은 내부 전용이므로 최종 모델도 외부 승인 전 Hugging Face private 저장소만 허용한다.
+
 ## 2026-07-18 · 1.22.10 focused-v12 150-step 학습 기각
 
 - 원 step 600에서 focused-v12를 4e-6→4e-7, effective batch 64로 150 step 학습했다. validation PPL은 step 25/50/75/100/125/150에서 1.75385/1.54393/1.45736/1.42701/1.41309/1.40665로 감소했고 final SHA는 `c68dae38…312a`다.

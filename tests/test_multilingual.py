@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import cast
 
 from typer.testing import CliRunner
 
@@ -98,3 +99,34 @@ def test_다국어_품질_suite는_6개_task와_108응답을_비누출로_계획
         for row in _rows(inventory / f"{teacher}.jsonl")
     }
     assert not suite_prompts.intersection(inventory_prompts)
+
+
+def test_expanded_v2는_대규모_자유대화와_번역_prompt를_비누출로_생성한다(
+    tmp_path: Path,
+) -> None:
+    inventory = tmp_path / "expanded"
+    result = prepare_multilingual_prompts(
+        inventory,
+        train_rows_per_task=40,
+        heldout_rows_per_task=10,
+        profile="expanded-v2",
+    )
+    assert result["profile"] == "expanded-v2"
+    assert result["rows_per_teacher"] == 300
+    rows = [row for teacher in ("qwen", "gemma") for row in _rows(inventory / f"{teacher}.jsonl")]
+    prompts = [row.messages[0].content for row in rows]
+    assert len(prompts) == len(set(prompts)) == 600
+    assert {row.provenance.dataset for row in rows} == {
+        "llmex-multilingual-teacher-prompts-expanded-v2"
+    }
+    metadata = [cast(dict[str, str | int], row.provenance.source_metadata) for row in rows]
+    assert all(item["profile"] == "expanded-v2" for item in metadata)
+
+    scenarios = [
+        QualityScenario.model_validate(json.loads(line))
+        for line in Path("data/evaluation/multilingual-conversation-translation-v1.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    suite_prompts = {turn.user for scenario in scenarios for turn in scenario.turns}
+    assert not suite_prompts.intersection(prompts)

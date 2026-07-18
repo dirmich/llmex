@@ -1,8 +1,30 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.21.3의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. full 자동 품질 평가의 1차 보정은 기존 suite 문장을 복제하지 않는 결정적 curriculum으로 분리했으며, teacher 추가 수집이 필요할 때도 같은 비누출 원칙을 적용한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
+LLMEX 1.22.11의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. full 자동 품질 평가의 1차 보정은 기존 suite 문장을 복제하지 않는 결정적 curriculum으로 분리했으며, teacher 추가 수집이 필요할 때도 같은 비누출 원칙을 적용한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
 
 teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation` 내부 전용이다. export manifest는 `redistribution_allowed=false`, `release_gate=blocked`를 강제한다. 수집 성공이나 휴리스틱 필터 통과는 최종 안전성·법무·공개 승인이 아니다.
+
+## 1.22.11 대규모 자연대화 수집
+
+기존 한국어 v10 source는 11,880행 중 고유 prompt가 2,294개뿐이라 target만 10,000으로 늘리면 Wikipedia 질문 7,706개가 섞인다. 다음 명령은 별도 자연대화 inventory 10,000개와 teacher별 다국어 6,000개를 먼저 생성하므로 Wikipedia 보충을 사용하지 않는다.
+
+```bash
+uv run llmex data korean-conversation-prompts \
+  --output data/chat/korean-conversation-teacher-prompts-expanded-v1 \
+  --train-rows-per-category 800 --heldout-rows-per-category 200
+uv run llmex data multilingual-prompts \
+  --output data/chat/multilingual-teacher-prompts-expanded-v2 \
+  --train-rows-per-task 800 --heldout-rows-per-task 200 --profile expanded-v2
+
+uv run llmex distill prepare --config configs/distill/qwen36mtp-multilingual-expanded-6000.yaml
+uv run llmex distill prepare --config configs/distill/gemma4-multilingual-expanded-6000.yaml
+uv run llmex distill prepare --config configs/distill/gemma4-conversation-10000.yaml
+uv run llmex distill preflight --config configs/distill/qwen36mtp-multilingual-expanded-6000.yaml
+uv run llmex distill preflight --config configs/distill/gemma4-multilingual-expanded-6000.yaml
+uv run llmex distill preflight --config configs/distill/gemma4-conversation-10000.yaml
+```
+
+실제 prepare 결과는 Qwen 다국어 train/heldout 4,338/1,662, Gemma 다국어 4,334/1,666, Gemma 한국어 7,239/2,761이며 각 target 6,000·6,000·10,000, 고유 prompt target 일치, Wikipedia 보충 0, prompt/source overlap 0이다. 세 수집은 서로 다른 run directory에 재개 가능하게 기록한다. 완료 뒤 각각 `status → export → validate`를 실행하고, 새 SFT curriculum이 통합 품질 suite와 모든 user turn overlap 0을 증명하기 전에는 학습에 사용하지 않는다.
 
 ## macmini Gemma 4 대화 증류 결과
 

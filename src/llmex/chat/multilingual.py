@@ -14,6 +14,157 @@ _TEACHERS = ("qwen", "gemma")
 _COLLECTED_AT = "2026-07-18"
 
 
+def _expanded_prompt(
+    teacher: Literal["qwen", "gemma"],
+    task: str,
+    index: int,
+    split: Literal["train", "heldout"],
+) -> str:
+    """자유대화와 번역 문형을 넓힌 v2 teacher prompt를 만든다."""
+    serial = index + (30_000 if split == "heldout" else 20_000)
+    names_ko = ("민준", "서연", "도윤", "하린", "지호", "수아", "현우", "나은")
+    names_en = ("Alex", "Jamie", "Morgan", "Taylor", "Casey", "Riley", "Jordan", "Avery")
+    names_ja = ("葵", "蓮", "陽菜", "湊", "結衣", "悠真", "凛", "蒼")
+    topics_en = (
+        "I finished a difficult task and finally feel relieved",
+        "I want a calm weekend but have not chosen what to do",
+        "I tried cooking a new dish and it turned out better than expected",
+        "I am nervous about meeting a new team tomorrow",
+        "A short walk helped me clear my head this evening",
+        "I found an old photo that brought back a happy memory",
+        "I keep postponing a book that I genuinely want to read",
+        "I am deciding whether to visit a museum or stay home",
+    )
+    topics_ja = (
+        "難しい用事が終わって、やっとほっとしています",
+        "静かな週末を過ごしたいのですが、まだ予定を決めていません",
+        "初めて作った料理が思ったよりおいしくできました",
+        "明日、新しいチームに会うので少し緊張しています",
+        "夕方に少し歩いたら気分がすっきりしました",
+        "古い写真を見つけて、楽しい思い出がよみがえりました",
+        "読みたい本があるのに、つい後回しにしてしまいます",
+        "美術館へ行くか家で休むか迷っています",
+    )
+    objects_ko = ("노트", "우산", "책", "사진", "열쇠", "선물", "보고서", "표")
+    objects_en = (
+        "notebooks",
+        "umbrellas",
+        "books",
+        "photos",
+        "keys",
+        "gifts",
+        "reports",
+        "tickets",
+    )
+    objects_ja = ("ノート", "傘", "本", "写真", "鍵", "贈り物", "報告書", "切符")
+    places_ko = ("도서관", "공원", "카페", "미술관", "시장", "강변", "역", "회의실")
+    places_en = (
+        "library",
+        "park",
+        "café",
+        "museum",
+        "market",
+        "riverside",
+        "station",
+        "meeting room",
+    )
+    places_ja = ("図書館", "公園", "カフェ", "美術館", "市場", "川辺", "駅", "会議室")
+    k = index % 8
+    quantity = 2 + index % 17
+    hour = 8 + index % 11
+    style = index % 4
+    if task == "conversation-en":
+        leads = (
+            (
+                "Reply warmly in natural English and ask one short follow-up question",
+                "Continue this conversation in one or two natural English sentences",
+                "Respond like a supportive friend in concise English",
+                "Give a natural English reaction without repeating my words",
+            )
+            if teacher == "qwen"
+            else (
+                "Answer warmly in everyday English and add one brief follow-up question",
+                "Keep the conversation going in one or two fluent English sentences",
+                "React as a caring friend using concise natural English",
+                "Respond naturally in English without echoing what I said",
+            )
+        )
+        return f"{leads[style]}. I am {names_en[k]}. {topics_en[k]}. Reference {serial}."
+    if task == "conversation-ja":
+        leads = (
+            (
+                "自然な日本語で共感し、短い質問を一つ添えてください",
+                "一、二文の自然な日本語で会話を続けてください",
+                "親しい友達のように短く返事をしてください",
+                "私の言葉を繰り返さず、自然な日本語で反応してください",
+            )
+            if teacher == "qwen"
+            else (
+                "日常的な日本語で共感し、短い質問を一つ加えてください",
+                "自然な日本語一、二文でこの会話を続けてください",
+                "仲のよい友人のように簡潔に返してください",
+                "同じ言葉を繰り返さず、日本語で自然に応じてください",
+            )
+        )
+        return f"{leads[style]}。私は{names_ja[k]}です。{topics_ja[k]}。整理番号は{serial}です。"
+    if task == "ko-en":
+        leads = (
+            ("영어 번역문만 답하세요", "자연스러운 영어 한 문장으로만 옮기세요")
+            if teacher == "qwen"
+            else (
+                "설명 없이 영어 번역만 쓰세요",
+                "다음 내용을 자연스러운 영어 한 문장으로 번역하세요",
+            )
+        )
+        return (
+            f"{leads[index % 2]}: {names_ko[k]}은 {hour}시에 {places_ko[k]}에서 "
+            f"{objects_ko[k]} {quantity}개를 받고, 확인 번호 {serial}을 알려 줄 예정입니다."
+        )
+    if task == "en-ko":
+        leads = (
+            (
+                "Give only a natural Korean translation",
+                "Translate into one natural Korean sentence only",
+            )
+            if teacher == "qwen"
+            else (
+                "Return only the fluent Korean translation",
+                "Render this as one natural Korean sentence without explanation",
+            )
+        )
+        return (
+            f"{leads[index % 2]}: {names_en[k]} will bring {quantity} {objects_en[k]} to the "
+            f"{places_en[k]} at {hour}:00 and confirm reference {serial}."
+        )
+    if task == "ko-ja":
+        leads = (
+            ("일본어 번역문만 답하세요", "자연스러운 일본어 한 문장으로만 옮기세요")
+            if teacher == "qwen"
+            else (
+                "설명 없이 일본어 번역만 쓰세요",
+                "다음 내용을 자연스러운 일본어 한 문장으로 번역하세요",
+            )
+        )
+        return (
+            f"{leads[index % 2]}: {names_ko[k]}은 {hour}시에 {places_ko[k]}에서 "
+            f"{objects_ko[k]} {quantity}개를 준비하고 예약 번호 {serial}을 확인합니다."
+        )
+    if task == "ja-ko":
+        leads = (
+            ("自然な韓国語の訳文だけ答えてください", "韓国語一文に訳し、説明は付けないでください")
+            if teacher == "qwen"
+            else (
+                "説明なしで自然な韓国語訳だけを書いてください",
+                "次の内容を自然な韓国語一文に訳してください",
+            )
+        )
+        return (
+            f"{leads[index % 2]}。{names_ja[k]}は{hour}時に{places_ja[k]}で"
+            f"{objects_ja[k]}を{quantity}個受け取り、番号{serial}を確認します。"
+        )
+    raise ValueError(f"지원하지 않는 다국어 task입니다: {task}")
+
+
 def _prompt(
     teacher: Literal["qwen", "gemma"],
     task: str,
@@ -98,20 +249,32 @@ def _row(
     task: str,
     index: int,
     split: Literal["train", "heldout"],
+    profile: Literal["compact-v1", "expanded-v2"] = "compact-v1",
 ) -> ChatRow:
     identifier = f"multilingual-{teacher}-{split}-{task}-{index:05d}"
-    prompt = _prompt(teacher, task, index, split)
+    prompt = (
+        _expanded_prompt(teacher, task, index, split)
+        if profile == "expanded-v2"
+        else _prompt(teacher, task, index, split)
+    )
     source_sha256 = fingerprint(
         {"teacher_pool": teacher, "task": task, "split": split, "prompt": prompt}
     )
+    source_metadata: dict[str, str | int] = {"teacher_pool": teacher, "task": task}
+    if profile == "expanded-v2":
+        source_metadata["profile"] = profile
     provenance = Provenance(
-        dataset="llmex-multilingual-teacher-prompts-v1",
+        dataset=(
+            "llmex-multilingual-teacher-prompts-v1"
+            if profile == "compact-v1"
+            else "llmex-multilingual-teacher-prompts-expanded-v2"
+        ),
         source="repository-authored-prompt-inventory",
         license="MIT",
         collected_at=_COLLECTED_AT,
         source_id=identifier,
         source_sha256=source_sha256,
-        source_metadata={"teacher_pool": teacher, "task": task},
+        source_metadata=source_metadata,
     )
     messages = [
         Message(role="user", content=prompt),
@@ -133,13 +296,18 @@ def _row(
     )
 
 
-def _payload(teacher: Literal["qwen", "gemma"], train_rows: int, heldout_rows: int) -> bytes:
+def _payload(
+    teacher: Literal["qwen", "gemma"],
+    train_rows: int,
+    heldout_rows: int,
+    profile: Literal["compact-v1", "expanded-v2"],
+) -> bytes:
     split_counts: tuple[tuple[Literal["train", "heldout"], int], ...] = (
         ("train", train_rows),
         ("heldout", heldout_rows),
     )
     rows = [
-        _row(teacher, task, index, split)
+        _row(teacher, task, index, split, profile)
         for split, count in split_counts
         for task in _TASKS
         for index in range(count)
@@ -157,13 +325,17 @@ def _payload(teacher: Literal["qwen", "gemma"], train_rows: int, heldout_rows: i
 
 
 def prepare_multilingual_prompts(
-    output_dir: Path, *, train_rows_per_task: int = 150, heldout_rows_per_task: int = 30
+    output_dir: Path,
+    *,
+    train_rows_per_task: int = 150,
+    heldout_rows_per_task: int = 30,
+    profile: Literal["compact-v1", "expanded-v2"] = "compact-v1",
 ) -> dict[str, object]:
     """두 teacher에 겹치지 않는 결정적 prompt inventory를 게시한다."""
     if train_rows_per_task < 1 or heldout_rows_per_task < 1:
         raise IntegrityError("다국어 task별 train/heldout 행 수는 1 이상이어야 합니다")
     payloads = {
-        teacher: _payload(teacher, train_rows_per_task, heldout_rows_per_task)
+        teacher: _payload(teacher, train_rows_per_task, heldout_rows_per_task, profile)
         for teacher in _TEACHERS
     }
     paths = {teacher: output_dir / f"{teacher}.jsonl" for teacher in _TEACHERS}
@@ -195,6 +367,8 @@ def prepare_multilingual_prompts(
         "prompt_overlap": 0,
         "license": "MIT",
     }
+    if profile == "expanded-v2":
+        manifest["profile"] = profile
     manifest["fingerprint"] = fingerprint(manifest)
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n",

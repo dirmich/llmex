@@ -117,6 +117,8 @@ checkpoint를 “가중치 파일”로만 생각하지 않는다. 모델·optim
 | `src/llmex/chat/template.py` | role marker 렌더링과 assistant-only label mask를 만든다. | 사용자/system/PAD는 `-100`, assistant target만 label로 둔다. | mask exact equality |
 | `src/llmex/chat/mixer.py` | public+teacher train/heldout을 누출 없이 선택·게시한다. | heldout 우선, prompt/source overlap 차단, 길이 gate를 적용한다. | preflight/prepare/validate 동일 통계 |
 | `src/llmex/chat/curriculum.py` | 품질 실패 범주의 결정적 합성 데이터와 기존 데이터 replay를 만든다. | suite 모든 user turn 비누출, split/source 분리, target-token 질량과 EOS를 검증한다. | curriculum preflight/prepare/validate byte 동일 |
+| `src/llmex/chat/korean_prompts.py` | 한국어 자연대화 teacher prompt를 10개 범주로 만든다. | 고유 prompt, split, MIT provenance와 Wikipedia 보충 0을 검증한다. | 10,000개 inventory·prepare target 일치 |
+| `src/llmex/chat/multilingual.py` | 두 teacher용 영어·일본어 대화와 네 번역 방향 prompt를 만든다. | v1 bytes 보존, expanded profile과 teacher 간 exact overlap 0을 보장한다. | teacher별 6,000개 inventory·suite 비누출 |
 | `src/llmex/chat/runtime.py` | SFT cache, 학습·재개·평가·생성을 담당한다. | fresh run, base SHA, 128 MiB token cache, target-token accumulation을 강제한다. | cached/uncached batch 동일·resume 동일 |
 | `src/llmex/chat/quality.py` | 멀티턴 rollout과 EOS·반복·안전·오염 자동 gate를 계산한다. | 평균만이 아니라 profile/scenario worst case를 판정한다. | quality eval/validate 재계산 |
 | `src/llmex/chat/quality_review.py` | blind template, 독립 review, adjudication, 서명 수동 gate를 검증한다. | 자동 gate 선행과 역할 독립성, target SHA를 강제한다. | unsigned/self-review 실패 |

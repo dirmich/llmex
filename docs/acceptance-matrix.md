@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.22.10, frozen sync | 통과 가능 |
+| 버전·lock | 1.22.11, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -25,6 +25,7 @@
 | focused-v12 집중 repair | 신규 합성 2,000 + Qwen 799 + Gemma 733 + 보존 replay 468, heldout 400, suite·split·source overlap 0 | 데이터·manifest·A/B preflight 통과, 학습 대기 |
 | focused-v12 LR A/B | 2e-6/4e-6 각 25 step·390응답, SHA 고정·byte 재유도 | 둘 다 gate 실패, 4e-6을 안전 우선 정식 후보로 선택 |
 | focused-v12 정식 학습 | 150 step, step 50·150 각 390응답, 한국어·영어·일본어 suite 밖 smoke | 실패, 안전은 개선됐으나 정확도 37.69%·멀티턴 46.67%·비문 잔존 |
+| 대규모 자연대화 증류 입력 | 한국어 10,000 + Qwen 다국어 6,000 + Gemma 다국어 6,000, 고유 prompt target 일치·Wikipedia 보충 0·endpoint preflight | 입력·설정 통과, 수집 진행 전 |
 | SFT 보정 curriculum | v1~v4, 접미 v5, 핵심 앞부분 v6, exact 문맥·PII v7, 값-only v8, PII·정상 안전 v9, 일반 대화·불확실성 v10, 대화·안전 결합 v11, 모든 user turn suite 비누출 | v11 train 13,200/heldout 1,320행과 150-step 학습·평가 완료, 최소 보정 필요 |
 | v12 진단 trial | v11 저학습률 20-step, v10→v9 안전 복원 20-step, SHA 고정 162응답 재검증 | 둘 다 기각, 안전 복원 최악 정확도 88.89%·유해 거절 83.33%·unsafe 1 |
 | 모듈별 교재 | 57개 Python 모듈 카드, 환경별 0~20장 준비표, 실행 가능한 offline mix·SFT·추론·품질 실습, capstone rubric | 구현·실제 CPU E2E·일대일 회귀 통과 |

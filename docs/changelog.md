@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.11 - 2026-07-18
+
+- 기존 다국어 v1 bytes를 보존하면서 자유대화 문형을 넓힌 `expanded-v2` prompt profile을 추가했다.
+- Qwen36mtp·Gemma4별 다국어 6,000개와 Gemma4 한국어 자연대화 10,000개의 수집 설정을 구현했다.
+- 세 inventory를 실제 생성해 고유 prompt 22,000개, Wikipedia 보충 0, split/source overlap 0을 확인하고 두 teacher endpoint preflight를 통과했다.
+
 ## 1.22.10 - 2026-07-18
 
 - focused-v12를 원 step 600에서 150 step까지 학습하고 모든 25-step checkpoint와 validation을 보존했다.
