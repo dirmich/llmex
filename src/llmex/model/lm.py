@@ -185,6 +185,13 @@ class CausalLM(nn.Module):
                         break
         finally:
             self.train(was_training)
+        if generation.eos_id is not None:
+            # 생성 한도에 도달해도 응답은 항상 명시적 EOS로 닫는다.
+            result[:, -1] = torch.where(
+                result[:, -1] == generation.eos_id,
+                result[:, -1],
+                torch.full_like(result[:, -1], generation.eos_id),
+            )
         return result
 
     def parameter_count(self) -> int:
