@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.7 - 2026-07-18
+
+- 100M latest 기반 Qwen36mtp·Gemma4 혼합 SFT를 600 step까지 완료하고 checkpoint SHA와 validation 결과를 고정했다.
+- 한국어 품질·대화 준비도와 영어·일본어 대화·네 번역 방향을 byte 결합한 60 scenario·65 turn·390응답 suite를 추가했다.
+- step 300과 600의 전체 품질 평가를 재유도해 두 checkpoint 모두 안전·정확도·멀티턴 gate 실패로 기각했다.
+
 ## 1.22.6 - 2026-07-18
 
 - release 차단 checkpoint를 private HF Llama 형식으로 원자 게시하는 SHA 고정 export를 추가했다.

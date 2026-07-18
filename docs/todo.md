@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.6 한국어·다국어 SFT와 private 모델 배포 준비
+## 1.22.7 한국어·다국어 SFT와 private 모델 배포 준비
 
 ### 완료
 
@@ -27,7 +27,9 @@
 - [x] 한국어 curriculum·Qwen·Gemma 세 manifest 직접 SHA 결속
 - [x] 최종 train 14,374·heldout 2,430행과 prompt/source overlap 0
 - [x] base checkpoint SHA pin과 600-step CUDA bf16 SFT preflight
-- [ ] 100M latest 기반 fresh SFT·통합 자동 평가·실제 대화 추론
+- [x] 100M latest 기반 fresh SFT 600 step과 step 300·600 통합 자동 평가
+- [x] 390응답에서 정확도·안전·멀티턴 실패를 확인하고 두 checkpoint 기각
+- [ ] 비누출 집중 curriculum continuing SFT·통합 자동 평가·실제 대화 추론
 - [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity
 - [ ] 선별 checkpoint의 HF·GGUF 최종 export·llama.cpp parity·private Hub 업로드
 

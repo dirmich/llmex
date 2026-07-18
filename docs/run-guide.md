@@ -224,6 +224,19 @@ uv run llmex sft preflight --config configs/sft/ko-qwen-gemma-multilingual-v1.ya
 uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-v1.yaml
 ```
 
+2026-07-18 실행은 600 step을 완료했다. 최종 training loss는 1.81682이고 고정 heldout loss/PPL은 2.121864/8.34668, step 600 checkpoint SHA는 `3b5e9c12…b0e2`다. 아래 통합 설정은 한국어 42 scenario와 다국어 18 scenario를 byte 결합한 60 scenario·65 turn·390응답을 생성한다.
+
+```bash
+uv run llmex sft quality-preflight --config configs/sft/ko-qwen-gemma-multilingual-v1-step300-quality.yaml
+uv run llmex sft quality-eval --config configs/sft/ko-qwen-gemma-multilingual-v1-step300-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/ko-qwen-gemma-multilingual-v1-step300-quality.yaml
+uv run llmex sft quality-preflight --config configs/sft/ko-qwen-gemma-multilingual-v1-step600-quality.yaml
+uv run llmex sft quality-eval --config configs/sft/ko-qwen-gemma-multilingual-v1-step600-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/ko-qwen-gemma-multilingual-v1-step600-quality.yaml
+```
+
+step 600은 정확도 30.26%, 유해 거절 39.58%, 멀티턴 유지 10%, EOS 98.21%, unsafe 5건, hard loop 6건으로 실패했다. step 300도 실패했으므로 중간 loss만 보고 400·500을 배포 후보로 승격하지 않는다. 다음 실행은 평가 문장 exact leakage 없이 대화·안전 curriculum과 다국어 teacher 비중을 높인 continuing SFT이며, 통합 gate와 suite 밖 자유대화까지 통과해야 export 단계로 이동한다.
+
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
 정식 pilot config를 사용한다.
 

@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.7 600-step 다국어 SFT 완료와 품질 기각
+
+- `configs/sft/ko-qwen-gemma-multilingual-v1.yaml`을 CUDA bf16, effective batch 64로 600 step 완료했다. 최종 loss는 1.81682, 고정 heldout loss/PPL은 2.121864/8.34668이며 checkpoint SHA는 `3b5e9c12…b0e2`다.
+- 한국어 품질·대화 준비도 42 scenario와 다국어 대화·번역 18 scenario를 byte 그대로 결합한 `ko-multilingual-chat-quality-v1.jsonl`을 추가했다. 60 scenario·65 turn에 greedy 1회와 sampling 5회를 적용해 390응답을 계획하며 SHA는 `bd76a433…fb23`이다.
+- step 300 평가는 정확도 29.23%, 유해 거절 41.67%, 멀티턴 유지 6.67%, EOS 98.21%, unsafe 6건, hard loop 5건이었다. step 600은 정확도 30.26%, 유해 거절 39.58%, 멀티턴 유지 10%, EOS 98.21%, unsafe 5건, hard loop 6건이었다.
+- profile/seed 최악값도 step 600에서 정확도 27.69%, 유해 거절 25%, 멀티턴 유지 0%, unsafe 1건, hard loop 2건으로 실패했다. validation 개선이 실제 대화 능력을 보장하지 않으므로 300·600 checkpoint를 모두 배포·HF 업로드 후보에서 제외했다.
+- 다음 작업은 평가 문장을 학습에 복제하지 않고 기존 비누출 대화·안전 curriculum과 Qwen/Gemma 다국어 teacher 행을 재가중한 집중 continuing SFT다. 자동 gate, suite 밖 자유대화, 수동 blind review를 모두 통과한 checkpoint만 HF·GGUF 최종 parity와 private Hub 업로드 대상으로 삼는다.
+
 ## 2026-07-18 · 1.22.6 private HF·GGUF 내보내기
 
 - SFT checkpoint를 immutable snapshot으로 한 번 읽어 SHA-256·fingerprint·release 차단·finite tensor·현재 모델 shape/dtype을 검증한 뒤 HF Llama 형식으로 원자 게시하는 `llmex model export-hf`를 구현했다.

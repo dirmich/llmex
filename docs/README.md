@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.6. 한국어 curriculum과 Qwen36mtp·Gemma4 다국어 export 세 manifest를 직접 SHA 결속한 train 14,374·heldout 2,430행으로 600-step SFT를 실행 중이다. 실제 모델은 87,804,672 parameters이고 effective batch는 64다. SHA 고정 checkpoint를 HF Llama 형식과 F16 GGUF로 원자 변환하고 Transformers logits·llama.cpp greedy/EOS parity를 검증하는 CLI를 구현했다. 내부 teacher 파생 가중치는 private로만 취급한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.22.7. 87,804,672-parameter 모델을 train 14,374·heldout 2,430행, effective batch 64로 600 step 학습했다. validation PPL은 8.34668까지 낮아졌지만 한국어·영어·일본어·번역·안전을 합친 390응답 gate에서 정확도 30.26%, 유해 거절 39.58%, 멀티턴 유지 10%, unsafe 5건으로 실패해 checkpoint를 기각했다. HF Llama·F16 GGUF export와 parity 검증은 구현됐으며, 품질을 통과한 후속 checkpoint만 private Hub 후보가 된다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
