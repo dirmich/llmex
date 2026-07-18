@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
-from llmex.chat.data import ResponseQualityContract
+from llmex.chat.data import ResponseQualityContract, validate_conversation_act_binding
 from llmex.config import StrictModel
 from llmex.fingerprint import fingerprint
 
@@ -20,6 +20,11 @@ class SourceProvenance(StrictModel):
     source_split: Literal["train", "heldout"]
     metadata: dict[str, str | int]
     response_quality: ResponseQualityContract | None = None
+
+    @model_validator(mode="after")
+    def validate_conversation_act_binding(self) -> "SourceProvenance":
+        validate_conversation_act_binding(self.metadata, self.response_quality)
+        return self
 
 
 class LogicalRequest(StrictModel):

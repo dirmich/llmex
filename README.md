@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.19는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. Qwen 다국어 v2는 2,000건을 완결했지만 독립 50건 표본 감사에서 대화 지시 불이행과 부자연스러운 조언을 확인해 미승인·미export했다. 결함이 확인된 Gemma 한국어 v2도 격리한다. `metadata-v1` gate는 source의 목표 언어·응답 모드·문장 수·숫자·이름·핵심 용어 계약을 inventory와 spool 재검증에 결속하며, uncertainty는 plain text만 허용하고 지도·내비게이션·map 계열과 혼잡도 계열의 공존을 극성 해석 없이 보수적으로 격리한다. 승인된 `sample-audit.json` 없이는 export하지 않는다. 다음 목표는 검증 가능한 conversation act 계약을 가진 새 Qwen tranche이며, 최종 checkpoint는 로컬 HF·GGUF와 llama.cpp까지만 검증하고 Hugging Face에는 업로드하지 않는다.
+LLMEX 1.22.20은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. Qwen 다국어 v2는 독립 50건 표본 감사를 실패해 미승인·미export했고, 결함이 확인된 Gemma 한국어 v2도 격리한다. 새 `natural-v4`는 질문과 제안을 `conversation-question`·`conversation-suggestion` 품질 계약에 결속하고 불안정한 비반복 지시를 제거했으며, Qwen·Gemma 각 6,000개 고유 prompt와 fresh 2,000건 inventory를 준비해 endpoint preflight까지 통과했다. 승인된 `sample-audit.json` 없이는 export하지 않는다. 다음 목표는 Qwen v3 수집과 독립 감사이며, 최종 checkpoint는 로컬 HF·GGUF와 llama.cpp까지만 검증하고 Hugging Face에는 공개·비공개 모두 업로드하지 않는다.
 
 ## 빠른 시작
 

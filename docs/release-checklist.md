@@ -1,4 +1,4 @@
-# 1.22.19 릴리스 체크리스트
+# 1.22.20 릴리스 체크리스트
 
 ## 자동 통과 항목
 
@@ -90,7 +90,7 @@
 - [ ] 공개 배포 결정: 승인된 대상·채널·버전·철회 책임자
 
 네 항목은 승인자, ISO 8601 시각, 근거 artifact를 가진 JSON과 각 품질·`release gate`가 필요하다. 현재 판정은
-**1.22.19 source 결속 teacher 응답 품질 gate·600-step 혼합 SFT·focused-v12 150-step repair·로컬 HF/GGUF export·통합 자동 품질 suite·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. focused-v12와 결함 있는 expanded tranche·Gemma 한국어 v2는 기각됐다. Qwen 다국어 v2는 2,000건을 완결했지만 독립 50건 수동 감사를 실패해 미승인·미export했고, conversation act 계약을 가진 새 tranche가 필요하다. 이번 실행에서는 Hugging Face 업로드를 하지 않으며 validation PPL 감소나 aggregate 품질만으로 checkpoint를 승인하지 않는다.
+**1.22.20 source 결속 teacher 응답 품질 gate·conversation act 계약·600-step 혼합 SFT·focused-v12 150-step repair·로컬 HF/GGUF export·통합 자동 품질 suite·자유대화 smoke·독립 수동 검토**다. focused-v12와 결함 있는 expanded tranche·Gemma 한국어 v2·Qwen 다국어 v2는 기각됐다. `natural-v4`는 질문형의 단일 종결 질문 부호와 제안형의 허용 marker·질문 부호 부재를 품질 fingerprint에 결속하며, Qwen·Gemma fresh inventory는 prepare와 endpoint preflight를 통과했다. 이번 실행에서는 Hugging Face에 공개·비공개 모두 업로드하지 않으며 validation PPL 감소나 aggregate 품질만으로 checkpoint를 승인하지 않는다.
 
 release gate의 필수 집합은 법무, 장기 baseline, 수동 품질 평가, 공개 배포 결정 네 개다. 수동 품질 manifest/report는 exact key, canonical fingerprint, report SHA, 최소 표본, 모든 점수와 worst 값, reviewer/submission/adjudication 교차 의미, release version·commit·config target을 검증한다. 네 gate는 한 invocation에서 한 번 snapshot한 Git commit·서명 trust policy·issuer map으로 검증한다. production `.llmex/trust-policy.json`에는 `quality-release`, `quality-reviewer`, `safety-reviewer`, `quality-adjudicator` 역할이 아직 없으며 고정 root private key 없이 policy를 수정하지 않는다.
 

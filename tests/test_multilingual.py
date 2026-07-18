@@ -144,6 +144,16 @@ def test_natural_v3는_일련번호_없이_teacher별_6천_prompt를_분리한�
     )
     assert result["profile"] == "natural-v3"
     assert result["rows_per_teacher"] == 6000
+    assert result["outputs"] == {
+        "qwen": {
+            "path": str(inventory / "qwen.jsonl"),
+            "sha256": "6568b13802613221084a4d3a7f8f80b0ee51f38238928941adb727becdcceca8",
+        },
+        "gemma": {
+            "path": str(inventory / "gemma.jsonl"),
+            "sha256": "2648e1de7cf29b2238849f70a8afe52e4c1c539604d261e07a2d8d17586c8d18",
+        },
+    }
     rows = [row for teacher in ("qwen", "gemma") for row in _rows(inventory / f"{teacher}.jsonl")]
     prompts = [row.messages[0].content for row in rows]
     assert len(prompts) == len(set(prompts)) == 12000
@@ -195,3 +205,71 @@ def test_natural_v3는_일련번호_없이_teacher별_6천_prompt를_분리한�
             if row.split == "heldout"
         }
         assert train_c == heldout_c == set(range(8))
+
+
+def test_natural_v4는_검증가능한_conversation_act를_metadata에_결속한다(
+    tmp_path: Path,
+) -> None:
+    inventory = tmp_path / "natural-v4"
+    result = prepare_multilingual_prompts(
+        inventory,
+        train_rows_per_task=800,
+        heldout_rows_per_task=200,
+        profile="natural-v4",
+    )
+
+    assert result["profile"] == "natural-v4"
+    assert result["rows_per_teacher"] == 6000
+    assert result["outputs"] == {
+        "qwen": {
+            "path": str(inventory / "qwen.jsonl"),
+            "sha256": "c0e9db62b67890e9482184ca6a6ad4413774f594bdf13355a358875651bae719",
+        },
+        "gemma": {
+            "path": str(inventory / "gemma.jsonl"),
+            "sha256": "7959e749fa508a67fb3603e7567341ffeede8368f503db5ba1c25da10ef657dc",
+        },
+    }
+    rows = [row for teacher in ("qwen", "gemma") for row in _rows(inventory / f"{teacher}.jsonl")]
+    all_prompts = [row.messages[0].content for row in rows]
+    assert len(all_prompts) == len(set(all_prompts)) == 12000
+    conversation_rows = [
+        row
+        for row in rows
+        if str(cast(dict[str, str | int], row.provenance.source_metadata)["task"]).startswith(
+            "conversation-"
+        )
+    ]
+    metadata = [
+        cast(dict[str, str | int], row.provenance.source_metadata) for row in conversation_rows
+    ]
+    assert {item["conversation_act"] for item in metadata} == {"question", "suggestion"}
+    prompts = [row.messages[0].content for row in conversation_rows]
+    assert not any("without echoing" in prompt or "繰り返さず" in prompt for prompt in prompts)
+    assert all(
+        ("exactly one brief question" in prompt or "one practical, safe suggestion" in prompt)
+        if metadata[index]["task"] == "conversation-en"
+        else ("短い質問を一つだけ" in prompt or "具体的な提案を一つ" in prompt)
+        for index, prompt in enumerate(prompts)
+    )
+    assert all(row.provenance.response_quality is not None for row in rows)
+    assert all(
+        row.provenance.response_quality is not None
+        and row.provenance.response_quality.mode
+        == "conversation-"
+        + str(cast(dict[str, str | int], row.provenance.source_metadata)["conversation_act"])
+        for row in conversation_rows
+    )
+    assert {
+        (
+            row.split,
+            cast(dict[str, str | int], row.provenance.source_metadata)["task"],
+            cast(dict[str, str | int], row.provenance.source_metadata)["conversation_act"],
+        )
+        for row in conversation_rows
+    } == {
+        (split, task, act)
+        for split in ("train", "heldout")
+        for task in ("conversation-en", "conversation-ja")
+        for act in ("question", "suggestion")
+    }

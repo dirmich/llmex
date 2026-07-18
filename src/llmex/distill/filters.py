@@ -285,6 +285,19 @@ _PROVIDER_CONFUSABLES = str.maketrans(
 _BIDI_FORMATTING_CLASSES = {"LRE", "RLE", "LRO", "RLO", "PDF", "LRI", "RLI", "FSI", "PDI"}
 _MARKUP_OR_ENTITY_SURFACES = frozenset("<>&[]`*_~#|\\")
 _MARKDOWN_BLOCK_SURFACE = re.compile(r"^\s*(?:[-+]\s|\d+[.)]\s)", re.MULTILINE)
+_SUGGESTION_PATTERNS = {
+    "en": re.compile(
+        r"(?:^|[.!]\s+)(?:perhaps\s+|maybe\s+|please\s+)?(?:try|consider)\b|"
+        r"\b(?:I|we)(?:'d| would)?\s+(?:recommend|suggest)\b|"
+        r"\byou (?:could|might) (?:try|consider)\b|"
+        r"\b(?:how about|why not)\b",
+        re.IGNORECASE,
+    ),
+    "ja": re.compile(
+        r"(?:てみ(?:て|ると(?:よい|いい)|ませんか|ましょう)|"
+        r"てはいかが(?:ですか)?|おすすめ(?:です|します)|(?:お)?勧めします|てください)"
+    ),
+}
 _NUMBER_SURFACES: dict[str, dict[str, str]] = {
     "en": {
         "two": "2",
@@ -425,6 +438,24 @@ def _unsupported_realtime_claim(value: str) -> bool:
     return has_provider and has_congestion
 
 
+def _conversation_act_failure(response: str, target_language: str, mode: str) -> str | None:
+    if mode == "conversation-question":
+        stripped = response.rstrip().rstrip('"”\u2019」』)]}\uff09\u3011\u300b\u3009')
+        return (
+            None
+            if response.count("?") + response.count("\uff1f") == 1
+            and stripped.endswith(("?", "\uff1f"))
+            else "quality:conversation_question"
+        )
+    if mode == "conversation-suggestion":
+        if "?" in response or "\uff1f" in response:
+            return "quality:conversation_suggestion"
+        pattern = _SUGGESTION_PATTERNS.get(target_language)
+        if pattern is None or pattern.search(response) is None:
+            return "quality:conversation_suggestion"
+    return None
+
+
 def _quality_failure(response: str, contract: ResponseQualityContract) -> str | None:
     normalized = unicodedata.normalize("NFKC", response).strip()
     if _language_failure(normalized, contract.target_language):
@@ -469,7 +500,16 @@ def filter_logical_response(
     contract = item.source.response_quality
     if contract is None:
         return "quality:missing_contract" if config.quality_gate_version == "metadata-v1" else None
-    return _quality_failure(response, contract)
+    quality_reason = _quality_failure(response, contract)
+    if quality_reason is not None:
+        return quality_reason
+    if contract.mode in {"conversation-question", "conversation-suggestion"}:
+        return _conversation_act_failure(
+            response,
+            contract.target_language,
+            contract.mode,
+        )
+    return None
 
 
 def canonical_response(value: str) -> str:

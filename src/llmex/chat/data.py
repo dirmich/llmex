@@ -27,7 +27,14 @@ class ResponseQualityContract(StrictModel):
     """teacher 응답에 적용할 source 결속 품질 계약."""
 
     schema_version: Literal[1] = 1
-    mode: Literal["conversation", "translation-only", "direct-message", "uncertainty"]
+    mode: Literal[
+        "conversation",
+        "conversation-question",
+        "conversation-suggestion",
+        "translation-only",
+        "direct-message",
+        "uncertainty",
+    ]
     target_language: Literal["ko", "en", "ja"]
     max_sentences: int = Field(default=3, ge=1, le=8)
     required_numbers: list[list[str]] = Field(default_factory=_empty_term_groups)
@@ -59,6 +66,25 @@ class Provenance(StrictModel):
     source_collected_at: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     source_metadata: dict[str, str | int] | None = None
     response_quality: ResponseQualityContract | None = None
+
+    @model_validator(mode="after")
+    def validate_conversation_act_binding(self) -> "Provenance":
+        validate_conversation_act_binding(self.source_metadata or {}, self.response_quality)
+        return self
+
+
+def validate_conversation_act_binding(
+    metadata: dict[str, str | int], contract: ResponseQualityContract | None
+) -> None:
+    """대화 행위 metadata와 품질 계약이 서로 우회되지 않게 결속한다."""
+    metadata_act = metadata.get("conversation_act")
+    contract_act: str | None = None
+    if contract is not None and contract.mode.startswith("conversation-"):
+        contract_act = contract.mode.removeprefix("conversation-")
+    if metadata_act is None and contract_act is None:
+        return
+    if metadata_act not in {"question", "suggestion"} or metadata_act != contract_act:
+        raise ValueError("conversation_act metadata와 response_quality mode가 일치해야 합니다")
 
 
 class ChatRow(StrictModel):

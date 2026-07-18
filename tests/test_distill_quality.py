@@ -3,7 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import pytest
 
@@ -35,7 +35,12 @@ def _config(tmp_path: Path) -> DistillationConfig:
     )
 
 
-def _request(prompt: str, contract: ResponseQualityContract) -> LogicalRequest:
+def _request(
+    prompt: str,
+    contract: ResponseQualityContract,
+    *,
+    metadata: dict[str, str | int] | None = None,
+) -> LogicalRequest:
     prompt_sha256 = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
     return LogicalRequest(
         schema_version=2,
@@ -51,7 +56,7 @@ def _request(prompt: str, contract: ResponseQualityContract) -> LogicalRequest:
             source_id="quality-source-1",
             source_sha256="a" * 64,
             source_split="train",
-            metadata={"teacher": "qwen36"},
+            metadata=metadata or {"teacher": "qwen36"},
             response_quality=contract,
         ),
     )
@@ -240,6 +245,164 @@ def test_qwen_번역_합성_품질_회귀(
     reason = filter_logical_response(_request(prompt, contract), response, _config(tmp_path))
 
     assert (reason is None) is accepted, f"{case}: reason={reason!r}"
+
+
+@pytest.mark.parametrize(
+    ("case", "language", "act", "response", "expected"),
+    [
+        (
+            "영어 질문 1개",
+            "en",
+            "question",
+            "That sounds encouraging. What will you try next?",
+            None,
+        ),
+        (
+            "닫는 인용과 괄호 뒤 질문",
+            "en",
+            "question",
+            "That sounds encouraging. (What will you try next?)",
+            None,
+        ),
+        (
+            "영어 질문 누락",
+            "en",
+            "question",
+            "That sounds encouraging and worth celebrating.",
+            "quality:conversation_question",
+        ),
+        (
+            "일본어 질문 2개",
+            "ja",
+            "question",
+            "よかったですね。次は何をしますか\uff1fどこで始めますか\uff1f",
+            "quality:conversation_question",
+        ),
+        (
+            "영어 질문이 마지막이 아님",
+            "en",
+            "question",
+            "What will you try next? That sounds encouraging.",
+            "quality:conversation_question",
+        ),
+        (
+            "영어 실용 제안",
+            "en",
+            "suggestion",
+            "That sounds tiring. Perhaps try a short walk before deciding.",
+            None,
+        ),
+        (
+            "영어 제안 대신 질문",
+            "en",
+            "suggestion",
+            "That sounds tiring. What would feel easiest?",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "영어 가능성만 언급",
+            "en",
+            "suggestion",
+            "That sounds tiring. Perhaps tomorrow will feel easier.",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "영어 try 일반 서술",
+            "en",
+            "suggestion",
+            "You try hard every day.",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "영어 부정 추천",
+            "en",
+            "suggestion",
+            "I do not recommend any practical step.",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "영어 modal 가능성",
+            "en",
+            "suggestion",
+            "You might feel better tomorrow.",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "영어 modal 상태 판단",
+            "en",
+            "suggestion",
+            "You could be right.",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "일본어 실용 제안",
+            "ja",
+            "suggestion",
+            "お疲れさまでした。今日は短い散歩をしてみるといいですよ。",
+            None,
+        ),
+        (
+            "일본어 제안 표면형 누락",
+            "ja",
+            "suggestion",
+            "お疲れさまでした。ゆっくり休める一日ですね。",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "일본어 부정 추천",
+            "ja",
+            "suggestion",
+            "今は散歩をおすすめしません。",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "일본어 날씨 소망",
+            "ja",
+            "suggestion",
+            "明日は天気だといいですね。",
+            "quality:conversation_suggestion",
+        ),
+        (
+            "일본어 주말 소망",
+            "ja",
+            "suggestion",
+            "楽しい週末になるといいですね。",
+            "quality:conversation_suggestion",
+        ),
+    ],
+)
+def test_conversation_act가_source_metadata에_결속된다(
+    tmp_path: Path,
+    case: str,
+    language: Literal["en", "ja"],
+    act: Literal["question", "suggestion"],
+    response: str,
+    expected: str | None,
+) -> None:
+    contract = ResponseQualityContract(
+        mode=cast(
+            Literal["conversation-question", "conversation-suggestion"],
+            f"conversation-{act}",
+        ),
+        target_language=language,
+        max_sentences=3,
+    )
+    reason = filter_logical_response(
+        _request("자연스럽게 답하세요.", contract, metadata={"conversation_act": act}),
+        response,
+        _config(tmp_path),
+    )
+
+    assert reason == expected, case
+
+
+def test_conversation_act_metadata와_contract_불일치는_거절한다() -> None:
+    contract = ResponseQualityContract(
+        mode="conversation-question", target_language="en", max_sentences=3
+    )
+
+    with pytest.raises(ValueError, match="conversation_act metadata와 response_quality mode"):
+        _request("Reply naturally.", contract, metadata={"conversation_act": "suggestion"})
 
 
 @pytest.mark.parametrize(

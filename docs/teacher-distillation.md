@@ -1,6 +1,26 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.22.19의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. Qwen 다국어 v2는 2,000건을 완결했지만 독립 표본 감사에서 대화 지시 불이행을 확인해 미승인·미export했다. 새 자연대화 수집은 exact hash와 의미 조합 범위뿐 아니라 source 결속 목표 언어·응답 계약도 검증한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
+LLMEX 1.22.20의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. Qwen 다국어 v2는 독립 표본 감사에서 대화 지시 불이행을 확인해 미승인·미export했다. 새 `natural-v4`는 질문과 제안을 source 결속 품질 계약으로 검증하며 Qwen·Gemma fresh inventory의 prepare와 endpoint preflight를 완료했다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이고 Hugging Face에는 공개·비공개 모두 업로드하지 않는다.
+
+## 1.22.20 natural-v4 대화 행위 계약
+
+`conversation-question`은 `?` 또는 `？`가 정확히 하나이고 닫는 따옴표·괄호 뒤를 제외한 응답 끝이 질문 부호여야 한다. `conversation-suggestion`은 질문 부호가 없어야 하며 언어별로 허용한 제안 표현을 포함해야 한다. 행위는 임의 metadata가 아니라 `ResponseQualityContract.mode`에 기록되므로 inventory와 응답 품질 fingerprint에 포함된다. 기존 `natural-v3`와 schema-v1 계약의 직렬화는 바꾸지 않는다.
+
+- source manifest fingerprint: `438c1e6264f73ba80c876994b214b1fa0cd48dc7ebb52fc698bffcbb812ca03c`
+- Qwen source SHA: `c0e9db62b67890e9482184ca6a6ad4413774f594bdf13355a358875651bae719`
+- Gemma source SHA: `7959e749fa508a67fb3603e7567341ffeede8368f503db5ba1c25da10ef657dc`
+- Qwen v3 inventory fingerprint: `b7172bb9defb57723800cbdbb0545a5cf9c61476a3ca960292be208577ef0e48` (train 1,411/heldout 589)
+- Gemma v3 inventory fingerprint: `2b1c589e775cda54e90ed469fbae81b5dc059bc1b5701df02cc116b1fd010e11` (train 1,427/heldout 573)
+
+두 source는 teacher별 6,000행이 모두 고유하고 train/heldout prompt overlap이 0이다. 다음 명령으로 Qwen v3부터 수집하며 pending·failed가 0이 된 뒤 독립 표본 감사를 통과한 run만 export한다.
+
+```bash
+uv run llmex distill collect --config configs/distill/qwen36mtp-multilingual-natural-2000-v3.yaml
+uv run llmex distill status --config configs/distill/qwen36mtp-multilingual-natural-2000-v3.yaml
+uv run llmex distill audit-sample --config configs/distill/qwen36mtp-multilingual-natural-2000-v3.yaml --reviewer "독립 검토자" --approve
+uv run llmex distill export --config configs/distill/qwen36mtp-multilingual-natural-2000-v3.yaml
+uv run llmex distill validate --config configs/distill/qwen36mtp-multilingual-natural-2000-v3.yaml
+```
 
 1.22.15 조기 감사에서는 Gemma가 실시간 혼잡도를 직접 알 수 없다고 말한 뒤에도 지도 서비스의 혼잡도 정보를 참고하거나 제공 정보를 보라고 답하는 우회를 확인했다. 형태소 기반 긍정·부정 판정과 provider 경계 열거는 활용형, 인용, wrapper, 조사, target bait에서 양방향 오류가 반복됐다. 1.22.18은 uncertainty 라벨을 plain text로 제한해 HTML·Markdown·entity·bidi 표면을 전량 실패-폐쇄하고, 평문은 NFKC·Cf·한글 filler를 정규화한 compact·한글 전용 projection에서 지도·내비게이션·map 계열과 혼잡·붐빔·사람이 많음 계열이 함께 있으면 극성·문장 경계와 무관 `quality:unsupported_realtime_claim`으로 격리한다. `지도자`, `로드맵`, markup이 들어간 안전 응답까지 의도적으로 격리하는 데이터 손실 정책이며, 지도 언급 없이 공식 홈페이지·주최 측에 확인하라는 plain text 응답은 계속 허용한다. 해당 Gemma 한국어 v2 run은 보존·미export한다. Qwen 다국어 v2는 2,000건 중 accepted 662/rejected 1,338/failed 0으로 완결됐지만 50건 수동 감사를 실패해 승인과 export를 허용하지 않는다.
 

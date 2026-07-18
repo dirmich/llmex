@@ -1,5 +1,14 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.20 대화 행위 결속 natural-v4
+
+- `conversation-question`·`conversation-suggestion`을 `ResponseQualityContract.mode`에 추가해 행위 계약을 inventory와 응답 품질 fingerprint에 직접 결속했다. 질문형은 단일 종결 질문 부호를, 제안형은 질문 부호 부재와 좁은 언어별 제안 marker를 요구하며 알 수 없거나 불완전한 행위는 실패-폐쇄한다.
+- 기존 `natural-v3` bytes와 schema-v1 계약 fingerprint를 보존하는 별도 `natural-v4` profile을 구현했다. 불안정한 비반복·입력 되풀이 금지 지시는 제거하고 질문·제안을 결정적으로 분배했다.
+- teacher별 6,000개 고유 prompt, train/heldout overlap 0인 source를 생성했다. manifest fingerprint는 `438c1e6264f73ba80c876994b214b1fa0cd48dc7ebb52fc698bffcbb812ca03c`, Qwen SHA는 `c0e9db62b67890e9482184ca6a6ad4413774f594bdf13355a358875651bae719`, Gemma SHA는 `7959e749fa508a67fb3603e7567341ffeede8368f503db5ba1c25da10ef657dc`다.
+- Qwen v3 inventory는 train 1,411/heldout 589, fingerprint `b7172bb9defb57723800cbdbb0545a5cf9c61476a3ca960292be208577ef0e48`, Gemma v3는 train 1,427/heldout 573, fingerprint `2b1c589e775cda54e90ed469fbae81b5dc059bc1b5701df02cc116b1fd010e11`이며 두 endpoint preflight가 실제 통과했다.
+- `make release-check`는 401 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다. 독립 code reviewer는 가능성·희망 진술 오탐과 metadata 불일치 우회를 지적했고, 회귀와 실패-폐쇄 결속을 보강한 최종 diff를 `APPROVE`했다.
+- 다음 작업은 Qwen v3 수집과 독립 표본 감사다. 승인된 fresh export만 후속 mix에 사용하며 최종 모델은 로컬 HF·GGUF와 llama.cpp까지만 검증하고 Hugging Face에는 공개·비공개 모두 업로드하지 않는다.
+
 ## 2026-07-18 · 1.22.19 Qwen 다국어 v2 수동 감사 기각
 
 - 반복 실패한 `distill-1f92f04c1f33ca08d6b1d356`을 살아 있는 `qwen36mtp` endpoint에 재호출했다. 자연스러운 한국어 번역을 받았지만 계약의 전달 동사 표면형과 일치하지 않아 `quality:term`으로 거절됐고, 최종 상태는 2,000/2,000, accepted 662/rejected 1,338/pending 0/failed 0이다.
@@ -47,7 +56,7 @@
 - 신규 품질 회귀와 metadata-v1 collect·stale spool·export E2E를 통과했다. 과거 spool을 새 계약으로 역감사해 Qwen 69 accepted/192 rejected, Gemma 201 accepted/50 rejected로 재분류했으며 알려진 결함 사례가 모두 거절되는 것을 확인했다.
 - 최종 `make release-check`는 247 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다. 독립 code reviewer는 `APPROVE`, architect는 `CLEAR`로 판정했고 부분 수집 audit/export와 mixer incomplete 우회까지 차단됐음을 확인했다.
 - 최종 다국어 source SHA는 Qwen `6568b13802613221084a4d3a7f8f80b0ee51f38238928941adb727becdcceca8`, Gemma `2648e1de7cf29b2238849f70a8afe52e4c1c539604d261e07a2d8d17586c8d18`, manifest fingerprint는 `07b26c84369b2eecc38b9d0019d607ebdc9be071b574d1600b99f4616cc90cfa`다. Qwen/Gemma v2 inventory fingerprint는 `b5f44db90884f1f3232aacbc80477ced5304538227e5d73c0eeebd9353982dbe`/`6cb3e358ee4d50c9b7804e82a7cb97e0a54acfc77c3d497071abe2c5dccdc537`다. 한국어 source와 inventory fingerprint는 `c17b628d…e0da`/`36310381…6259`다.
-- 이후 작업은 v2 collect→독립 표본 감사→export/validate→public+teacher 비누출 mix→100M latest SFT→390응답·suite 밖 smoke→HF/GGUF parity→private Hugging Face 업로드 순서다.
+- 당시 이후 작업은 v2 collect→독립 표본 감사→export/validate→public+teacher 비누출 mix→100M latest SFT→390응답·suite 밖 smoke→HF/GGUF parity 순서로 계획했다. Hugging Face 업로드 계획은 1.22.20에서 공개·비공개 모두 폐기했다.
 
 ## 2026-07-18 · 1.22.13 자연대화 source 결함 폐기와 의미 범위 분리
 
@@ -57,7 +66,7 @@
 - 한국어 natural-v2 prompt SHA는 `f854929cf83afb168584aa63969479e69a8ca8e9d3e0ff96ea17646062d5c407`, manifest fingerprint는 `410a98b4330663213064d6f851e44facce9df421b276bb2d0c218af08d61cff8`이다. 조사와 비현실적인 큰 수치를 제거하고 split별 의미 조합 범위와 각 의미 축을 분리했다.
 - 새 설정은 `qwen36mtp-multilingual-natural-2000.yaml`, `gemma4-multilingual-natural-2000.yaml`, `gemma4-conversation-natural-3000.yaml`이다. prepare 결과는 각각 train/heldout 1,410/590, 1,421/579, 2,167/833이고 inventory fingerprint는 `3b970e90db06eaa00e06aa59c556d8e1a930944edfdfc7a8b6d4a7ad97e94b09`, `cd006e3843350a719c66f0b1f4ea9396550c20a7c4612d03a3f87300d7ddfb71`, `c82eb66052990802929eef45364c2d0bbb49a57dff8e8981bc4540b8f5d9e2dd`다. 모두 선택 request가 target만큼 고유하고 Wikipedia 보충·prompt/source overlap이 0이며 release blocked와 실제 endpoint preflight를 통과했다.
 - 독립 전수 감사에서 22,000행의 row/source SHA 오류와 중복이 0이고, train/heldout 및 Qwen/Gemma canonical 본문 교집합이 모든 task/category에서 0임을 확인했다. 장소·물체·스타일 조합 축은 양 split에 모두 분포했다. 전체 품질 검사는 207 tests, Ruff, format, Pyright 0 오류, 참조 checksum, release audit를 통과했다.
-- 다음 실행 순서는 세 수집의 collect→export→validate, 통합 suite 비누출 mix, 100M latest 기반 SFT, 60 scenario·390응답과 suite 밖 자연대화 smoke, 선별 checkpoint의 HF·GGUF parity와 private Hub 업로드다.
+- 당시 다음 실행 순서는 세 수집의 collect→export→validate, 통합 suite 비누출 mix, 100M latest 기반 SFT, 60 scenario·390응답과 suite 밖 자연대화 smoke, 선별 checkpoint의 HF·GGUF parity였다. private Hub 업로드 계획은 1.22.20에서 폐기했다.
 
 ## 2026-07-18 · 1.22.12 단계적 teacher 수집
 
@@ -71,7 +80,7 @@
 - 10개 범주의 한국어 자연대화 prompt를 train 8,000·heldout 2,000으로 생성했다. 10,000개가 모두 고유하며 SHA는 `40175685…4baf`, manifest fingerprint는 `ff546202…15d`다.
 - 기존 다국어 v1 payload를 byte 그대로 보존하고, 영어·일본어 공감 대화와 네 번역 방향의 문형을 확장한 v2를 teacher별 train 4,800·heldout 1,200으로 생성했다. Qwen SHA는 `1cf390a8…6033`, Gemma SHA는 `87982980…fa27`, manifest fingerprint는 `3a63e661…870a`다.
 - Qwen 다국어 6,000개는 최종 split train 4,338·heldout 1,662, Gemma 다국어는 train 4,334·heldout 1,666, Gemma 한국어는 train 7,239·heldout 2,761이다. 세 inventory 모두 고유 prompt 수가 target과 같고 Wikipedia 보충·prompt/source overlap은 0이다.
-- `localhost:8081/v1`의 qwen36mtp와 `macmini:11434/v1`의 Gemma4 모델 preflight를 실제 통과했다. teacher 출력은 내부 전용이므로 최종 모델도 외부 승인 전 Hugging Face private 저장소만 허용한다.
+- `localhost:8081/v1`의 qwen36mtp와 `macmini:11434/v1`의 Gemma4 모델 preflight를 실제 통과했다. teacher 출력은 내부 전용이다. 당시 private 저장소만 허용하려던 계획도 1.22.20에서 폐기해 Hugging Face 업로드를 전면 금지한다.
 
 ## 2026-07-18 · 1.22.10 focused-v12 150-step 학습 기각
 
@@ -102,7 +111,7 @@
 - 한국어 품질·대화 준비도 42 scenario와 다국어 대화·번역 18 scenario를 byte 그대로 결합한 `ko-multilingual-chat-quality-v1.jsonl`을 추가했다. 60 scenario·65 turn에 greedy 1회와 sampling 5회를 적용해 390응답을 계획하며 SHA는 `bd76a433…fb23`이다.
 - step 300 평가는 정확도 29.23%, 유해 거절 41.67%, 멀티턴 유지 6.67%, EOS 98.21%, unsafe 6건, hard loop 5건이었다. step 600은 정확도 30.26%, 유해 거절 39.58%, 멀티턴 유지 10%, EOS 98.21%, unsafe 5건, hard loop 6건이었다.
 - profile/seed 최악값도 step 600에서 정확도 27.69%, 유해 거절 25%, 멀티턴 유지 0%, unsafe 1건, hard loop 2건으로 실패했다. validation 개선이 실제 대화 능력을 보장하지 않으므로 300·600 checkpoint를 모두 배포·HF 업로드 후보에서 제외했다.
-- 다음 작업은 평가 문장을 학습에 복제하지 않고 기존 비누출 대화·안전 curriculum과 Qwen/Gemma 다국어 teacher 행을 재가중한 집중 continuing SFT다. 자동 gate, suite 밖 자유대화, 수동 blind review를 모두 통과한 checkpoint만 HF·GGUF 최종 parity와 private Hub 업로드 대상으로 삼는다.
+- 다음 작업은 평가 문장을 학습에 복제하지 않고 기존 비누출 대화·안전 curriculum과 Qwen/Gemma 다국어 teacher 행을 재가중한 집중 continuing SFT다. 자동 gate, suite 밖 자유대화, 수동 blind review를 모두 통과한 checkpoint만 로컬 HF·GGUF 최종 parity 대상으로 삼는다. private Hub 업로드 계획은 1.22.20에서 폐기했다.
 
 ## 2026-07-18 · 1.22.6 private HF·GGUF 내보내기
 
@@ -113,13 +122,13 @@
 - focused-v9 step 2 checkpoint SHA `59af3549…438`를 실제 HF로 변환했다. 61-token 다중 턴 입력에서 원본 LLMEX와 Transformers 최대 logit 절대 오차는 `9.5367431640625e-05`, 모든 위치 argmax는 일치했다.
 - 같은 HF export를 llama.cpp `b9550-f0156d140`로 F16 GGUF `200,967,680` bytes, SHA `efb2671a…2070`으로 변환했다. `llama-completion -no-cnv` greedy 결과가 원본과 같은 `[[안녕하세요` 뒤 EOS에 도달했다.
 - 표적 회귀는 모델 export·checkpoint 학습 테스트 `34 passed`, Ruff·Pyright 오류 0으로 통과했다. 이 검증은 converter 계약 증거이며 현재 600-step 학습의 최종 checkpoint 품질 또는 public release 승인이 아니다.
-- 내부 teacher 파생 산출물은 `redistribution_allowed=false`, `release_gate=blocked`, `hub_visibility=private`를 유지한다. Hugging Face에는 외부 승인 전 private 저장소로만 업로드한다.
+- 내부 teacher 파생 산출물은 `redistribution_allowed=false`, `release_gate=blocked`, `hub_visibility=private`를 유지한다. 이 필드는 로컬 artifact의 비공개 정책이며, 1.22.20부터 Hugging Face 업로드는 공개·비공개 모두 금지한다.
 
 ## 2026-07-18 · 1.22.5 다국어 SFT 실행 계약
 
 - `expected_base_checkpoint_sha256`를 추가해 지정한 base checkpoint를 immutable snapshot으로 읽은 직후 역직렬화 전에 SHA 불일치를 실패-폐쇄한다. 필드를 쓰지 않는 기존 SFT config fingerprint는 새 필드를 생략해 호환성을 유지한다.
 - `runs/baseline-100m/checkpoints/latest.pt` SHA `dae1b01b…33b3`와 최종 3원천 manifest SHA `f3c11daf…ce58`를 고정한 600-step CUDA bf16 설정을 만들었다. LR은 1.2e-5→1.2e-6, warmup 30, effective batch 64, validation 25-step, checkpoint 50-step이다.
-- 실제 no-baseline preflight는 87,804,672 parameters, train 14,374·heldout 2,430행, 총 4,105,835 token과 32,981,128-byte 연속 cache, base/source/release fingerprint 결속을 확인했다. 학습 산출물은 내부 전용이며 HF 업로드도 공개가 아닌 private로 제한한다.
+- 실제 no-baseline preflight는 87,804,672 parameters, train 14,374·heldout 2,430행, 총 4,105,835 token과 32,981,128-byte 연속 cache, base/source/release fingerprint 결속을 확인했다. 학습 산출물은 내부 전용이며, 1.22.20부터 HF 업로드는 공개·비공개 모두 금지한다.
 
 ## 2026-07-18 · 1.22.4 한국어·Qwen·Gemma 다국어 3원천 결속
 

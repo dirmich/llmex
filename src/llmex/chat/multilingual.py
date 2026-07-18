@@ -232,7 +232,12 @@ def _detected_groups(prompt: str, mapping: dict[str, tuple[str, ...]]) -> list[l
     return [list(targets) for source, targets in mapping.items() if present(source)]
 
 
-def response_quality_contract(task: str, prompt: str) -> ResponseQualityContract:
+def response_quality_contract(
+    task: str,
+    prompt: str,
+    *,
+    conversation_act: Literal["question", "suggestion"] | None = None,
+) -> ResponseQualityContract:
     target = cast(
         Literal["ko", "en", "ja"],
         {
@@ -245,7 +250,15 @@ def response_quality_contract(task: str, prompt: str) -> ResponseQualityContract
         }[task],
     )
     if task.startswith("conversation-"):
-        return ResponseQualityContract(mode="conversation", target_language=target, max_sentences=2)
+        mode = "conversation" if conversation_act is None else f"conversation-{conversation_act}"
+        return ResponseQualityContract(
+            mode=cast(
+                Literal["conversation", "conversation-question", "conversation-suggestion"],
+                mode,
+            ),
+            target_language=target,
+            max_sentences=2,
+        )
     number_source = re.sub(r"(?<=\d):00\b", "", prompt)
     numbers = list(dict.fromkeys(re.findall(r"(?<!\d)\d+(?!\d)", number_source)))
     return ResponseQualityContract(
@@ -279,6 +292,8 @@ def _natural_prompt(
     teacher: Literal["qwen", "gemma"],
     task: str,
     index: int,
+    *,
+    contracted_conversation: bool = False,
 ) -> str:
     """일련번호 없이 의미 조합으로 고유한 자연대화 v3 prompt를 만든다."""
     names_ko = ("민준", "서연", "도윤", "하린", "지호", "수아", "현우", "나은")
@@ -364,6 +379,18 @@ def _natural_prompt(
     d = (combination_index // 64) % 4
     c = (combination_index // 256) % 8
     if task == "conversation-en":
+        if contracted_conversation:
+            instructions = (
+                "Reply warmly in English and end with exactly one brief question",
+                "Reply warmly in English with one practical, safe suggestion and no question",
+                "Respond supportively in English and end with exactly one brief question",
+                "Respond supportively in English with one practical, safe suggestion "
+                "and no question",
+            )
+            return (
+                f"{instructions[d]}. I am {names_en[a]} and spend time near the {places_en[c]}. "
+                f"I {topics_en[b]}, and I usually enjoy {activities_en[a]}."
+            )
         leads = (
             (
                 "Reply warmly and ask one brief question",
@@ -391,6 +418,17 @@ def _natural_prompt(
             f"{activities_en[a]}. {contexts[d]}."
         )
     if task == "conversation-ja":
+        if contracted_conversation:
+            instructions = (
+                "自然な日本語で温かく返し、最後に短い質問を一つだけ書いてください",
+                "自然な日本語で温かく返し、質問をせず無理のない具体的な提案を一つ書いてください",
+                "自然な日本語で共感し、最後に短い質問を一つだけ書いてください",
+                "自然な日本語で共感し、質問をせず安全で具体的な提案を一つ書いてください",
+            )
+            return (
+                f"{instructions[d]}。私は{names_ja[a]}で、{places_ja[c]}の近くに住んでいます。"
+                f"{topics_ja[b]}。普段は{activities_ja[a]}が好きです。"
+            )
         leads = (
             (
                 "自然な日本語で共感し、短い質問を一つ添えてください",
@@ -704,14 +742,19 @@ def _row(
     task: str,
     index: int,
     split: Literal["train", "heldout"],
-    profile: Literal["compact-v1", "expanded-v2", "natural-v3"] = "compact-v1",
+    profile: Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"] = "compact-v1",
     prompt_index: int | None = None,
 ) -> ChatRow:
     identifier = f"multilingual-{teacher}-{split}-{task}-{index:05d}"
-    if profile == "natural-v3":
+    if profile in {"natural-v3", "natural-v4"}:
         if prompt_index is None:
-            raise IntegrityError("natural-v3 prompt index가 누락되었습니다")
-        prompt = _natural_prompt(teacher, task, prompt_index)
+            raise IntegrityError(f"{profile} prompt index가 누락되었습니다")
+        prompt = _natural_prompt(
+            teacher,
+            task,
+            prompt_index,
+            contracted_conversation=profile == "natural-v4",
+        )
     elif profile == "expanded-v2":
         prompt = _expanded_prompt(teacher, task, index, split)
     else:
@@ -722,10 +765,13 @@ def _row(
     source_metadata: dict[str, str | int] = {"teacher_pool": teacher, "task": task}
     if profile != "compact-v1":
         source_metadata["profile"] = profile
-    if profile == "natural-v3":
+    if profile in {"natural-v3", "natural-v4"}:
         absolute_prompt_index = (prompt_index or 0) + (1024 if teacher == "gemma" else 0)
         source_metadata["prompt_index"] = absolute_prompt_index
         source_metadata["combination_index"] = (absolute_prompt_index * 641) % 2048
+        if profile == "natural-v4" and task.startswith("conversation-"):
+            d = ((absolute_prompt_index * 641) % 2048) // 64 % 4
+            source_metadata["conversation_act"] = "question" if d % 2 == 0 else "suggestion"
     provenance = Provenance(
         dataset=(
             "llmex-multilingual-teacher-prompts-v1"
@@ -739,7 +785,16 @@ def _row(
         source_sha256=source_sha256,
         source_metadata=source_metadata,
         response_quality=(
-            response_quality_contract(task, prompt) if profile == "natural-v3" else None
+            response_quality_contract(
+                task,
+                prompt,
+                conversation_act=cast(
+                    Literal["question", "suggestion"] | None,
+                    source_metadata.get("conversation_act"),
+                ),
+            )
+            if profile in {"natural-v3", "natural-v4"}
+            else None
         ),
     )
     messages = [
@@ -766,7 +821,7 @@ def _payload(
     teacher: Literal["qwen", "gemma"],
     train_rows: int,
     heldout_rows: int,
-    profile: Literal["compact-v1", "expanded-v2", "natural-v3"],
+    profile: Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"],
 ) -> bytes:
     split_counts: tuple[tuple[Literal["train", "heldout"], int], ...] = (
         ("train", train_rows),
@@ -779,7 +834,9 @@ def _payload(
             index,
             split,
             profile,
-            index + train_rows if profile == "natural-v3" and split == "heldout" else index,
+            index + train_rows
+            if profile in {"natural-v3", "natural-v4"} and split == "heldout"
+            else index,
         )
         for split, count in split_counts
         for task in _TASKS
@@ -802,13 +859,15 @@ def prepare_multilingual_prompts(
     *,
     train_rows_per_task: int = 150,
     heldout_rows_per_task: int = 30,
-    profile: Literal["compact-v1", "expanded-v2", "natural-v3"] = "compact-v1",
+    profile: Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"] = "compact-v1",
 ) -> dict[str, object]:
     """두 teacher에 겹치지 않는 결정적 prompt inventory를 게시한다."""
     if train_rows_per_task < 1 or heldout_rows_per_task < 1:
         raise IntegrityError("다국어 task별 train/heldout 행 수는 1 이상이어야 합니다")
-    if profile == "natural-v3" and train_rows_per_task + heldout_rows_per_task > 1024:
-        raise IntegrityError("natural-v3는 teacher별 task당 최대 1,024개 prompt를 지원합니다")
+    if profile in {"natural-v3", "natural-v4"} and (
+        train_rows_per_task + heldout_rows_per_task > 1024
+    ):
+        raise IntegrityError(f"{profile}는 teacher별 task당 최대 1,024개 prompt를 지원합니다")
     payloads = {
         teacher: _payload(teacher, train_rows_per_task, heldout_rows_per_task, profile)
         for teacher in _TEACHERS

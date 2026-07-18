@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.22.20 - 2026-07-18
+
+- 질문형과 제안형을 `ResponseQualityContract.mode`에 결속해 응답 품질 fingerprint가 대화 행위를 포함하도록 했다.
+- 질문형은 단일 종결 질문 부호, 제안형은 질문 부호 부재와 언어별 제안 marker를 실패-폐쇄로 검증한다.
+- 불안정한 비반복 지시를 제거한 `natural-v4` Qwen·Gemma 각 6,000개 고유 prompt와 fresh 2,000건 inventory를 생성하고 두 endpoint preflight를 통과했다.
+- 최종 산출물은 로컬 HF·GGUF와 llama.cpp 검증까지만 허용하며 Hugging Face 공개·비공개 업로드를 금지했다.
+
 ## 1.22.19 - 2026-07-18
 
 - Qwen 다국어 v2의 유일한 retry-exhausted 요청을 재호출해 2,000/2,000 처리를 완결했고, 정상 번역이 자동 계약의 용어 표면형 불일치로 거절된 상태를 고정했다.

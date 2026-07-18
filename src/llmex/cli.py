@@ -1250,7 +1250,8 @@ def data_multilingual_prompts(
     train_rows_per_task: Annotated[int, typer.Option("--train-rows-per-task")] = 150,
     heldout_rows_per_task: Annotated[int, typer.Option("--heldout-rows-per-task")] = 30,
     profile: Annotated[
-        Literal["compact-v1", "expanded-v2", "natural-v3"], typer.Option("--profile")
+        Literal["compact-v1", "expanded-v2", "natural-v3", "natural-v4"],
+        typer.Option("--profile"),
     ] = "compact-v1",
 ) -> None:
     """Qwen·Gemma용 영어·일본어 대화/번역 prompt inventory를 생성합니다."""
