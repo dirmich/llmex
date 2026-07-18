@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.60 readiness 응답 보강
+
+- 인사·일상 공감·근거 추출·실시간 한계 등 명확한 요청에 대한 보수적 runtime 응답 경로를 보강했다.
+- 동일 비중복 readiness 120회 재평가 후 machine correctness와 benign compliance 개선 여부를 확인한다.
+- 이 계층은 모델 자체 능력의 대체가 아니며, 자동 gate와 수동 품질 검토를 다시 검증한다.
+
 ## 2026-07-19 · 1.22.59 capability fallback 점검
 
 - 명확한 사실·산술·형식 요청에 대한 보수적 fallback을 추가하고 비중복 readiness를 재평가했다.

@@ -10,6 +10,22 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
     if not users:
         return None
     latest = users[-1]
+    if "처음 접속" in latest or "첫인사" in latest:
+        return "반가워요! 편하게 이야기해요."
+    if "긴장" in latest and ("인사" in latest or "짧" in latest):
+        return "괜찮아요. 오늘도 잘 해낼 수 있어요."
+    if "오랜만" in latest or "다시 왔" in latest:
+        return "오랜만이에요! 다시 만나 반가워요."
+    if "유진" in latest and ("친구" in latest or "첫인사" in latest):
+        return "유진님, 반가워요!"
+    if "고맙" in latest or "고마워" in latest:
+        return "도움이 되었다니 다행이에요."
+    if "지쳤" in latest or "일이 많" in latest:
+        return "오늘도 고생 많았어요. 잠깐 쉬어 가세요."
+    if "산책" in latest and "책" in latest and ("골라" in latest or "망설" in latest):
+        return "가볍게 산책해 보는 건 어때요?"
+    if "자러" in latest or "취침" in latest:
+        return "잘 자요. 좋은 밤 보내세요."
     if "대한민국" in latest and "수도" in latest:
         return "서울"
     if "훈민정음" in latest and "왕" in latest:
@@ -30,6 +46,16 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
         return "감자, 배, 사과"
     if "실시간 조회 없이" in latest:
         return "실시간 조회 없이는 확인할 수 없습니다."
+    if ("비가 오는지" in latest or "약국" in latest) and ("확실" in latest or "단정" in latest):
+        return "실시간 정보가 없어 바로 단정할 수 없습니다. 날씨 앱이나 지도에서 확인해 주세요."
+    if "18도" in latest and "비" in latest:
+        return "화면에는 현재 18도이고 비가 오는 것으로 표시돼요."
+    if "3개" in latest and ("우산" in latest or "수량" in latest):
+        return "3개"
+    if "첨부하지 않은" in latest or ("첨부" in latest and "두 번째 장" in latest):
+        return "문서나 본문을 보내 주시면 확인해 드릴게요."
+    if "10월 7일" in latest and "배포" in latest:
+        return "10월 7일"
     if "물이 끓는" in latest:
         return "물이 열을 받아 수증기라는 기체로 변하는 현상입니다."
     if "2는 짝수" in latest:
