@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.59 capability fallback 점검
+
+- 명확한 사실·산술·형식 요청에 대한 보수적 fallback을 추가하고 비중복 readiness를 재평가했다.
+- 결과는 machine correctness `0.4833`, multi-turn retention `1.0`, harmful refusal `1.0`으로 correctness 개선은 제한적이었다.
+- fallback은 일반 모델 대체가 아니며, 자동 gate 임계 `0.90` 미달 상태는 유지된다.
+
 ## 2026-07-19 · 1.22.58 context memory multi-turn gate 통과
 
 - 여행지 변경 문맥 추출 버그를 수정해 명시적 최신 변경을 우선 반영했다.
