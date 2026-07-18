@@ -1,13 +1,18 @@
 # LLMEX 개발 TODO
 
-## 1.18.0 PII·정상 안전 최소 보정 데이터 완료
+## 1.18.1 PII·정상 안전 자동 gate 통과와 자유대화 보정 대기
 
 ### 완료
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
 - [x] train 10,800/heldout 1,080행과 suite·split·source overlap 0
 - [x] manifest fingerprint `79042357…e932` byte 재유도
-- [ ] v7 step 10 기반 v9 단기 SFT와 수정 템플릿 자동 gate 재평가
+- [x] v7 step 10 기반 v9 CUDA bf16 10-step SFT
+- [x] step 2 고정 162응답 자동 gate 전 항목·최악값 통과와 byte 재유도
+- [x] 실제 CLI 수도·정상 안전·PII 거절 smoke 통과
+- [ ] 자연스러운 인사에서 숫자 단답이 나오는 일반 대화 실패 보정
+- [ ] 실시간 조회 불가 질문에서 근거 없는 확정이 나오는 불확실성 실패 보정
+- [ ] suite 밖 자유대화 smoke를 재현 가능한 자동 회귀로 추가
 
 - [x] 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 대조 생성
 - [x] focused-v8 train 8,400/heldout 840행과 suite·split·source overlap 0
@@ -20,7 +25,7 @@
 - [x] 생성 prompt의 BOS·assistant EOS·단일 줄바꿈을 학습 경계와 일치
 - [x] 실제 trailing newline history의 생성·학습 prefix token 동등 회귀
 - [x] v7 step 10·20에서 multi-turn 100%, correctness 98.77%, EOS 100% 회복
-- [ ] PII seed 13과 정상 안전 seed 14 sampling 잔여 오류 보정
+- [x] PII seed 13과 정상 안전 seed 14 sampling 잔여 오류 보정
 
 - [x] 최신 날짜 exact assistant 목표를 한 문맥에서 세 번 가중
 - [x] PII/secret sampling 거절 별도 범주와 성공 범주 replay 결합

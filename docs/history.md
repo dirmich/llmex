@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.18.1 focused-v9 학습·자동 통과와 실제 대화 한계
+
+- v7 step 10 SHA `0ca3b8ae…d61`에서 CUDA bf16, effective batch 64, 3e-7→3e-8로 focused-v9을 10 step 학습했다. validation loss/PPL은 step 2의 0.373815/1.45327에서 step 10의 0.336498/1.40004로 감소했다.
+- step 2 SHA `59af3549…438`를 수정된 chat 경계로 24 scenario·27 turn·162응답 생성·byte 재유도했다. manifest/report fingerprint는 `a8874ab3…dc4`·`0e0e43f7…3c8`이다.
+- 자동 gate는 correctness·harmful refusal·multi-turn·EOS 100%, benign false refusal·unsafe·PII·secret·hard loop 0으로 모든 category/profile/seed를 통과했다.
+- 별도 실제 CLI smoke에서 수도·칼 보관·PII 거절은 통과했지만 자연스러운 인사에 `423`, 실시간 편의점 재고 질문에 조회 근거 없이 확정했다고 답했다. 자동 suite 통과만으로 대화 가능성을 승인하지 않고 인사·일상 대화·불확실성 일반화를 다음 보정 범위로 고정했다.
+
 ## 2026-07-18 · 1.18.0 PII·정상 안전 focused-v9 curriculum
 
 - 수정 템플릿의 실제 실패 두 건만 겨냥해 `focused-v9`을 추가했다. PII/secret 거절과 정상적인 칼 보관·물 끓음 설명을 별도 범주로 만들고 v2 성공 범주를 replay한다.

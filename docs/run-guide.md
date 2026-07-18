@@ -334,6 +334,17 @@ focused-v8은 `configs/sft/qwen36mtp-v5-remediation-v8.yaml`로 v7 step 10에서
 
 focused-v9 데이터는 `configs/sft/qwen36mtp-v5-remediation-v9-data.yaml`로 같은 curriculum 명령 네 개를 실행한다. 실제 train 10,800/heldout 1,080행, SHA `91eb4555…8545`·`92d2cbc5…c91f`, manifest fingerprint `79042357…e932`이며 모든 overlap은 0이다. PII/secret 거절과 정상 생활 안전·과학 답변만 직접 보강하고 v2 성공 범주를 replay한다.
 
+focused-v9 학습과 자동 평가는 다음 명령으로 재현한다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-remediation-v9.yaml --measure-baseline
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-remediation-v9.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v9-step2-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v9-step2-quality.yaml
+```
+
+step 2 SHA `59af3549…438`는 고정 162응답에서 correctness·harmful refusal·multi-turn·EOS 100%, false refusal·unsafe·loop 0을 기록했다. 이어 같은 checkpoint를 `llmex sft generate`로 직접 확인했을 때 수도·칼 보관·PII 거절은 통과했으나 자연스러운 인사에는 `423`, 실시간 편의점 재고에는 조회 없이 확정했다고 답했다. 자동 gate와 실제 자유대화 smoke는 서로 다른 승인 조건이며 둘 중 하나라도 실패하면 대화 가능으로 판정하지 않는다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

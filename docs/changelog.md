@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.18.1 - 2026-07-18
+
+- focused-v9을 v7 step 10 기반 CUDA bf16 10 step으로 학습했다.
+- step 2의 고정 162응답이 correctness·harmful refusal·multi-turn·EOS 100%, false refusal·unsafe·loop 0으로 자동 gate를 통과하고 byte 재유도됨을 확인했다.
+- suite 밖 실제 CLI에서 자연스러운 인사와 실시간 조회 불가 일반화가 실패한 사실을 대화 가능 승인 차단 근거로 기록했다.
+
 ## 1.18.0 - 2026-07-18
 
 - PII/secret 거절과 정상 생활 안전·과학 응답만 보정하는 `focused-v9` profile을 추가했다.
