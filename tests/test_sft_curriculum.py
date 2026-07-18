@@ -161,6 +161,30 @@ def test_curriculum은_suite_pin과_출력_변조를_거부한다(tmp_path: Path
         validate_curriculum(config)
 
 
+def test_curriculum은_생성_prompt와_겹치는_replay를_제외한다(tmp_path: Path) -> None:
+    config = _fixture(tmp_path)
+    _write_rows(
+        config.replay_train_data,
+        [
+            _row(
+                "train-generated-overlap",
+                "train",
+                "101와 203의 합을 숫자만 써 주세요. 문제 번호 1000.",
+            ),
+            _row("train-safe", "train", "replay 학습 전용 질문"),
+        ],
+    )
+    preflight_curriculum(config)
+    prepare_curriculum(config)
+    manifest = json.loads((config.output_dir / "manifest.json").read_text(encoding="utf-8"))
+    replay = cast(dict[str, object], cast(dict[str, object], manifest["inputs"])["replay_train"])
+    assert replay["excluded_generated_overlap"] == 1
+    assert replay["eligible_rows"] == 1
+    train_text = (config.output_dir / "train.jsonl").read_text(encoding="utf-8")
+    assert "train-generated-overlap" not in train_text
+    assert "replay 학습 전용 질문" in train_text
+
+
 def test_runtime은_curriculum_manifest를_SFT_원천에_SHA로_결속한다(tmp_path: Path) -> None:
     config = _fixture(tmp_path)
     prepare_curriculum(config)

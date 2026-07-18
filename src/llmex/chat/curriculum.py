@@ -1616,6 +1616,7 @@ def _read_replay(
     split: Literal["train", "heldout"],
     allowed_licenses: set[str],
     suite_prompts: set[str],
+    generated_prompts: set[str],
     count: int,
     seed: int,
 ) -> tuple[list[_Candidate], dict[str, object]]:
@@ -1625,6 +1626,7 @@ def _read_replay(
         raise InputError(f"replay 입력 파일이 없습니다: {path}")
     eligible: list[ChatRow] = []
     excluded_suite = 0
+    excluded_generated = 0
     try:
         with path.open(encoding="utf-8") as stream:
             for line_number, line in enumerate(stream, 1):
@@ -1637,6 +1639,8 @@ def _read_replay(
                     raise IntegrityError(f"허가되지 않은 replay 라이선스: {row.provenance.license}")
                 if _all_user_prompts(row.messages) & suite_prompts:
                     excluded_suite += 1
+                elif _all_user_prompts(row.messages) & generated_prompts:
+                    excluded_generated += 1
                 else:
                     eligible.append(row)
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
@@ -1680,15 +1684,18 @@ def _read_replay(
                 "replay",
             )
         )
-    return selected, {
+    binding: dict[str, object] = {
         "path": str(path),
         "sha256": sha256_file(path),
-        "input_rows": len(eligible) + excluded_suite,
+        "input_rows": len(eligible) + excluded_suite + excluded_generated,
         "eligible_rows": len(eligible),
         "excluded_suite_overlap": excluded_suite,
         "requested": count,
         "selected": len(selected),
     }
+    if excluded_generated:
+        binding["excluded_generated_overlap"] = excluded_generated
+    return selected, binding
 
 
 def _payload(candidates: list[_Candidate]) -> bytes:
@@ -1703,12 +1710,18 @@ def _material(config: SFTCurriculumConfig) -> tuple[bytes, bytes, dict[str, obje
     suite_prompts, suite_binding = _suite_prompts(config)
     generated_train = _generated(config, "train", config.train_rows_per_category)
     generated_heldout = _generated(config, "heldout", config.heldout_rows_per_category)
+    generated_prompts = {
+        prompt
+        for candidate in [*generated_train, *generated_heldout]
+        for prompt in _all_user_prompts(candidate.row.messages)
+    }
     allowed = set(config.allowed_replay_licenses)
     replay_train, replay_train_binding = _read_replay(
         config.replay_train_data,
         split="train",
         allowed_licenses=allowed,
         suite_prompts=suite_prompts,
+        generated_prompts=generated_prompts,
         count=config.replay_train_rows,
         seed=config.seed,
     )
@@ -1717,6 +1730,7 @@ def _material(config: SFTCurriculumConfig) -> tuple[bytes, bytes, dict[str, obje
         split="heldout",
         allowed_licenses=allowed,
         suite_prompts=suite_prompts,
+        generated_prompts=generated_prompts,
         count=config.replay_heldout_rows,
         seed=config.seed,
     )

@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.0. `http://macmini:11434/v1` Gemma 4 teacher로 2,200건을 처리해 accepted 2,145/rejected 55를 기록했고, canonical 응답 중복 489개 제거 후 export train 1,160·heldout 496행과 overlap 0을 재유도 검증했다. 다음 단계는 Qwen/public+Gemma 비누출 mix와 통합 suite curriculum을 만들고 100M latest 기반 SFT를 수행하는 것이다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.22.1. Qwen/public+Gemma mix train 9,906·heldout 1,984행을 검증하고, 생성 prompt와 겹친 replay train 664·heldout 303행을 제외한 통합 curriculum train 12,842·heldout 2,041행을 만들었다. suite·split·source overlap은 모두 0이다. 다음 단계는 두 teacher의 영어·일본어 대화와 양방향 번역을 증류해 100M latest 기반 SFT에 함께 넣는 것이다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.

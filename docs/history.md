@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.1 Qwen/public+Gemma 비누출 curriculum
+
+- 기존 Qwen/public mix와 Gemma export 1,656행을 다시 heldout 우선 격리해 train 9,906·heldout 1,984행을 만들었다. 입력 11,900행 중 heldout prompt 중복 10행을 제외했고 mix manifest SHA는 `6d1f5936…2018`이다.
+- 기존 curriculum은 suite와 replay만 비교해, 새로 생성하는 focused-v11 prompt와 replay가 겹치면 마지막 all-user gate에서 늦게 실패했다. 생성 train/heldout 전체 prompt와 겹치는 replay도 사전에 제외하고 실제 겹침이 있을 때만 manifest에 수를 기록해 기존 무겹침 fingerprint를 보존했다.
+- replay train 664·heldout 303행을 제외하고 생성 3,600/360행을 합쳐 최종 train 12,842·heldout 2,041행을 만들었다. 통합 42 scenario·47 turn suite, train/heldout, source overlap은 모두 0이다. curriculum fingerprint는 `9235fbb5…44d4`, manifest SHA는 `b11c8fa2…edc6`다.
+
 ## 2026-07-18 · 1.22.0 macmini Gemma 4 대화 증류 완료
 
 - `http://macmini:11434/v1`의 `gemma4-26b-a4b-uncensored-hauhaucs-balanced`를 명시적 내부망 allowlist와 강한 한국어 system prompt로 호출해 2,200건을 3,085.164초에 처리했다.

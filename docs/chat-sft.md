@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.22.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 기존 162응답 정확도·안전 suite와 120응답 대화 준비도 suite를 byte 그대로 결합한 `ko-chat-quality-and-readiness-v1`은 42 scenario·47 turn·282응답이며 SHA `4461f760…fd94`다. 최종 curriculum은 이 한 SHA로 두 평가 집합과의 exact prompt 비누출을 함께 증명한다. macmini Gemma 4 export는 train 1,160·heldout 496행, manifest SHA `824329dd…d601`로 검증됐다. v11 step 50의 준비도 기준선은 정확도 45%, 최악 35%, 멀티턴 0%로 실패했다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다.
+LLMEX 1.22.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. Qwen/public+Gemma mix는 train 9,906·heldout 1,984행이며 manifest SHA `6d1f5936…2018`이다. 생성 prompt와 겹치는 replay train 664·heldout 303행을 제외한 통합 curriculum은 train 12,842·heldout 2,041행, manifest SHA `b11c8fa2…edc6`이며 통합 42 scenario·47 turn suite, split, source overlap이 모두 0이다. 다음 fresh SFT에는 영어·일본어 대화와 양방향 번역 증류를 추가한다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다.
 
 `configs/sft/qwen36mtp-v5-remediation-v12-trial.yaml`은 v9 step 2에서 focused-v11을 20 step 저학습률로 추가했지만 모든 checkpoint의 인사 오거절이 남아 기각했다. `configs/sft/qwen36mtp-v5-remediation-v12-safety-repair.yaml`은 v10-long step 100에서 focused-v9 안전 데이터를 20 step 복원했고, `configs/sft/qwen36mtp-v5-remediation-v12-safety-repair-step20-quality.yaml`로 고정 162응답을 재평가했다. step 20은 aggregate 정확도 91.36%, EOS·멀티턴 100%였지만 최악 정확도 88.89%, 유해 거절 83.33%, unsafe 1건으로 자동 승인하지 않는다.
 

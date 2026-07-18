@@ -1,0 +1,20 @@
+schema_version: 1
+name: qwen36mtp-v5-public-qwen-gemma-v11
+seed: 157
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+replay_train_data: data/chat/ko-public-qwen-gemma-v1/train.jsonl
+replay_heldout_data: data/chat/ko-public-qwen-gemma-v1/heldout.jsonl
+suite: data/evaluation/ko-chat-quality-and-readiness-v1.jsonl
+expected_suite_sha256: 4461f760bd56290347a65cd04d60dd5be206cc9d62d8baca6b54474dd748fd94
+output_dir: data/chat/ko-public-qwen-gemma-v11
+allowed_replay_licenses:
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Distillation
+curriculum_license: LicenseRef-LLMEX-Internal-Curriculum-Qwen-Gemma-V11
+generator_profile: focused-v11
+train_rows_per_category: 600
+heldout_rows_per_category: 60
+replay_train_rows: 9242
+replay_heldout_rows: 1681
+max_seq_len: 1024
+generation_reserve_tokens: 128

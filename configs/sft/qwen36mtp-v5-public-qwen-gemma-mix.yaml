@@ -1,0 +1,16 @@
+schema_version: 1
+name: qwen36mtp-v5-public-qwen-gemma-mix
+seed: 151
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+public_train_data: data/chat/ko-public-teacher-v5/train.jsonl
+public_heldout_data: data/chat/ko-public-teacher-v5/heldout.jsonl
+teacher_train_data: runs/distill/gemma4-conversation-2200-v1/export/train.jsonl
+teacher_heldout_data: runs/distill/gemma4-conversation-2200-v1/export/heldout.jsonl
+teacher_manifest: runs/distill/gemma4-conversation-2200-v1/export/manifest.json
+expected_teacher_manifest_sha256: 824329dd4fd49571f392660dfe83360877c0a922b5c23a89e575d1835bfad601
+output_dir: data/chat/ko-public-qwen-gemma-v1
+allowed_licenses:
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Distillation
+max_seq_len: 1024
+generation_reserve_tokens: 128

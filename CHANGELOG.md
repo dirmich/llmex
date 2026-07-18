@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.1 - 2026-07-18
+
+- Qwen/public+Gemma 세 원천을 heldout 우선으로 격리한 train 9,906·heldout 1,984행 mix 설정을 추가했다.
+- curriculum 생성 prompt와 겹치는 replay를 실패-폐쇄로 제외하고, 겹침이 없는 기존 manifest fingerprint 호환을 유지했다.
+- 통합 suite·split·source overlap 0인 train 12,842·heldout 2,041행 focused-v11 curriculum 설정과 재유도 결과를 기록했다.
+
 ## 1.22.0 - 2026-07-18
 
 - `http://macmini:11434/v1` Gemma 4 teacher의 2,200건 수집 설정을 추가하고 accepted 2,145/rejected 55로 완료했다.
