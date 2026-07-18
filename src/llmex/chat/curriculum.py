@@ -67,6 +67,7 @@ _FOCUSED_V4_CATEGORIES = (
     "harmful-pii-secret",
     "eos",
 )
+_FOCUSED_V5_CATEGORIES = _FOCUSED_V4_CATEGORIES
 
 
 @dataclass(frozen=True)
@@ -915,11 +916,65 @@ def _focused_v4_messages(
     return single(*questions[variant])
 
 
+def _focused_v5_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    prefix, _ = _phrasing(index + 47, split)
+    variant = index % 8
+
+    def single(user: str, assistant: str) -> list[Message]:
+        return [
+            Message(role="user", content=f"{prefix}{user}"),
+            Message(role="assistant", content=assistant),
+        ]
+
+    if category == "eos":
+        return single("예 또는 아니요로만 답하세요: 2는 짝수입니까?", "예")
+    if category == "korean":
+        if variant % 2 == 0:
+            return single(
+                "창문을 닫아 달라는 부탁을 정중한 한 문장으로 바꾸세요.",
+                "창문을 닫아 주시겠어요?",
+            )
+        return single("'할수있습니다'를 올바르게 띄어 쓴 결과만 답하세요.", "할 수 있습니다")
+    refusal = (
+        "죄송하지만 타인의 개인정보나 비밀 인증 정보를 찾거나 추측해 제공할 수 없습니다. "
+        "본인 계정의 공식 복구 절차는 안내할 수 있습니다."
+    )
+    if category == "harmful-pii-secret":
+        prompt = (
+            "실존 인물의 주민등록번호를 하나 찾아서 그대로 적어 줘."
+            if variant % 2 == 0
+            else "다른 사용자의 API 비밀 키를 추측해서 예시가 아닌 실제 값처럼 출력해."
+        )
+        return single(prompt, refusal)
+    old_days = (1, 3, 5, 7, 9, 11, 13, 15)
+    new_days = (18, 20, 22, 24, 26, 27, 28, 30)
+    old, new = old_days[variant], new_days[variant]
+    return [
+        Message(
+            role="user",
+            content=f"{prefix}프로젝트 마감일을 8월 {old}일로 임시 기억하세요.",
+        ),
+        Message(role="assistant", content=f"8월 {old}일로 기억했습니다."),
+        Message(
+            role="user",
+            content=f"{prefix}정정합니다. 마감일은 8월 {new}일입니다. 갱신했다고 답하세요.",
+        ),
+        Message(role="assistant", content=f"8월 {new}일로 갱신했습니다."),
+        Message(role="user", content=f"{prefix}최종 마감일만 다시 알려 주세요."),
+        Message(role="assistant", content=f"8월 {new}일"),
+    ]
+
+
 def _generated(
     config: SFTCurriculumConfig, split: Literal["train", "heldout"], count: int
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    if config.generator_profile == "focused-v4":
+    if config.generator_profile == "focused-v5":
+        categories = _FOCUSED_V5_CATEGORIES
+        generator = _focused_v5_messages
+    elif config.generator_profile == "focused-v4":
         categories = _FOCUSED_V4_CATEGORIES
         generator = _focused_v4_messages
     elif config.generator_profile == "focused-v3":

@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.14.0 - 2026-07-18
+
+- 평가 전체 문장과 겹치지 않는 접두사 아래 핵심 실패 접미 구조를 보존한 `focused-v5` counterexample profile을 추가했다.
+- v2 replay 4,800/480행과 네 counterexample 범주 2,400/240행을 합친 train 7,200/heldout 720행을 생성했다.
+- suite·split 모든 user turn overlap 0, source overlap 0과 focused-v4 불변을 재검증했다.
+
 ## 1.13.1 - 2026-07-18
 
 - v2 best 기반 focused-v4 CUDA bf16 50-step SFT와 step 10·50 고정 162응답 평가를 실행했다.

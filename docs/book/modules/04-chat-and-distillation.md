@@ -41,7 +41,7 @@
 - 책임: 품질 실패 범주를 보정하는 결정적 합성 데이터와 기존 데이터 replay를 만든다.
 - 구현 순서: suite의 모든 user turn hash 수집 → 범주별 후보 생성 → split/source 분리 → replay 선택 → target-token 질량 계산 → 원자 publish 순서다.
 - 실패 사례: 고정 suite 문장 복제, split/user/source overlap, assistant EOS 누락, 민감 출력과 기존 profile fingerprint 변화는 실패다.
-- 검증: `uv run pytest -q tests/test_sft_curriculum.py`와 `sft curriculum-preflight/prepare/validate`를 실행한다. focused-v3 실습에서는 7개 잔여 범주를 만들고, focused-v4에서는 v2 성공 범주 replay와 네 일반화 범주를 결합한다. 두 실습 모두 suite·split 모든 user turn overlap 0, source overlap 0, 이전 profile 불변을 확인한다.
+- 검증: `uv run pytest -q tests/test_sft_curriculum.py`와 `sft curriculum-preflight/prepare/validate`를 실행한다. focused-v3은 잔여 범주, focused-v4는 성공 범주 replay, focused-v5는 비누출 접미 counterexample을 실습한다. 모두 suite·split 모든 user turn overlap 0, source overlap 0, 이전 profile 불변을 확인한다.
 - 완료 산출물: 범주·target-token 비중과 suite overlap 0을 증명하는 curriculum manifest다.
 
 ### `src/llmex/chat/runtime.py`

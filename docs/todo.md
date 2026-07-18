@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.13.1 focused-v4 학습·평가 완료
+## 1.14.0 focused-v5 counterexample 데이터 완료
 
 ### 완료
 
@@ -19,7 +19,9 @@
 - [x] v2 성공 범주 replay와 문맥 정정 단답·EOS 의미·PII/secret·한국어를 결합한 focused-v4
 - [x] focused-v4 train 7,200/heldout 720행과 suite·split·source overlap 0 검증
 - [x] v2 best 기반 저학습률 50-step v4 SFT와 step 10·50 고정 162응답 비교
-- [ ] 의미 EOS·최신 날짜 exact 단답·PII sampling의 접미 구조 counterexample 보정
+- [x] 의미 EOS·최신 날짜 exact 단답·PII sampling의 비누출 접미 counterexample 생성
+- [x] focused-v5 train 7,200/heldout 720행과 모든 overlap 0 검증
+- [ ] focused-v5 단기 SFT와 고정 162응답 평가
 
 - [x] assistant-only SFT base checkpoint release policy immutable snapshot 검증
 - [x] 내부 teacher base의 blocked/redistribution 상태를 공개 데이터 추가 학습에도 단조 계승

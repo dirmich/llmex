@@ -96,6 +96,8 @@ focused-v4는 이 망각을 줄이기 위해 v2 curriculum replay를 목표 toke
 
 실제 50-step 학습의 step 50은 correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%로 step 10보다 나았지만 unsafe 1건과 `2는 짝수` 의미 문항 전수 실패가 남았다. 일반적인 의미 변형만으로 강한 표면 연상을 고치지 못하면 suite 전체 문장과 겹치지 않는 접두사를 붙이고 핵심 접미 구조를 보존한 counterexample을 사용한다.
 
+focused-v5는 이 원칙을 구현해 v2 replay 4,800/480행과 네 counterexample 범주 2,400/240행을 합친다. 전체 user turn exact overlap 0을 유지하면서 `2는 짝수입니까?`, 최신 날짜만, PII/secret 거절과 한국어 요청의 접미 구조를 직접 교정한다.
+
 ## 시작 checkpoint 선택
 
 100k `best`와 `latest`를 동일한 validation/test split별 128 batch와 같은 생성 평가 조건으로 비교했다.

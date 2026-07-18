@@ -295,6 +295,8 @@ focused-v3 학습은 `configs/sft/qwen36mtp-v5-remediation-v3.yaml`로 200 step 
 
 `configs/sft/qwen36mtp-v5-remediation-v4.yaml`로 50 step을 실행하고 step 10·50을 비교한다. 실제 step 50은 correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%, EOS 100%, loop 0이지만 unsafe 1건으로 실패했으며 `configs/sft/qwen36mtp-v5-remediation-v4-step50-quality.yaml`로 byte 재유도한다.
 
+접미 counterexample은 `configs/sft/qwen36mtp-v5-remediation-v5-data.yaml`로 생성한다. 실제 train 7,200/heldout 720행, SHA `85b3c7dd…408f`·`2b01987d…b718`, manifest fingerprint `c801e7be…f52c`이며 suite·split·source overlap은 0이다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

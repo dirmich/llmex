@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.14.0 접미 counterexample focused-v5 curriculum
+
+- v4가 일반 의미 변형에도 `2는 짝수입니까?`를 계속 `아니요`로 답한 실측에 따라, suite 전체 user turn과는 다른 접두사를 붙이되 핵심 접미 구조를 보존한 counterexample을 구현했다. 같은 방식으로 최신 마감일 exact 단답, PII/secret 거절과 한국어 정중 표현·띄어쓰기를 강화한다.
+- `configs/sft/qwen36mtp-v5-remediation-v5-data.yaml`은 v2 replay 4,800/480행과 생성 2,400/240행을 합쳐 train 7,200/heldout 720행을 게시했다. SHA는 `85b3c7dd…408f`·`2b01987d…b718`, manifest fingerprint는 `c801e7be…f52c`다.
+- suite·split 모든 user turn overlap과 source overlap은 0이며 replay 목표 token은 100,214개로 전체의 약 67.9%다. focused-v4 bytes 불변과 원자 재유도를 통과했다.
+
 ## 2026-07-18 · 1.13.1 focused-v4 단기 학습과 품질 비교
 
 - `configs/sft/qwen36mtp-v5-remediation-v4.yaml`은 v2 best에서 CUDA bf16, effective batch 64, 1e-6→1e-7, 50 step을 실행했다. step-0 loss/PPL 1.438882/4.21598에서 step 50 validation loss/PPL 0.465658/1.59307로 개선됐고 final SHA는 `2b2fef04…c397`다.
