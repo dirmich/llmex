@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.23 Qwen v4 표본 감사와 조사 계약 보강
+
+- Qwen multilingual natural-v4 수집을 2,000/2,000까지 완료했다: accepted 1,036, rejected 964, pending 0, skipped 0.
+- 독립 50건 표본 감사에서 `에이브리로 건넬`처럼 한국어 수령인 조사가 잘못된 응답을 확인하여 export/validate를 차단했다. 해당 run은 승인 데이터나 학습 mix에 포함하지 않는다.
+- `natural-v5` 품질 계약에 영어·일본어 원문의 한국어 수령인 이름에 `에게/께`가 붙어야 한다는 조건과 회귀 테스트를 추가했다.
+- 버전 1.22.23으로 올리고 한국어 문서와 이력을 갱신했다. Hugging Face 공개·비공개 업로드는 수행하지 않았다.
+
 ## 2026-07-18 · 1.22.22 natural-v5 번역 계약 보강
 
 - 기존 natural-v3/v4 bytes와 고정 SHA를 바꾸지 않고 `natural-v5` profile을 추가했다. 모든 prompt에 언어별 의미 보존·직접 관련성 지시를 추가해 teacher별 6,000개, 전체 12,000개가 고유하고 과거 source prompt와 겹치지 않게 했다.

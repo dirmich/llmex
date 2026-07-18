@@ -358,6 +358,27 @@ def _detected_groups(
     return [list(targets) for source, targets in mapping.items() if present(source)]
 
 
+def _recipient_particle_groups(task: str, prompt: str) -> list[list[str]]:
+    """번역 대상이 한국어일 때 수령인에게 붙는 조사를 검증한다.
+
+    ``에게``/``께`` 없이 ``로``처럼 장소·방향 조사를 붙인 응답은
+    의미 보존 실패이므로, 이름 자체가 아닌 이름+수령인 조사를 계약에
+    포함한다.  원문 이름의 변형(한글 음역/라틴 표기)은 모두 허용한다.
+    """
+    if task == "en-ko":
+        match = re.search(r"\bgive them to\s+([A-Za-z-]+)", prompt, re.IGNORECASE)
+    elif task == "ja-ko":
+        match = re.search(r"([葵蓮陽菜湊結衣悠真凛蒼])に渡します", prompt)
+    else:
+        return []
+    if match is None:
+        return []
+    source = match.group(1)
+    aliases = _ENTITY_MAPS[task].get(source, ())
+    # 한 원문 이름의 표기 변형은 하나의 대안 그룹이어야 한다.
+    return [[form for alias in aliases for form in (f"{alias}에게", f"{alias}께")]]
+
+
 def response_quality_contract(
     task: str,
     prompt: str,
@@ -400,6 +421,11 @@ def response_quality_contract(
             for source, targets in term_maps.items()
         }
     strict_detection = translation_contract == "natural-v5"
+    required_terms = [
+        *_detected_groups(prompt, _TERM_MAPS[task], strict_ascii_boundaries=strict_detection),
+        *_detected_groups(prompt, term_maps, strict_ascii_boundaries=strict_detection),
+        *_recipient_particle_groups(task, prompt),
+    ]
     return ResponseQualityContract(
         mode="translation-only",
         target_language=target,
@@ -408,10 +434,7 @@ def response_quality_contract(
         required_entities=_detected_groups(
             prompt, _ENTITY_MAPS[task], strict_ascii_boundaries=strict_detection
         ),
-        required_terms=[
-            *_detected_groups(prompt, _TERM_MAPS[task], strict_ascii_boundaries=strict_detection),
-            *_detected_groups(prompt, term_maps, strict_ascii_boundaries=strict_detection),
-        ],
+        required_terms=required_terms,
     )
 
 

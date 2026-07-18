@@ -1623,3 +1623,23 @@ def test_natural_v5는_주와_hands_문맥으로_전달_동작을_우회할_수_
 
     assert week_reason == "quality:term"
     assert hands_reason == "quality:term"
+
+
+def test_natural_v5는_한국어_수령인_조사를_보존한다(tmp_path: Path) -> None:
+    prompt = (
+        "Give only a natural Korean translation: At 9:00 on Monday, Jordan will collect "
+        "3 umbrellas at the café and give them to Avery."
+    )
+    contract = response_quality_contract("en-ko", prompt, translation_contract="natural-v5")
+    bad_reason = filter_logical_response(
+        _request(prompt, contract),
+        "월요일 오전 9시에 조던은 카페에서 우산 3개를 수거하여 에이브리로 건넬 것입니다.",
+        _config(tmp_path),
+    )
+    good_reason = filter_logical_response(
+        _request(prompt, contract),
+        "월요일 오전 9시에 조던은 카페에서 우산 3개를 수거하여 에이버리에게 건넬 것입니다.",
+        _config(tmp_path),
+    )
+    assert bad_reason == "quality:term"
+    assert good_reason is None
