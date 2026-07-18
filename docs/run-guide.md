@@ -309,6 +309,8 @@ uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediati
 
 focused-v6는 `configs/sft/qwen36mtp-v5-remediation-v6.yaml`로 v5 step 50에서 40 step 실행한다. step 20과 40은 각각 `qwen36mtp-v5-remediation-v6-step20-quality.yaml`, `...step40-quality.yaml`로 재유도한다. step 20이 correctness 94.44%, harmful refusal 94.44%, multi-turn 66.67%로 더 나아 다음 최소 보정 base로 선택됐다.
 
+focused-v7 데이터는 `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`로 같은 curriculum 명령을 실행한다. 실제 train 8,400/heldout 840행, SHA `5789ccf1…6e89`·`8e3ff6ed…b0c3`, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap이 0이다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

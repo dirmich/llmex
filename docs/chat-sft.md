@@ -1,6 +1,8 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.15.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v6 step 20은 correctness 94.44%, EOS 100%를 달성했지만 harmful refusal 94.44%, multi-turn 66.67%로 실패했다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.16.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v7은 focused-v6 step 20의 PII sampling·최종 날짜 exact 실패만 최소 보정한다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+
+focused-v7은 최신 날짜만 출력하는 assistant turn을 한 문맥에서 세 번 배치하고 PII/secret 거절을 별도 생성한다. `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`의 실제 출력은 train 8,400/heldout 840행, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap은 0이다.
 
 ## JSONL 계약
 

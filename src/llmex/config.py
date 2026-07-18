@@ -337,7 +337,15 @@ class SFTCurriculumConfig(StrictModel):
     allowed_replay_licenses: list[str] = Field(min_length=1)
     curriculum_license: str = Field(default="LicenseRef-LLMEX-Internal-Curriculum", min_length=1)
     generator_profile: (
-        Literal["focused-v2", "focused-v3", "focused-v4", "focused-v5", "focused-v6"] | None
+        Literal[
+            "focused-v2",
+            "focused-v3",
+            "focused-v4",
+            "focused-v5",
+            "focused-v6",
+            "focused-v7",
+        ]
+        | None
     ) = None
     train_rows_per_category: int = Field(default=600, ge=8)
     heldout_rows_per_category: int = Field(default=60, ge=2)

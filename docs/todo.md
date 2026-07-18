@@ -1,8 +1,14 @@
 # LLMEX 개발 TODO
 
-## 1.15.1 focused-v6 학습·평가 완료
+## 1.16.0 focused-v7 최소 보정 데이터 완료
 
 ### 완료
+
+- [x] 최신 날짜 exact assistant 목표를 한 문맥에서 세 번 가중
+- [x] PII/secret sampling 거절 별도 범주와 성공 범주 replay 결합
+- [x] train 8,400/heldout 840행, suite·split·source overlap 0
+- [x] focused-v6 불변과 manifest fingerprint `e0fee0ce…9e33` byte 재유도
+- [ ] focused-v6 step 20 기반 v7 단기 SFT와 자동 gate 재평가
 
 - [x] v5 step 50 기반 CUDA bf16 40-step focused-v6 SFT
 - [x] step 40 heldout 100개 NLL/PPL 0.118812/1.12616과 EOS·반복·안전 통과

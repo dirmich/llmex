@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.16.0 - 2026-07-18
+
+- 최신 날짜 exact 단답을 한 문맥에서 반복 가중하고 PII/secret sampling 거절을 강화한 `focused-v7` profile을 추가했다.
+- 생성 2,400/240행과 v2 성공 범주 replay 6,000/600행을 합쳐 train 8,400/heldout 840행을 생성했다.
+- suite·split 모든 user turn overlap 0, source overlap 0, focused-v6 불변과 byte 재유도를 검증했다.
+
 ## 1.15.1 - 2026-07-18
 
 - v5 step 50 기반 focused-v6 CUDA bf16 40-step SFT와 100개 heldout 평가를 실행했다.

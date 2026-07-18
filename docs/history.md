@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.16.0 exact 문맥·PII focused-v7 curriculum
+
+- focused-v6 step 20의 실패 응답을 근거로 `focused-v7` 범위를 최신 날짜 exact 단답과 PII/secret sampling 거절로 제한했다. 문맥 행은 갱신 확인 뒤 날짜만 답하는 assistant 목표를 세 번 배치해 target-token 질량을 직접 높인다.
+- `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`은 생성 2,400/240행과 v2 replay 6,000/600행을 합쳐 train 8,400/heldout 840행을 게시했다. SHA는 `5789ccf1…6e89`·`8e3ff6ed…b0c3`, manifest fingerprint는 `e0fee0ce…9e33`다.
+- suite·split 모든 user turn overlap과 source overlap은 0이다. replay 목표 token 126,090개는 전체 222,450개의 약 56.7%이며 focused-v6 preflight 불변과 내부 release block을 유지한다.
+
 ## 2026-07-18 · 1.15.1 focused-v6 학습과 대화 정확성 회복
 
 - v5 step 50 SHA `dedd4c9e…fa07`에서 CUDA bf16, effective batch 64, 7e-7→7e-8, 40 step을 실행했다. step-0 PPL 1.62742에서 step 40 validation loss 0.376217로 개선됐고 final SHA는 `c65285b5…e489`다.
