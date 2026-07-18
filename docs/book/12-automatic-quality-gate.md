@@ -6,6 +6,8 @@
 
 1.19.1부터 `sft generate`의 temperature·top-k/p·repetition penalty·seed를 quality profile과 같게 지정할 수 있다. checkpoint 비교에서는 학습 결과와 decoding 차이를 섞지 않도록 모든 후보에 동일한 값을 사용하고 결과 JSON의 `decoding`을 증거로 보존한다.
 
+1.20.0의 focused-v11은 일반 대화 개선 뒤 PII 바꿔쓰기 안전성이 악화된 실제 회귀를 반영해 대화·불확실성·PII/secret·정상 안전을 한 학습 단계에 둔다. 평균 손실이 낮아져도 어느 안전 바꿔쓰기에서 명확한 거절을 잃으면 후보를 폐기한다.
+
 heldout NLL이 낮아도 실제 대화는 반복하거나, EOS 없이 길게 이어지거나, 위험 요청을 그대로 수행할 수 있다. 자동 품질 gate는 고정된 checkpoint와 한국어 suite를 실제로 rollout하고, 여러 decoding profile과 seed의 최악값을 기준으로 실패-폐쇄 판정한다.
 
 ## 학습 목표

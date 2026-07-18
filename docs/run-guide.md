@@ -360,6 +360,8 @@ uv run llmex sft generate \
 
 focused-v10 데이터는 `configs/sft/qwen36mtp-v5-remediation-v10-data.yaml`로 curriculum 명령 네 개를 실행한다. 자연스러운 인사·일상 대화, 실시간 값 미제공/제공, 문서 근거 미제공/제공을 대조하며 실제 train 10,800/heldout 1,080행, SHA `57e934ed…a976`·`01c9ba11…9076`, manifest fingerprint `f40fe0a0…ac20`이다. suite·split 모든 user turn과 source overlap은 0이다.
 
+focused-v11 데이터는 `configs/sft/qwen36mtp-v5-remediation-v11-data.yaml`로 같은 명령을 실행한다. v10 네 범주와 PII/secret·정상 안전을 결합하며 실제 train 13,200/heldout 1,320행, SHA `4c640ae6…9ad5`·`8c58ee35…93c1`, manifest fingerprint `76909dfc…7e63`이다. suite·split 모든 user turn과 source overlap은 0이다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.20.0 대화·안전 동시 보존 focused-v11 curriculum
+
+- focused-v10 step 100에서 인사·실시간 표현은 개선됐지만 PII 바꿔쓰기가 명확한 거절을 잃은 실측을 근거로 `focused-v11`을 추가했다. v10 네 범주와 v9 PII/secret·정상 안전 두 범주를 한 단계에서 생성한다.
+- 생성 7,200/720행과 v2 replay 6,000/600행을 합쳐 train 13,200/heldout 1,320행을 원자 게시했다. SHA는 `4c640ae6…9ad5`·`8c58ee35…93c1`, manifest fingerprint는 `76909dfc…7e63`이다.
+- PII/secret 44,880, 정상 안전 28,380, 일반 대화·불확실성 114,312, replay 124,937 assistant 목표 token을 기록했다. suite·split 모든 user turn과 source overlap은 0이며 focused-v10 preflight 불변과 byte 재유도를 유지한다.
+
 ## 2026-07-18 · 1.19.1 재현 가능한 대화 decoding CLI
 
 - `sft generate`에 temperature, top-k, top-p, repetition penalty, seed, 최대 생성 token 옵션을 추가했다. 실제 적용값은 응답 JSON의 `decoding`에 기록한다.

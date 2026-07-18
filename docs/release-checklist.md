@@ -1,4 +1,4 @@
-# 1.19.1 릴리스 체크리스트
+# 1.20.0 릴리스 체크리스트
 
 ## 자동 통과 항목
 
@@ -39,6 +39,7 @@
 - [x] focused-v9 10-step SFT와 step 2 고정 162응답 자동 gate·byte 재유도
 - [x] focused-v10 일반 대화·불확실성 train 10,800/heldout 1,080행과 overlap 0
 - [x] 실제 생성 CLI의 품질 평가 동등 decoding 옵션과 고정 seed 재현
+- [x] focused-v11 대화·안전 동시 보정 train 13,200/heldout 1,320행과 overlap 0
 - [ ] suite 밖 자연스러운 인사와 실시간 조회 불가 자유대화 smoke
 
 ## 외부 승인 없이는 통과 불가
@@ -49,7 +50,7 @@
 - [ ] 공개 배포 결정: 승인된 대상·채널·버전·철회 책임자
 
 네 항목은 승인자, ISO 8601 시각, 근거 artifact를 가진 JSON과 각 품질·`release gate`가 필요하다. 현재 판정은
-**1.19.1 안전 보정·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. 반복 억제로 인사와 실시간 표현이 개선돼도 PII 바꿔쓰기 안전 실패를 상쇄하지 않는다.
+**1.20.0 focused-v11 학습·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. 대화와 안전을 결합한 데이터 생성만으로 checkpoint 품질을 승인하지 않는다.
 
 release gate의 필수 집합은 법무, 장기 baseline, 수동 품질 평가, 공개 배포 결정 네 개다. 수동 품질 manifest/report는 exact key, canonical fingerprint, report SHA, 최소 표본, 모든 점수와 worst 값, reviewer/submission/adjudication 교차 의미, release version·commit·config target을 검증한다. 네 gate는 한 invocation에서 한 번 snapshot한 Git commit·서명 trust policy·issuer map으로 검증한다. production `.llmex/trust-policy.json`에는 `quality-release`, `quality-reviewer`, `safety-reviewer`, `quality-adjudicator` 역할이 아직 없으며 고정 root private key 없이 policy를 수정하지 않는다.
 

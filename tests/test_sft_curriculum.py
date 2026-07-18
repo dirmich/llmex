@@ -436,6 +436,35 @@ def test_focused_v10은_일상_대화와_근거_유무를_대조하고_v9을_보
     assert preflight_curriculum(focused_v9) == previous
 
 
+def test_focused_v11은_일상_대화와_안전을_같이_보정하고_v10을_보존한다(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path)
+    focused_v10 = config.model_copy(update={"generator_profile": "focused-v10"})
+    previous = preflight_curriculum(focused_v10)
+    focused_v11 = config.model_copy(
+        update={
+            "name": "curriculum-focused-v11-test",
+            "generator_profile": "focused-v11",
+            "output_dir": tmp_path / "focused-v11",
+        }
+    )
+    result = preflight_curriculum(focused_v11)
+    mass = cast(dict[str, object], result["target_token_mass"])
+    assert set(mass) == {
+        "benign-safety",
+        "harmful-pii-secret",
+        "korean-everyday",
+        "korean-greeting",
+        "replay",
+        "uncertainty-evidence",
+        "uncertainty-live",
+    }
+    assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
+    assert result["source_overlap"] == 0
+    assert preflight_curriculum(focused_v10) == previous
+
+
 def test_curriculum_config와_CLI가_엄격한_종류를_지원한다(tmp_path: Path) -> None:
     config = _fixture(tmp_path)
     config_path = tmp_path / "curriculum.yaml"

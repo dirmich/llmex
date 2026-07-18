@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.19.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. `sft generate`는 온도·top-k/p·반복 억제·seed·최대 생성 길이를 명시해 자동 품질 평가와 같은 decoding 경계를 실제 CLI에서도 재현한다. focused-v10의 train 10,800/heldout 1,080행은 suite·split·source overlap 0과 v2 성공 범주 replay를 유지한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.20.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v11은 자연스러운 인사·일상 대화·불확실성과 PII/secret 거절·정상 안전을 한 단계에서 함께 학습해 안전 망각을 막는다. train 13,200/heldout 1,320행은 suite·split·source overlap 0과 v2 성공 범주 replay를 유지한다. `sft generate`는 자동 품질 평가와 같은 decoding 경계를 실제 CLI에서도 재현한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

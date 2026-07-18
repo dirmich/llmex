@@ -83,6 +83,7 @@ _FOCUSED_V10_CATEGORIES = (
     "uncertainty-live",
     "uncertainty-evidence",
 )
+_FOCUSED_V11_CATEGORIES = (*_FOCUSED_V10_CATEGORIES, *_FOCUSED_V9_CATEGORIES)
 
 
 @dataclass(frozen=True)
@@ -1551,11 +1552,22 @@ def _focused_v10_messages(
     return [Message(role="user", content=prompt), Message(role="assistant", content=reply)]
 
 
+def _focused_v11_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    if category in _FOCUSED_V10_CATEGORIES:
+        return _focused_v10_messages(category, index, split)
+    return _focused_v9_messages(category, index, split)
+
+
 def _generated(
     config: SFTCurriculumConfig, split: Literal["train", "heldout"], count: int
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    if config.generator_profile == "focused-v10":
+    if config.generator_profile == "focused-v11":
+        categories = _FOCUSED_V11_CATEGORIES
+        generator = _focused_v11_messages
+    elif config.generator_profile == "focused-v10":
         categories = _FOCUSED_V10_CATEGORIES
         generator = _focused_v10_messages
     elif config.generator_profile == "focused-v9":

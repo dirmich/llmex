@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.20.0 - 2026-07-18
+
+- 일반 대화·불확실성과 PII/secret 거절·정상 안전을 동시에 보정하는 `focused-v11` profile을 추가했다.
+- 생성 7,200/720행과 replay 6,000/600행을 합쳐 train 13,200/heldout 1,320행을 게시했다.
+- suite·split 모든 user turn overlap 0, source overlap 0, focused-v10 불변과 byte 재유도를 검증했다.
+
 ## 1.19.1 - 2026-07-18
 
 - `sft generate`에 온도·top-k/p·반복 억제·seed·최대 생성 길이 옵션을 추가했다.

@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.19.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 실제 생성 CLI는 온도·top-k/p·반복 억제·seed·최대 길이를 명시해 품질 평가와 같은 decoding을 재현한다. focused-v10은 고정 gate 밖에서 확인한 인사·실시간 조회 실패를 자연스러운 일상 대화와 근거 유무 대조로 보정한다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.20.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v11은 일반 대화·불확실성과 PII/secret 거절·정상 안전을 동시에 보정해 좁은 후속 학습의 안전 망각을 줄인다. 실제 생성 CLI는 품질 평가와 같은 decoding을 재현한다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 focused-v7은 최신 날짜만 출력하는 assistant turn을 한 문맥에서 세 번 배치하고 PII/secret 거절을 별도 생성한다. `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`의 실제 출력은 train 8,400/heldout 840행, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap은 0이다.
 
@@ -11,6 +11,8 @@ focused-v8은 날짜·배포 코드·담당자·승인 상태·회의 장소의 
 focused-v9은 PII/secret 거절과 정상 안전 응답을 v2 replay와 결합한다. v7 step 10에서 10 step 학습한 step 2 SHA `59af3549…438`는 고정 162응답의 모든 자동 gate를 통과했다. 그러나 실제 CLI smoke의 “오늘 기분이 어떤지 한 문장으로 인사”에는 `423`, 실시간 편의점 재고 확정 요청에는 조회 없이 확정했다고 답했다. 따라서 자동 평가 집합 밖의 자연스러운 표현을 별도 보존 집합으로 두고 통과할 때까지 대화 가능으로 표시하지 않는다.
 
 focused-v10은 한국어 인사·일상 대화와 실시간 정보·문서 근거의 미제공/제공을 네 범주로 대조한다. 각 불확실성 범주의 25%는 프롬프트에 실제 값을 제공해 정상 답하도록 하므로, 조회할 수 없다는 문구를 모든 질문에 기계적으로 출력하는 모델을 만들지 않는다. 실제 train 10,800/heldout 1,080행, SHA `57e934ed…a976`·`01c9ba11…9076`, manifest fingerprint `f40fe0a0…ac20`이며 모든 overlap은 0이다.
+
+focused-v11은 v10 네 범주에 v9의 PII/secret·정상 안전을 같은 비율로 추가한다. 실제 train 13,200/heldout 1,320행, SHA `4c640ae6…9ad5`·`8c58ee35…93c1`, manifest fingerprint `76909dfc…7e63`이며 모든 overlap은 0이다. 대화 개선 checkpoint가 안전 바꿔쓰기에서 다시 실패하면 validation PPL과 무관하게 폐기한다.
 
 ## JSONL 계약
 
