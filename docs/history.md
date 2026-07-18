@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.13.0 보존 replay 기반 focused-v4 curriculum
+
+- v3의 catastrophic forgetting을 근거로 `focused-v4`를 추가했다. v2 curriculum에서 hash 선택한 성공 범주 replay 3,600/360행과 문맥 최신값 단답, `2`의 짝수·홀수 의미, PII/secret 거절, 한국어 정중 표현·띄어쓰기 생성 3,600/360행을 1:1로 결합한다.
+- `configs/sft/qwen36mtp-v5-remediation-v4-data.yaml`의 실제 출력은 train 7,200/heldout 720행, SHA `74e12903…3463`·`447f98da…182f`, manifest fingerprint `2eddb72d…0b22`다. suite·split 모든 user turn overlap과 source overlap은 0이다.
+- replay assistant 목표 token은 75,910개로 전체 142,002개 중 약 53.5%이며 새 curriculum license를 이전 replay license와 분리했다. focused-v3 preflight 불변 회귀와 원자 게시 byte 재유도도 통과했다.
+
 ## 2026-07-18 · 1.12.1 focused-v3 실제 학습과 checkpoint 품질 비교
 
 - `configs/sft/qwen36mtp-v5-remediation-v3.yaml`은 v2 best SHA `892779…12a5`에서 CUDA bf16, effective batch 64, 3e-6→3e-7, 200 step을 실행했다. step-0 loss/PPL 2.188255/8.91963에서 step 200 validation loss/PPL 0.825744/2.28358로 개선됐고 best/latest/final SHA는 `730dfd07…abb9`다.

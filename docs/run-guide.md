@@ -291,6 +291,8 @@ uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediati
 
 focused-v3 학습은 `configs/sft/qwen36mtp-v5-remediation-v3.yaml`로 200 step 실행한다. validation-best step 200만 승인하지 말고 `configs/sft/qwen36mtp-v5-remediation-v3-step25-quality.yaml`처럼 보존된 중간 checkpoint도 동일 162응답으로 평가한다. 실제 step 25가 correctness 87.65%로 step 200의 82.72%보다 높았지만 EOS 99.38%, harmful refusal 91.67%, multi-turn 50%여서 둘 다 실패했다. PPL best와 품질 best가 다를 수 있으므로 자동 gate가 통과한 checkpoint만 수동 검토 후보로 올린다.
 
+망각 보정 데이터는 `configs/sft/qwen36mtp-v5-remediation-v4-data.yaml`로 같은 curriculum 명령 네 개를 실행한다. 실제 train 7,200/heldout 720행, SHA `74e12903…3463`·`447f98da…182f`, manifest fingerprint `2eddb72d…0b22`다. v2 성공 범주 replay와 네 일반화 범주를 행 기준 1:1로 섞고 모든 overlap 0을 검증한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

@@ -217,6 +217,32 @@ def test_focused_v3는_잔여_실패만_분리하고_이전_profile을_바꾸지
     assert preflight_curriculum(focused_v2) == previous
 
 
+def test_focused_v4는_보존_replay와_네_가지_일반화_범주만_사용한다(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path)
+    focused_v3 = config.model_copy(update={"generator_profile": "focused-v3"})
+    previous = preflight_curriculum(focused_v3)
+    focused_v4 = config.model_copy(
+        update={
+            "name": "curriculum-focused-v4-test",
+            "generator_profile": "focused-v4",
+            "output_dir": tmp_path / "focused-v4",
+        }
+    )
+    result = preflight_curriculum(focused_v4)
+    mass = cast(dict[str, object], result["target_token_mass"])
+    assert set(mass) == {
+        "context",
+        "eos",
+        "harmful-pii-secret",
+        "korean",
+        "replay",
+    }
+    assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
+    assert preflight_curriculum(focused_v3) == previous
+
+
 def test_curriculum_config와_CLI가_엄격한_종류를_지원한다(tmp_path: Path) -> None:
     config = _fixture(tmp_path)
     config_path = tmp_path / "curriculum.yaml"

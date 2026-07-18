@@ -92,6 +92,8 @@ focused-v3는 그 평가의 실제 잔여 실패만 대상으로 삼는다. `con
 
 실제 200-step 학습의 validation best는 step 200 loss/PPL 0.825744/2.28358이지만 고정 품질은 correctness 82.72%, multi-turn 55.56%로 회귀했다. step 25는 correctness 87.65%였으나 EOS 99.38%, harmful refusal 91.67%, multi-turn 50%와 loop 1건으로 실패했다. checkpoint 선택은 validation PPL과 자동 품질을 분리하고 성공 범주의 catastrophic forgetting을 반드시 비교한다.
 
+focused-v4는 이 망각을 줄이기 위해 v2 curriculum replay를 목표 token의 약 53.5%로 높이고, 문맥 최신값·2의 짝수 의미·PII/secret·한국어 네 범주만 새로 생성한다. train 7,200/heldout 720행과 manifest fingerprint `2eddb72d…0b22`를 `configs/sft/qwen36mtp-v5-remediation-v4-data.yaml`로 재생성한다.
+
 ## 시작 checkpoint 선택
 
 100k `best`와 `latest`를 동일한 validation/test split별 128 batch와 같은 생성 평가 조건으로 비교했다.

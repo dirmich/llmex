@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.12.1. focused-v3를 v2 best에서 CUDA bf16 200 step 학습하고 step 25·200을 고정 162응답으로 재유도했다. step 25가 correctness 87.65%로 더 좋았지만 EOS 99.38%, harmful refusal 91.67%, multi-turn 50%라 필수 gate가 실패했다. validation PPL만으로 품질 checkpoint를 선택하지 않으며 성공 범주 보존과 문맥·EOS 일반화를 다음 보정 대상으로 유지한다. 내부 teacher checkpoint를 base로 한 모든 후속 SFT는 원 release block을 계승한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.13.0. focused-v4는 v2 성공 범주 3,600/360행 replay와 문맥·EOS 의미·PII/secret·한국어 3,600/360행을 결합해 train 7,200/heldout 720행을 만들었다. suite·split 모든 user turn 및 source overlap은 0이고 replay 목표 token은 전체의 약 53.5%다. 아직 v4 학습 전이므로 대화 가능 모델로 판정하지 않는다. 내부 teacher checkpoint를 base로 한 모든 후속 SFT는 원 release block을 계승한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.

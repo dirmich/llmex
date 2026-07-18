@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.13.0 - 2026-07-18
+
+- v2 성공 범주 replay와 문맥·EOS 의미·PII/secret·한국어 네 범주를 결합한 `focused-v4` profile을 추가했다.
+- train 7,200/heldout 720행을 생성하고 suite·split 모든 user turn overlap 0, source overlap 0과 이전 profile 불변을 검증했다.
+- `2`의 짝수·홀수 의미를 분리하고 최신 문맥 값만 출력하는 자연어 변형으로 평가 문장 복제 없이 일반화를 보강했다.
+
 ## 1.12.1 - 2026-07-18
 
 - v2 best 기반 focused-v3 CUDA bf16 200-step SFT와 100개 heldout 생성을 실제 실행했다.
