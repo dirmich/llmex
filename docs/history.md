@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.0 macmini Gemma 4 대화 증류 완료
+
+- `http://macmini:11434/v1`의 `gemma4-26b-a4b-uncensored-hauhaucs-balanced`를 명시적 내부망 allowlist와 강한 한국어 system prompt로 호출해 2,200건을 3,085.164초에 처리했다.
+- accepted 2,145, rejected 55, pending 0이다. 거부 사유는 length 47, `unsafe:personal-id` 6, `finish_reason_not_stop` 2건이며 실패나 미완료 요청은 없다.
+- canonical 응답 중복 489개를 제거한 export는 train 1,160·heldout 496행이다. train SHA `489d335e…18af`, heldout SHA `3767797e…c0aa`, manifest SHA `824329dd…d601`이며 prompt·upstream source overlap 0과 release blocked를 현재 spool에서 재유도 검증했다.
+- 표본은 자연스러운 인사·일상 대화, 실시간/문서 근거 부재의 한계 고지, 안전 거절을 포함한다. 일부 장황하거나 메타적인 답변이 있어 단독 teacher로 승인하지 않고 Qwen/public replay·통합 282응답 gate와 함께 학습·선별한다.
+
 ## 2026-07-18 · 1.21.4 품질·대화 준비도 통합 suite
 
 - 기존 정확도·안전 `ko-chat-quality-v1` 24 scenario·27 turn과 자연 대화 `ko-conversation-readiness-v1` 18 scenario·20 turn을 byte 그대로 이어 붙인 통합 suite를 추가했다.

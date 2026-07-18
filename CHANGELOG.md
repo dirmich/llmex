@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.0 - 2026-07-18
+
+- `http://macmini:11434/v1` Gemma 4 teacher의 2,200건 수집 설정을 추가하고 accepted 2,145/rejected 55로 완료했다.
+- 중복 응답 489개를 제거한 train 1,160·heldout 496행 export를 만들고 prompt·source overlap 0과 byte 재유도 검증을 통과했다.
+- endpoint·model·필터·수집 시간·거부 사유·출력 SHA와 내부 전용 release 경계를 한국어 문서에 기록했다.
+
 ## 1.21.4 - 2026-07-18
 
 - 정확도·안전 24 scenario와 자연 대화 준비도 18 scenario를 한 SHA로 결속하는 42 scenario 통합 suite를 추가했다.

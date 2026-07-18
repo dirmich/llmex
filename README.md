@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.21.4는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정식 Qwen v5 10k는 현재 CLI에서 completed 10,000, accepted 9,712, pending 0과 export overlap 0으로 재검증됐다. 정확도·안전 24 scenario와 자연 대화 준비도 18 scenario를 한 SHA로 결속한 42 scenario·47 turn 통합 suite를 제공하며, 기존 v11 step 50은 준비도 정확도 45%로 실패했다. 공개+teacher mix와 후속 curriculum manifest를 최종 SFT에 SHA로 결속하며 내부 teacher 출력·가중치·corpus는 외부 공개하지 않는다.
+LLMEX 1.22.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정식 Qwen v5 10k와 `http://macmini:11434/v1` Gemma 4 2,200건 수집을 완료·재검증했다. Gemma export는 중복 응답 제거 후 train 1,160·heldout 496행, prompt·source overlap 0이다. 정확도·안전과 자연 대화 준비도를 한 SHA로 결속한 42 scenario·47 turn 통합 suite를 제공한다. 공개+teacher mix와 후속 curriculum manifest를 최종 SFT에 SHA로 결속하며 내부 teacher 출력·가중치·corpus는 외부 공개하지 않는다.
 
 ## 빠른 시작
 
