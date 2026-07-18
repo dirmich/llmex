@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.56 멀티턴 heavy 보강 실험
+
+- 멀티턴 aligned teacher 2행을 200배 주입해 추가 100스텝 SFT를 완료했다.
+- validation PPL `6.44` 수준으로 기존과 유사했고, 직접 context 추론에서 유의미한 회상 개선을 확인하지 못해 채택 보류한다.
+- 이 실험은 과적합·데이터 형식 문제를 확인하기 위한 연구 artifact이며 정식 품질 gate 대상이 아니다.
+
 ## 2026-07-19 · 1.22.55 비중복 paraphrase readiness 평가
 
 - aligned 멀티턴 checkpoint를 원 suite와 prompt가 겹치지 않도록 변형한 18시나리오·20턴 평가에서 실행했다.

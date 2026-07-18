@@ -7,8 +7,8 @@ from llmex.fingerprint import fingerprint
 SUITE = Path("data/evaluation/ko-conversation-readiness-v1.jsonl")
 BASE = Path("data/chat/ko-qwen-natural-v5-10k-paraphrase/train.jsonl")
 EXPORT = Path("runs/distill/qwen36mtp-multiturn-readiness/export/train.jsonl")
-OUT = Path("data/chat/ko-qwen-natural-v5-10k-multiturn-aligned/train.jsonl")
-HELDOUT = Path("data/chat/ko-qwen-natural-v5-10k-multiturn-aligned/heldout.jsonl")
+OUT = Path("data/chat/ko-qwen-natural-v5-10k-multiturn-heavy/train.jsonl")
+HELDOUT = Path("data/chat/ko-qwen-natural-v5-10k-multiturn-heavy/heldout.jsonl")
 
 def main() -> None:
     scenarios = {json.loads(x)["id"]: json.loads(x) for x in SUITE.read_text(encoding="utf-8").splitlines()}
@@ -25,7 +25,7 @@ def main() -> None:
     output = []
     for index, raw in enumerate(rows):
         output.append(json.dumps(raw, ensure_ascii=False, sort_keys=True))
-    for repeat in range(20):
+    for repeat in range(200):
         for j, (messages, provenance) in enumerate(extra):
             row_id = f"aligned-{repeat:02d}-{j:02d}"
             basis = {"id": row_id, "messages": [m.model_dump() for m in messages], "provenance": provenance.model_dump(exclude_none=True), "split": "train"}
