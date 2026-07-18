@@ -1,4 +1,5 @@
 schema_version: 2
+# 310건 조기 감사에서 세 번역 방향 accepted 0을 확인해 기각했다. collect/export 금지.
 name: qwen36mtp-multilingual-natural-2000-v3
 seed: 239
 endpoint: http://localhost:8081/v1

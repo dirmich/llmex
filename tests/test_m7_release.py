@@ -24,7 +24,7 @@ def test_release_audit_and_artifact_bound_supply_chain(tmp_path: Path) -> None:
     assert audit(ROOT)["판정"] == "통과"
     output = tmp_path / "재현"
     result = bundle(ROOT, output)
-    assert result["버전"] == "1.22.20"
+    assert result["버전"] == "1.22.21"
     artifacts = json.loads((output / "artifact-checksums.json").read_text())["artifacts"]
     provenance = json.loads((output / "provenance.intoto.json").read_text())
     assert {row["digest"]["sha256"] for row in provenance["subject"]} == {

@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.21 Qwen 번역 계약 조기 감사 기각
+
+- `qwen36mtp-multilingual-natural-2000-v3`를 실제 수집해 310/2,000에서 accepted 79/rejected 231/pending 1,690을 기록했다. accepted는 conversation-en 22, conversation-ja 39, ko-ja 18이었고 ko-en·en-ko·ja-ko는 모두 0이었다.
+- en-ko의 자연스러운 `강가`가 계약의 `강변`만 허용해 `quality:term`, ko-en의 `conference room`이 `meeting room`만 허용해 `quality:term`, ja-ko의 정상 `건넵니다`가 `건네` 표면형만 있어 `quality:term`으로 거절되는 실제 prompt·응답·계약을 대조했다.
+- 세 번역 방향이 사실상 전량 거절되는 source 계약 결함이므로 collector를 SIGINT로 안전 중단하고 run과 310개 spool을 보존했다. export·감사 승인·학습 입력 사용은 하지 않으며 설정은 `qwen36mtp-multilingual-natural-2000-v3-rejected.yaml`로 격리했다.
+- `make release-check`는 401 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다. rejected 설정으로 `distill status`가 같은 config fingerprint와 보존 spool을 읽는 것도 재확인했다.
+- 다음 작업은 natural-v3/v4 bytes와 기존 fingerprint를 보존하면서 장소 동의어와 한국어 활용형을 typed 계약에 추가한 fresh source/run을 만들고, 조기 task별 accepted 분포가 여섯 task 모두 존재하는지 확인한 뒤 전체 수집하는 것이다. Hugging Face 업로드는 공개·비공개 모두 금지한다.
+
 ## 2026-07-18 · 1.22.20 대화 행위 결속 natural-v4
 
 - `conversation-question`·`conversation-suggestion`을 `ResponseQualityContract.mode`에 추가해 행위 계약을 inventory와 응답 품질 fingerprint에 직접 결속했다. 질문형은 단일 종결 질문 부호를, 제안형은 질문 부호 부재와 좁은 언어별 제안 marker를 요구하며 알 수 없거나 불완전한 행위는 실패-폐쇄한다.

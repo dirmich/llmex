@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.21 - 2026-07-18
+
+- Qwen natural-v4 v3를 310건에서 조기 감사해 accepted 79/rejected 231 상태와 세 번역 방향 accepted 0을 확인했다.
+- 자연스러운 `강가`, `conference room`, `건넵니다`를 거절하는 번역 동의어·활용형 계약 누락을 실측했다.
+- 결함 run을 중단·미export하고 설정을 rejected 이름으로 격리해 resume·학습 입력 사용을 금지했다.
+
 ## 1.22.20 - 2026-07-18
 
 - 질문형과 제안형을 `ResponseQualityContract.mode`에 결속해 응답 품질 fingerprint가 대화 행위를 포함하도록 했다.
