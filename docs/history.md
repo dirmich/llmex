@@ -1,5 +1,14 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.44 paraphrase remediation SFT 완료
+
+- quality suite 비중복 paraphrase teacher 14행을 10배 가중해 clean curriculum checkpoint에서 100스텝 보강 SFT했다.
+- heldout assistant NLL `1.3706`, EOS·반복·safety 단순 게이트 통과. 원 suite 문장과 train prompt overlap은 없다.
+- 전체 quality suite 재평가와 수동 blind review를 다음 단계로 진행한다.
+- 품질 preflight는 clean curriculum에서 계승된 원 suite user prompt가 train/heldout에 남아 있어
+  contamination 방어로 차단됐다(`quality suite prompt가 SFT train/heldout과 overlap됩니다`).
+  따라서 오염된 자동 점수는 산출하지 않고, 별도 비중복 평가 split을 준비해야 한다.
+
 ## 2026-07-19 · 1.22.43 비중복 paraphrase teacher 재수집
 
 - quality suite 문장을 그대로 학습하지 않도록 의미 보존 paraphrase 27개를 새로 만들어 qwen36mtp에 재질의했다.

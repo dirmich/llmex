@@ -1,0 +1,24 @@
+schema_version: 1
+name: qwen36mtp-v5-paraphrase-remediation-quality
+sft_config: configs/sft/qwen36mtp-v5-paraphrase-remediation.yaml
+expected_sft_config_sha256: 6d8a680d785662bc78c165d16bb58696aeac249378417959cce03c6f0b9247d8
+checkpoint: runs/sft-qwen36mtp-v5-paraphrase-remediation/checkpoints/step-00000100.pt
+expected_checkpoint_sha256: 06e4940bd9b805a338236414fa51f91cb681faf8cbaa3f71cd155db6f39cfbdc
+suite: data/evaluation/ko-chat-quality-v1.jsonl
+expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
+output_dir: runs/sft-qwen36mtp-v5-paraphrase-remediation-quality
+allowed_suite_licenses: [MIT]
+greedy_profile:
+  name: greedy
+  temperature: 0.0
+  repetition_penalty: 1.5
+  max_new_tokens: 128
+  seeds: [0]
+sampling_profiles:
+  - name: sample
+    temperature: 0.7
+    top_k: 20
+    top_p: 0.9
+    repetition_penalty: 1.5
+    max_new_tokens: 128
+    seeds: [11, 12, 13, 14, 15]
