@@ -328,6 +328,8 @@ baseline PPL은 2.28960이고 step 20 validation loss/PPL은 0.691437/1.99658이
 
 focused-v8 데이터는 `configs/sft/qwen36mtp-v5-remediation-v8-data.yaml`로 같은 curriculum 명령 네 개를 실행한다. 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 형식을 일반화하며 실제 train 8,400/heldout 840행, SHA `bfd8f39b…1e88`·`7dcc3568…c51`, manifest fingerprint `f4dc0633…d647`다. suite·split 모든 user turn과 source overlap은 0이다.
 
+focused-v8은 `configs/sft/qwen36mtp-v5-remediation-v8.yaml`로 v7 step 10에서 20 step 학습한다. baseline loss/PPL은 0.282483/1.32642, step 20 validation loss/PPL은 0.162003/1.17586, final SHA는 `7cec81df…b11d8`다. step 5·20 자동 평가에서 직전 assistant 문장 반복이 유지됐지만, 조사 결과 학습 `tokenize_chat`에는 있던 assistant EOS가 다중 턴 `render_chat` prompt에서 누락됐다. 템플릿을 수정하기 전 수치는 모델 품질 승인 근거로 사용하지 않고 기존 checkpoint를 새 출력 디렉터리에서 재평가한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.17.1 focused-v8 학습과 템플릿 불일치 진단
+
+- v7 step 10 SHA `0ca3b8ae…d61`에서 CUDA bf16, effective batch 64, 5e-7→5e-8로 focused-v8을 20 step 학습했다. baseline loss/PPL 0.282483/1.32642에서 step 20 validation loss/PPL 0.162003/1.17586으로 감소했고 final SHA는 `7cec81df…b11d8`다.
+- step 5·20의 고정 162응답을 생성·재유도했지만 최신 날짜가 계속 직전 assistant 문장으로 출력됐다. 코드 경계를 추적한 결과 `tokenize_chat`은 매 assistant 뒤 EOS를 학습하는 반면 `render_chat` 기반 다중 턴 생성 prompt는 과거 assistant EOS를 누락했다.
+- 이 학습·추론 템플릿 불일치 아래의 품질 수치는 checkpoint 승인 근거로 사용하지 않는다. 기존 v7 안전 checkpoint를 수정된 동일 token 경계로 다시 평가하는 작업을 다음 하위 단계로 분리한다.
+
 ## 2026-07-18 · 1.17.0 값-only 형식 일반화 focused-v8 curriculum
 
 - focused-v7의 step 증가로도 최신 날짜 단답이 바뀌지 않은 증거를 근거로 `focused-v8`을 추가했다. 날짜뿐 아니라 배포 코드·담당자·승인 상태·회의 장소의 갱신 확인 문장 뒤 값만 출력하는 대조를 만들어 표면 문장 암기 대신 형식 지시를 보강한다.

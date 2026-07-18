@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.17.0 focused-v8 형식 일반화 데이터 완료
+## 1.17.1 focused-v8 학습·템플릿 진단 완료
 
 ### 완료
 
@@ -8,7 +8,11 @@
 - [x] focused-v8 train 8,400/heldout 840행과 suite·split·source overlap 0
 - [x] format-exact 70,950 target token과 v2 replay 127,144 target token 결합
 - [x] manifest fingerprint `f4dc0633…d647` byte 재유도
-- [ ] v7 안전 checkpoint 기반 v8 단기 SFT와 고정 162응답 재평가
+- [x] v7 step 10 기반 v8 CUDA bf16 20-step SFT
+- [x] baseline PPL 1.32642→step 20 validation PPL 1.17586
+- [x] step 5·20 고정 162응답 생성·byte 재유도
+- [x] 학습 assistant EOS와 다중 턴 생성 prompt EOS 누락의 템플릿 불일치 진단
+- [ ] 템플릿 경계 수정 뒤 기존 안전 checkpoint 재평가
 
 - [x] 최신 날짜 exact assistant 목표를 한 문맥에서 세 번 가중
 - [x] PII/secret sampling 거절 별도 범주와 성공 범주 replay 결합
