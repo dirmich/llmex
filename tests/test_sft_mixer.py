@@ -15,7 +15,13 @@ from llmex.chat.data import ChatRow, final_user_prompt_sha256, provenance_source
 from llmex.chat.mixer import preflight_mix, prepare_mix, status_mix, validate_mix
 from llmex.chat.runtime import SFTTrainer, _datasets, evaluate_chat, preflight_sft
 from llmex.cli import app
-from llmex.config import ModelConfig, OptimizerConfig, SFTConfig, SFTMixConfig
+from llmex.config import (
+    ModelConfig,
+    OptimizerConfig,
+    SFTConfig,
+    SFTMixConfig,
+    SFTTeacherSourceConfig,
+)
 from llmex.errors import ConflictError, IntegrityError, LlmexError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
@@ -213,6 +219,137 @@ def _refresh_teacher_binding(config: SFTMixConfig) -> SFTMixConfig:
     return config.model_copy(
         update={"expected_teacher_manifest_sha256": sha256_file(config.teacher_manifest)}
     )
+
+
+def _upstream_manifest(
+    path: Path,
+    *,
+    kind: str,
+    train_data: Path,
+    heldout_data: Path,
+    tokenizer_dir: Path,
+) -> None:
+    value = {
+        "schema_version": 1,
+        "kind": kind,
+        "outputs": {
+            "train": {
+                "rows": len(_rows(train_data)),
+                "sha256": sha256_file(train_data),
+            },
+            "heldout": {
+                "rows": len(_rows(heldout_data)),
+                "sha256": sha256_file(heldout_data),
+            },
+        },
+        "tokenizer_manifest_sha256": sha256_file(tokenizer_dir / "tokenizer-manifest.json"),
+        "length_gate": {"max_seq_len": 128, "generation_reserve_tokens": 16},
+        "redistribution_allowed": True,
+        "release_gate": "not_blocked",
+    }
+    value["fingerprint"] = fingerprint(value)
+    path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
+
+
+def test_mix는_legacy_fingerprint를_보존하고_세_원천_manifest를_결속한다(
+    tmp_path: Path,
+) -> None:
+    legacy, _ = _fixture(tmp_path)
+    legacy_manifest = preflight_mix(legacy)
+    assert legacy_manifest["status"] == "ok"
+    legacy_dump = legacy.model_dump(mode="json")
+    legacy_dump.pop("public_manifest")
+    legacy_dump.pop("expected_public_manifest_sha256")
+    legacy_dump.pop("additional_teacher_sources")
+    prepare_mix(legacy)
+    materialized_legacy = json.loads((legacy.output_dir / "manifest.json").read_text())
+    assert materialized_legacy["config_fingerprint"] == fingerprint(legacy_dump)
+    assert "public_manifest" not in materialized_legacy
+    assert "additional_teacher_manifests" not in materialized_legacy
+
+    public_manifest = tmp_path / "public-manifest.json"
+    _upstream_manifest(
+        public_manifest,
+        kind="sft-capability-remediation-curriculum",
+        train_data=legacy.public_train_data,
+        heldout_data=legacy.public_heldout_data,
+        tokenizer_dir=legacy.tokenizer_dir,
+    )
+    internal = "LicenseRef-LLMEX-Internal-Distillation"
+    gemma_train = tmp_path / "gemma-train.jsonl"
+    gemma_heldout = tmp_path / "gemma-heldout.jsonl"
+    _write(
+        gemma_train,
+        [_row("gt-1", "train", "Gemma 고유 질문", "Gemma 답변", internal, "gemma-a")],
+    )
+    _write(
+        gemma_heldout,
+        [_row("gh-1", "heldout", "Gemma 검증 질문", "Gemma 검증", internal, "gemma-b")],
+    )
+    gemma_manifest = tmp_path / "gemma-manifest.json"
+    gemma_manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "config_fingerprint": "4" * 64,
+                "inventory_fingerprint": "5" * 64,
+                "accepted_spool_set_fingerprint": "6" * 64,
+                "teacher_output_license": internal,
+                "redistribution_allowed": False,
+                "release_gate": "blocked",
+                "counts": {"train": 1, "heldout": 1},
+                "sha256": {
+                    "train": sha256_file(gemma_train),
+                    "heldout": sha256_file(gemma_heldout),
+                },
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    config = legacy.model_copy(
+        update={
+            "name": "three-source-mix",
+            "output_dir": tmp_path / "three-source-mixed",
+            "public_manifest": public_manifest,
+            "expected_public_manifest_sha256": sha256_file(public_manifest),
+            "additional_teacher_sources": [
+                SFTTeacherSourceConfig(
+                    name="gemma",
+                    train_data=gemma_train,
+                    heldout_data=gemma_heldout,
+                    manifest=gemma_manifest,
+                    expected_manifest_sha256=sha256_file(gemma_manifest),
+                )
+            ],
+        }
+    )
+    prepare_mix(config)
+    manifest = json.loads((config.output_dir / "manifest.json").read_text())
+    assert manifest["public_manifest"]["sha256"] == sha256_file(public_manifest)
+    assert manifest["additional_teacher_manifests"]["gemma"]["sha256"] == sha256_file(
+        gemma_manifest
+    )
+    assert manifest["inputs"]["teacher-gemma-train"]["rows"] == 1
+    assert manifest["inputs"]["teacher-gemma-heldout"]["rows"] == 1
+    assert manifest["prompt_overlap"] == 0
+    assert manifest["source_sha256_overlap"] == 0
+
+    gemma_value = json.loads(gemma_manifest.read_text())
+    gemma_value["counts"]["train"] = 2
+    gemma_manifest.write_text(json.dumps(gemma_value, sort_keys=True), encoding="utf-8")
+    tampered = config.model_copy(
+        update={
+            "expected_public_manifest_sha256": sha256_file(public_manifest),
+            "additional_teacher_sources": [
+                config.additional_teacher_sources[0].model_copy(
+                    update={"expected_manifest_sha256": sha256_file(gemma_manifest)}
+                )
+            ],
+        }
+    )
+    with pytest.raises(IntegrityError, match="teacher export manifest"):
+        preflight_mix(tampered)
 
 
 def test_mix는_assistant_민감_출력만_선필터하고_집계만_공개한다(tmp_path: Path) -> None:

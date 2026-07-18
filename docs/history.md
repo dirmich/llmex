@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.4 한국어·Qwen·Gemma 다국어 3원천 결속
+
+- 기존 `SFTMixConfig`에 선택적 public upstream manifest와 이름 있는 추가 teacher export 목록을 추가했다. 새 필드를 쓰지 않는 legacy config는 필드를 fingerprint 입력과 manifest에서 생략해 기존 mix 출력과 fingerprint를 그대로 재유도한다.
+- public curriculum manifest는 self-fingerprint·tokenizer·길이·train/heldout SHA와 행 수·release policy를 검증하고, Qwen primary와 Gemma additional teacher는 각각 schema 2 export manifest의 세 core fingerprint·출력 SHA·행 수에 결속한다. 어느 JSONL이나 manifest가 바뀌어도 preflight가 실패한다.
+- 세 원천 16,921행을 전역 heldout 우선으로 다시 격리해 중복 heldout prompt 117행을 제외했다. 최종 train 14,374 SHA `1251c2a3…1d41`, heldout 2,430 SHA `7992479a…e650`, manifest SHA `f3c11daf…ce58`이며 prompt·source overlap 0, release blocked다.
+
 ## 2026-07-18 · 1.22.3 Qwen36mtp·Gemma4 다국어 증류 완료
 
 - Qwen36mtp와 Gemma4가 각각 1,080개 요청을 약 15분 30초에 처리했다. Qwen은 prompt copy 10건을 제외한 1,070건, Gemma는 1,080건 전량을 채택했으며 미완료 요청은 없다.

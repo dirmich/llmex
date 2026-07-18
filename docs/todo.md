@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.3 다국어 teacher 증류 완료
+## 1.22.4 한국어·다국어 3원천 결속 완료
 
 ### 완료
 
@@ -24,7 +24,8 @@
 - [x] Qwen 1,070건·Gemma 1,080건 채택 및 export/validate 완료
 - [x] Qwen train 799·heldout 270, Gemma train 733·heldout 236과 split/source overlap 0
 - [x] 영어·일본어 대화·한↔영·한↔일 18 scenario·108응답 평가 suite
-- [ ] Qwen36mtp·Gemma4 영어/일본어 대화와 양방향 번역 2,160건 수집·검증
+- [x] 한국어 curriculum·Qwen·Gemma 세 manifest 직접 SHA 결속
+- [x] 최종 train 14,374·heldout 2,430행과 prompt/source overlap 0
 - [ ] 100M latest 기반 fresh SFT·통합 자동 평가·실제 대화 추론
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성

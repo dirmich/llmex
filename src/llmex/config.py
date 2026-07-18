@@ -285,6 +285,16 @@ class SensitiveOutputRegex(StrictModel):
         return value
 
 
+class SFTTeacherSourceConfig(StrictModel):
+    """추가 teacher export와 그 manifest SHA 결속."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    train_data: YamlPath
+    heldout_data: YamlPath
+    manifest: YamlPath
+    expected_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class SFTMixConfig(StrictModel):
     """공개·teacher 대화 데이터를 비누출 split으로 혼합하는 설정."""
 
@@ -298,6 +308,11 @@ class SFTMixConfig(StrictModel):
     teacher_heldout_data: YamlPath
     teacher_manifest: YamlPath
     expected_teacher_manifest_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    public_manifest: YamlPath | None = None
+    expected_public_manifest_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    additional_teacher_sources: list[SFTTeacherSourceConfig] = Field(
+        default_factory=lambda: list[SFTTeacherSourceConfig]()
+    )
     output_dir: YamlPath
     allowed_licenses: list[str] = Field(min_length=1)
     max_seq_len: int = Field(default=1_024, gt=2)
@@ -312,6 +327,13 @@ class SFTMixConfig(StrictModel):
             raise ValueError("generation_reserve_tokens는 max_seq_len보다 작아야 합니다")
         if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
             raise ValueError("allowed_licenses는 중복될 수 없습니다")
+        if (self.public_manifest is None) != (self.expected_public_manifest_sha256 is None):
+            raise ValueError(
+                "public_manifest와 expected_public_manifest_sha256는 함께 지정해야 합니다"
+            )
+        teacher_names = [source.name for source in self.additional_teacher_sources]
+        if "primary" in teacher_names or len(teacher_names) != len(set(teacher_names)):
+            raise ValueError("추가 teacher 이름은 중복되거나 primary일 수 없습니다")
         names = [rule.name for rule in self.extra_sensitive_output_patterns]
         patterns = [rule.pattern for rule in self.extra_sensitive_output_patterns]
         reserved_names = BUILTIN_SENSITIVE_OUTPUT_RULE_NAMES | {SENSITIVE_OUTPUT_LENGTH_RULE_NAME}

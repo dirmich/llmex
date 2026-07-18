@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from llmex.chat.data import ChatRow, final_user_prompt_sha256, provenance_source_key
 from llmex.chat.template import render_chat, tokenize_chat
-from llmex.config import SFTMixConfig
+from llmex.config import SFTMixConfig, SFTTeacherSourceConfig
 from llmex.errors import ConflictError, InputError, IntegrityError, LlmexError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.locking import exclusive_run_lock
@@ -38,7 +38,13 @@ class _Candidate:
 
 
 def _config_fingerprint(config: SFTMixConfig) -> str:
-    return fingerprint(config.model_dump(mode="json"))
+    value = config.model_dump(mode="json")
+    if value["public_manifest"] is None:
+        value.pop("public_manifest")
+        value.pop("expected_public_manifest_sha256")
+    if not value["additional_teacher_sources"]:
+        value.pop("additional_teacher_sources")
+    return fingerprint(value)
 
 
 def _read_rows(
@@ -75,14 +81,19 @@ def _read_rows(
     }
 
 
-def _teacher_manifest(
-    config: SFTMixConfig, *, expected_counts: dict[str, int]
+def _teacher_manifest_binding(
+    *,
+    manifest_path: Path,
+    expected_manifest_sha256: str,
+    train_data: Path,
+    heldout_data: Path,
+    expected_counts: dict[str, int],
 ) -> dict[str, object]:
     try:
-        manifest_sha256 = sha256_file(config.teacher_manifest)
-        if manifest_sha256 != config.expected_teacher_manifest_sha256:
+        manifest_sha256 = sha256_file(manifest_path)
+        if manifest_sha256 != expected_manifest_sha256:
             raise ValueError("teacher manifest checksum")
-        value = json.loads(config.teacher_manifest.read_text(encoding="utf-8"))
+        value = json.loads(manifest_path.read_text(encoding="utf-8"))
         hashes = value["sha256"]
         counts = value["counts"]
         core = {
@@ -98,8 +109,8 @@ def _teacher_manifest(
             or value.get("teacher_output_license") != _INTERNAL_LICENSE
             or value.get("redistribution_allowed") is not False
             or value.get("release_gate") != "blocked"
-            or hashes["train"] != sha256_file(config.teacher_train_data)
-            or hashes["heldout"] != sha256_file(config.teacher_heldout_data)
+            or hashes["train"] != sha256_file(train_data)
+            or hashes["heldout"] != sha256_file(heldout_data)
             or counts != expected_counts
             or not all(
                 isinstance(item, str) and re.fullmatch(r"[0-9a-f]{64}", item)
@@ -110,11 +121,78 @@ def _teacher_manifest(
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         raise IntegrityError("teacher export manifest 결속이 올바르지 않습니다") from exc
     return {
-        "path": str(config.teacher_manifest),
+        "path": str(manifest_path),
         "sha256": manifest_sha256,
         "core": core,
         "redistribution_allowed": False,
         "release_gate": "blocked",
+    }
+
+
+def _teacher_manifest(
+    config: SFTMixConfig, *, expected_counts: dict[str, int]
+) -> dict[str, object]:
+    return _teacher_manifest_binding(
+        manifest_path=config.teacher_manifest,
+        expected_manifest_sha256=config.expected_teacher_manifest_sha256,
+        train_data=config.teacher_train_data,
+        heldout_data=config.teacher_heldout_data,
+        expected_counts=expected_counts,
+    )
+
+
+def _additional_teacher_manifest(
+    source: SFTTeacherSourceConfig, *, expected_counts: dict[str, int]
+) -> dict[str, object]:
+    return _teacher_manifest_binding(
+        manifest_path=source.manifest,
+        expected_manifest_sha256=source.expected_manifest_sha256,
+        train_data=source.train_data,
+        heldout_data=source.heldout_data,
+        expected_counts=expected_counts,
+    )
+
+
+def _public_manifest(config: SFTMixConfig, *, expected_counts: dict[str, int]) -> dict[str, object]:
+    if config.public_manifest is None or config.expected_public_manifest_sha256 is None:
+        raise IntegrityError("public manifest 결속 설정이 완전하지 않습니다")
+    try:
+        manifest_sha256 = sha256_file(config.public_manifest)
+        if manifest_sha256 != config.expected_public_manifest_sha256:
+            raise ValueError("public manifest checksum")
+        value = json.loads(config.public_manifest.read_text(encoding="utf-8"))
+        outputs = value["outputs"]
+        length_gate = value["length_gate"]
+        core = {key: item for key, item in value.items() if key != "fingerprint"}
+        current_tokenizer_sha256 = sha256_file(config.tokenizer_dir / "tokenizer-manifest.json")
+        if (
+            value.get("schema_version") != 1
+            or value.get("kind")
+            not in {"sft-public-teacher-mix", "sft-capability-remediation-curriculum"}
+            or value.get("fingerprint") != fingerprint(core)
+            or outputs["train"]["sha256"] != sha256_file(config.public_train_data)
+            or outputs["heldout"]["sha256"] != sha256_file(config.public_heldout_data)
+            or outputs["train"]["rows"] != expected_counts["train"]
+            or outputs["heldout"]["rows"] != expected_counts["heldout"]
+            or value.get("tokenizer_manifest_sha256") != current_tokenizer_sha256
+            or not isinstance(length_gate["max_seq_len"], int)
+            or isinstance(length_gate["max_seq_len"], bool)
+            or length_gate["max_seq_len"] <= 2
+            or not isinstance(length_gate["generation_reserve_tokens"], int)
+            or isinstance(length_gate["generation_reserve_tokens"], bool)
+            or length_gate["generation_reserve_tokens"] <= 0
+            or not isinstance(value.get("redistribution_allowed"), bool)
+            or value.get("release_gate") not in {"blocked", "not_blocked"}
+        ):
+            raise ValueError("public manifest binding")
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise IntegrityError("public source manifest 결속이 올바르지 않습니다") from exc
+    return {
+        "path": str(config.public_manifest),
+        "sha256": manifest_sha256,
+        "kind": value["kind"],
+        "redistribution_allowed": value["redistribution_allowed"],
+        "release_gate": value["release_gate"],
     }
 
 
@@ -174,6 +252,14 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
         (config.teacher_train_data, "train", "teacher-train"),
         (config.teacher_heldout_data, "heldout", "teacher-heldout"),
     ]
+    additional_sources = sorted(config.additional_teacher_sources, key=lambda item: item.name)
+    for source in additional_sources:
+        specifications.extend(
+            [
+                (source.train_data, "train", f"teacher-{source.name}-train"),
+                (source.heldout_data, "heldout", f"teacher-{source.name}-heldout"),
+            ]
+        )
     candidates: list[_Candidate] = []
     inputs: dict[str, object] = {}
     for path, split, origin in specifications:
@@ -187,6 +273,30 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
             "heldout": cast(int, cast(dict[str, object], inputs["teacher-heldout"])["rows"]),
         },
     )
+    public_manifest = None
+    if config.public_manifest is not None:
+        public_manifest = _public_manifest(
+            config,
+            expected_counts={
+                "train": cast(int, cast(dict[str, object], inputs["public-train"])["rows"]),
+                "heldout": cast(int, cast(dict[str, object], inputs["public-heldout"])["rows"]),
+            },
+        )
+    additional_teacher_manifests: dict[str, object] = {}
+    for source in additional_sources:
+        additional_teacher_manifests[source.name] = _additional_teacher_manifest(
+            source,
+            expected_counts={
+                "train": cast(
+                    int,
+                    cast(dict[str, object], inputs[f"teacher-{source.name}-train"])["rows"],
+                ),
+                "heldout": cast(
+                    int,
+                    cast(dict[str, object], inputs[f"teacher-{source.name}-heldout"])["rows"],
+                ),
+            },
+        )
     tokenizer = load_tokenizer(config.tokenizer_dir)
     tokenizer_manifest = config.tokenizer_dir / "tokenizer-manifest.json"
     if not tokenizer_manifest.is_file():
@@ -330,6 +440,10 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
         "redistribution_allowed": not internal,
         "release_gate": "blocked" if internal else "not_blocked",
     }
+    if public_manifest is not None:
+        manifest["public_manifest"] = public_manifest
+    if additional_teacher_manifests:
+        manifest["additional_teacher_manifests"] = additional_teacher_manifests
     manifest["fingerprint"] = fingerprint(manifest)
     return train_bytes, heldout_bytes, manifest
 

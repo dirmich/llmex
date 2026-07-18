@@ -205,6 +205,17 @@ uv run llmex sft validate-mix --help
 `prompt_overlap=0`, `source_sha256_overlap=0`, `release_gate=blocked`를 확인하기 전에는 학습하지 않는다.
 canonical exact prompt 검사는 semantic paraphrase 누출을 판정하지 않으므로 contamination과 수동 감사를 후속 수행한다.
 
+한국어 curriculum과 두 다국어 teacher를 합칠 때는 `configs/sft/ko-qwen-gemma-multilingual-v1-mix.yaml`을 사용한다. `public_manifest`는 한국어 curriculum을, primary teacher는 Qwen export를, `additional_teacher_sources`는 Gemma export를 각각 SHA로 결속한다.
+
+```bash
+uv run llmex config validate --kind sft-mix configs/sft/ko-qwen-gemma-multilingual-v1-mix.yaml
+uv run llmex sft preflight-mix --config configs/sft/ko-qwen-gemma-multilingual-v1-mix.yaml
+uv run llmex sft prepare-mix --config configs/sft/ko-qwen-gemma-multilingual-v1-mix.yaml
+uv run llmex sft validate-mix --config configs/sft/ko-qwen-gemma-multilingual-v1-mix.yaml
+```
+
+2026-07-18 실행 결과는 입력 16,921행, heldout prompt 중복 제외 117행, 최종 train 14,374(`1251c2a3…1d41`)·heldout 2,430(`7992479a…e650`)행이다. manifest SHA는 `f3c11daf…ce58`이고 prompt/source overlap 0, release blocked다.
+
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
 정식 pilot config를 사용한다.
 

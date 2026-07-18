@@ -1,0 +1,25 @@
+schema_version: 1
+name: ko-qwen-gemma-multilingual-v1
+seed: 173
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+public_train_data: data/chat/ko-public-qwen-gemma-v11/train.jsonl
+public_heldout_data: data/chat/ko-public-qwen-gemma-v11/heldout.jsonl
+public_manifest: data/chat/ko-public-qwen-gemma-v11/manifest.json
+expected_public_manifest_sha256: b11c8fa2dddd3e2528b5d1a710c98dbc54ac7a8b96a343da4fc5b2375389edc6
+teacher_train_data: runs/distill/qwen36mtp-multilingual-1080-v1/export/train.jsonl
+teacher_heldout_data: runs/distill/qwen36mtp-multilingual-1080-v1/export/heldout.jsonl
+teacher_manifest: runs/distill/qwen36mtp-multilingual-1080-v1/export/manifest.json
+expected_teacher_manifest_sha256: 12b4a89387f87ca51a835851bc5a7f164f460426db9f5aa4a97ada6a04d4c459
+additional_teacher_sources:
+  - name: gemma4
+    train_data: runs/distill/gemma4-multilingual-1080-v1/export/train.jsonl
+    heldout_data: runs/distill/gemma4-multilingual-1080-v1/export/heldout.jsonl
+    manifest: runs/distill/gemma4-multilingual-1080-v1/export/manifest.json
+    expected_manifest_sha256: c52fa324afe893155040cbf57ed70a97f44c53da4c636aad958d5171cf76bc7e
+output_dir: data/chat/ko-qwen-gemma-multilingual-v1
+allowed_licenses:
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Curriculum-Qwen-Gemma-V11
+  - LicenseRef-LLMEX-Internal-Distillation
+max_seq_len: 1024
+generation_reserve_tokens: 128

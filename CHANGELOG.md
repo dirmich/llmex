@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.4 - 2026-07-18
+
+- 기존 SFT mix의 byte와 fingerprint 호환을 유지하면서 public upstream manifest와 여러 teacher export manifest를 직접 SHA 결속하도록 확장했다.
+- 한국어 curriculum, Qwen36mtp 다국어, Gemma4 다국어 세 원천을 단일 manifest로 묶어 train 14,374·heldout 2,430행을 준비했다.
+- 입력 16,921행에서 heldout prompt 중복 117행을 제거하고 최종 prompt·source overlap 0과 내부 전용 release 차단을 검증했다.
+
 ## 1.22.3 - 2026-07-18
 
 - Qwen36mtp와 Gemma4 다국어 teacher 수집을 각각 1,080요청으로 완료하고 영어·일본어 대화와 한↔영·한↔일 응답을 export했다.

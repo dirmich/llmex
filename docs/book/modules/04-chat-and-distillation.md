@@ -30,9 +30,9 @@
 
 ### `src/llmex/chat/mixer.py`
 
-- 책임: public·teacher의 train/heldout을 누출 없이 선택하고 byte-identical하게 게시한다.
-- 구현 순서: 입력 SHA 확인 → teacher manifest 결속 → heldout 우선 선택 → prompt/source overlap 제거 → 길이·license gate → 원자 publish 순서다.
-- 실패 사례: train/heldout prompt 또는 source overlap, teacher manifest 불일치, 기존 산출물 충돌을 거부한다.
+- 책임: public·한 개 이상의 teacher train/heldout을 누출 없이 선택하고 byte-identical하게 게시한다.
+- 구현 순서: 입력 SHA 확인 → 선택적 public upstream과 모든 teacher manifest 결속 → heldout 우선 선택 → prompt/source overlap 제거 → 길이·license gate → 원자 publish 순서다.
+- 실패 사례: train/heldout prompt 또는 source overlap, 어느 upstream manifest나 JSONL의 불일치, teacher 이름 중복, 기존 산출물 충돌을 거부한다. 새 source가 없을 때는 legacy fingerprint 입력에서 새 필드를 생략해 과거 산출물을 보존한다.
 - 검증: `uv run pytest -q tests/test_sft_mixer.py`와 `sft preflight-mix/prepare-mix/validate-mix`를 연속 실행한다.
 - 완료 산출물: 혼합 train/heldout JSONL과 선택·제외 통계 manifest다.
 
