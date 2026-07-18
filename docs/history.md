@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.21.4 품질·대화 준비도 통합 suite
+
+- 기존 정확도·안전 `ko-chat-quality-v1` 24 scenario·27 turn과 자연 대화 `ko-conversation-readiness-v1` 18 scenario·20 turn을 byte 그대로 이어 붙인 통합 suite를 추가했다.
+- 통합 suite는 42 scenario·47 unique user turn·6개 decoding profile 기준 282응답을 계획하며 SHA-256은 `4461f760…fd94`다. 최종 curriculum은 이 한 SHA를 사용해 두 평가 집합 모두와의 exact prompt 비누출을 manifest에 결속할 수 있다.
+- 원본 두 파일의 byte 결합, scenario·prompt 고유성, 응답 계획 수와 고정 SHA를 회귀 테스트로 검증한다.
+
 ## 2026-07-18 · 1.21.3 정식 Qwen 10k 증류 호환 복구
 
 - 내부망 teacher allowlist 도입 전 생성한 loopback run은 빈 `allowed_endpoint_hosts` 필드 때문에 현재 설정 fingerprint와 달라졌다. 빈 allowlist만 legacy 표현으로 정규화하고, 실제 내부망 host 목록은 계속 fingerprint에 포함하도록 수정했다.

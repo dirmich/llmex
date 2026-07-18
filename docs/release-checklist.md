@@ -1,4 +1,4 @@
-# 1.21.3 릴리스 체크리스트
+# 1.21.4 릴리스 체크리스트
 
 ## 자동 통과 항목
 
@@ -49,6 +49,7 @@
 - [x] capability curriculum manifest의 최종 SFT source SHA·출력·tokenizer·길이·release 결속
 - [x] v11 step 50 한국어 대화 준비도 120응답 생성·byte 재유도·실패 기준선 기록
 - [x] 빈 내부망 allowlist의 기존 loopback 증류 fingerprint 호환과 Qwen 10k 재검증
+- [x] 기존 품질·대화 준비도 42 scenario·47 turn을 한 curriculum SHA에 결속
 - [ ] step 50 profile/seed 최악 정확도 88.89%를 90% 이상으로 보정
 - [ ] suite 밖 자연스러운 인사와 실시간 조회 불가 자유대화 smoke
 
@@ -60,7 +61,7 @@
 - [ ] 공개 배포 결정: 승인된 대상·채널·버전·철회 책임자
 
 네 항목은 승인자, ISO 8601 시각, 근거 artifact를 가진 JSON과 각 품질·`release gate`가 필요하다. 현재 판정은
-**1.21.3 추가 teacher 증류·두 자동 품질 suite·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. validation PPL 감소나 aggregate 품질만으로 checkpoint를 승인하지 않는다.
+**1.21.4 추가 teacher 증류·통합 자동 품질 suite·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. validation PPL 감소나 aggregate 품질만으로 checkpoint를 승인하지 않는다.
 
 release gate의 필수 집합은 법무, 장기 baseline, 수동 품질 평가, 공개 배포 결정 네 개다. 수동 품질 manifest/report는 exact key, canonical fingerprint, report SHA, 최소 표본, 모든 점수와 worst 값, reviewer/submission/adjudication 교차 의미, release version·commit·config target을 검증한다. 네 gate는 한 invocation에서 한 번 snapshot한 Git commit·서명 trust policy·issuer map으로 검증한다. production `.llmex/trust-policy.json`에는 `quality-release`, `quality-reviewer`, `safety-reviewer`, `quality-adjudicator` 역할이 아직 없으며 고정 root private key 없이 policy를 수정하지 않는다.
 

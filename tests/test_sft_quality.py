@@ -652,6 +652,28 @@ def test_repository_conversation_readiness_suite는_자연대화와_근거대조
     assert not original_prompts.intersection(prompts)
 
 
+def test_repository_통합_suite는_기존_품질과_대화준비도를_그대로_결속한다() -> None:
+    quality_path = Path("data/evaluation/ko-chat-quality-v1.jsonl")
+    readiness_path = Path("data/evaluation/ko-conversation-readiness-v1.jsonl")
+    combined_path = Path("data/evaluation/ko-chat-quality-and-readiness-v1.jsonl")
+    expected = quality_path.read_bytes() + readiness_path.read_bytes()
+    assert combined_path.read_bytes() == expected
+    assert sha256_file(combined_path) == (
+        "4461f760bd56290347a65cd04d60dd5be206cc9d62d8baca6b54474dd748fd94"
+    )
+
+    rows = [
+        QualityScenario.model_validate(json.loads(line))
+        for line in combined_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(rows) == 42
+    assert len({row.id for row in rows}) == 42
+    prompts = [turn.user for row in rows for turn in row.turns]
+    assert len(prompts) == 47
+    assert len(set(prompts)) == 47
+    assert sum(len(row.turns) for row in rows) * 6 == 282
+
+
 def _review_public(key: Ed25519PrivateKey) -> str:
     raw = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
     return base64.b64encode(raw).decode()

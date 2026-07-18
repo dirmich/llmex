@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.21.3 Gemma 4 대화 증류 진행
+## 1.21.4 Gemma 4 대화 증류 진행
 
 ### 완료
 
@@ -16,6 +16,7 @@
 - [x] curriculum manifest를 최종 SFT source_manifest로 SHA 결속
 - [x] v11 step 50 readiness 120응답 평가·재유도와 실패 기준선 고정
 - [x] Qwen v5 10k 완료·export를 현재 CLI로 재검증하고 legacy fingerprint 복구
+- [x] quality v1과 readiness v1을 단일 SHA로 결속한 42 scenario 통합 suite
 - [ ] Gemma 4 자연 대화 source·inventory·수집·export·validate
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성

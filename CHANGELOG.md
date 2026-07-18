@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.21.4 - 2026-07-18
+
+- 정확도·안전 24 scenario와 자연 대화 준비도 18 scenario를 한 SHA로 결속하는 42 scenario 통합 suite를 추가했다.
+- 통합 suite가 원본 두 파일의 byte 결합과 정확히 같고 47개 user turn이 모두 고유하며 282응답을 계획하는지 회귀 테스트로 고정했다.
+- 후속 curriculum이 두 평가 집합의 prompt 비누출을 단일 manifest 입력으로 증명할 수 있게 했다.
+
 ## 1.21.3 - 2026-07-18
 
 - 빈 내부망 teacher allowlist가 필드 도입 전 loopback 증류 설정 fingerprint를 보존하도록 호환성을 복구했다. 비어 있지 않은 내부망 host 목록은 계속 fingerprint에 결속한다.
