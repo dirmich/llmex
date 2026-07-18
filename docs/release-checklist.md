@@ -1,4 +1,4 @@
-# 1.22.13 릴리스 체크리스트
+# 1.22.14 릴리스 체크리스트
 
 ## 자동 통과 항목
 
@@ -73,6 +73,10 @@
 - [x] Reference/serial·부자연스러운 조사·큰 수치와 split·teacher 의미 중복 제거
 - [x] `prompt_index` 기반 의미 조합 범위 분리와 natural-v3/v2 SHA·fingerprint 고정
 - [x] natural 2,000/2,000/3,000 inventory의 고유 request·Wikipedia 0·overlap 0·endpoint preflight
+- [x] Qwen 261건·Gemma 한국어 251건 teacher label 독립 감사 실패와 collector 중단·미export
+- [x] typed response contract 보존과 목표 언어·숫자·이름·용어·writing·uncertainty metadata-v1 gate
+- [x] task/category 균등 최대 50개 표본 승인 artifact와 inventory·accepted spool 강결속 export gate
+- [x] 과거 spool 역감사에서 Qwen 192/261·Gemma 50/251 품질 거절 재현
 - [ ] natural-v3/v2 collect·export·validate와 새 teacher mix
 - [ ] 100M latest SFT·390응답·suite 밖 smoke 통과 checkpoint 선별
 - [ ] step 50 profile/seed 최악 정확도 88.89%를 90% 이상으로 보정
@@ -86,7 +90,7 @@
 - [ ] 공개 배포 결정: 승인된 대상·채널·버전·철회 책임자
 
 네 항목은 승인자, ISO 8601 시각, 근거 artifact를 가진 JSON과 각 품질·`release gate`가 필요하다. 현재 판정은
-**1.22.13 의미 범위가 분리된 자연대화 증류 준비·600-step 혼합 SFT·focused-v12 150-step repair·private HF/GGUF export·통합 자동 품질 suite·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. focused-v12와 결함 있는 expanded tranche는 기각됐고 natural-v3/v2는 아직 수집·학습 전이다. validation PPL 감소나 aggregate 품질만으로 checkpoint를 승인하지 않는다.
+**1.22.14 source 결속 teacher 응답 품질 gate·600-step 혼합 SFT·focused-v12 150-step repair·private HF/GGUF export·통합 자동 품질 suite·자유대화 smoke·독립 수동 검토·외부 공개 승인 전 공개 금지**다. focused-v12와 결함 있는 expanded tranche, 품질 gate 전 natural 부분 수집은 모두 기각됐고 v2 natural은 export·mix·학습 전이다. validation PPL 감소나 aggregate 품질만으로 checkpoint를 승인하지 않는다.
 
 release gate의 필수 집합은 법무, 장기 baseline, 수동 품질 평가, 공개 배포 결정 네 개다. 수동 품질 manifest/report는 exact key, canonical fingerprint, report SHA, 최소 표본, 모든 점수와 worst 값, reviewer/submission/adjudication 교차 의미, release version·commit·config target을 검증한다. 네 gate는 한 invocation에서 한 번 snapshot한 Git commit·서명 trust policy·issuer map으로 검증한다. production `.llmex/trust-policy.json`에는 `quality-release`, `quality-reviewer`, `safety-reviewer`, `quality-adjudicator` 역할이 아직 없으며 고정 root private key 없이 policy를 수정하지 않는다.
 

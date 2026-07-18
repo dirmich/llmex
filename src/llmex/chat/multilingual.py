@@ -2,16 +2,263 @@
 
 import hashlib
 import json
+import re
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
-from llmex.chat.data import ChatRow, Message, Provenance
+from llmex.chat.data import ChatRow, Message, Provenance, ResponseQualityContract
 from llmex.errors import ConflictError, IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 
 _TASKS = ("conversation-en", "conversation-ja", "ko-en", "en-ko", "ko-ja", "ja-ko")
 _TEACHERS = ("qwen", "gemma")
 _COLLECTED_AT = "2026-07-18"
+
+_ENTITY_MAPS: dict[str, dict[str, tuple[str, ...]]] = {
+    "ko-en": {
+        "민준": ("Minjun", "Min-jun"),
+        "서연": ("Seoyeon", "Seo-yeon"),
+        "도윤": ("Doyun", "Do-yun"),
+        "하린": ("Harin", "Ha-rin"),
+        "지호": ("Jiho", "Ji-ho", "Jihoo"),
+        "수아": ("Sua", "Su-a", "Sooah"),
+        "현우": ("Hyeonwoo", "Hyunwoo", "Hyeon-woo", "Hyun-woo"),
+        "나은": ("Naeun", "Na-eun", "Nae-eun"),
+    },
+    "en-ko": {
+        "Alex": ("알렉스", "Alex"),
+        "Jamie": ("제이미", "Jamie"),
+        "Morgan": ("모건", "Morgan"),
+        "Taylor": ("테일러", "Taylor"),
+        "Casey": ("케이시", "캐시", "Casey"),
+        "Riley": ("라일리", "라이리", "Riley"),
+        "Jordan": ("조던", "Jordan"),
+        "Avery": ("에이버리", "에이브리", "Avery"),
+    },
+    "ko-ja": {
+        "민준": ("ミンジュン",),
+        "서연": ("ソヨン",),
+        "도윤": ("ドユン",),
+        "하린": ("ハリン",),
+        "지호": ("ジホ",),
+        "수아": ("スア",),
+        "현우": ("ヒョヌ", "ヒョンウ"),
+        "나은": ("ナウン",),
+    },
+    "ja-ko": {
+        "葵": ("아오이",),
+        "蓮": ("렌",),
+        "陽菜": ("히나",),
+        "湊": ("미나토",),
+        "結衣": ("유이",),
+        "悠真": ("유마",),
+        "凛": ("린",),
+        "蒼": ("아오이", "소우", "소오"),
+    },
+}
+
+_NUMBER_WORDS = {
+    "en": {
+        2: ("two",),
+        3: ("three",),
+        4: ("four",),
+        5: ("five",),
+        6: ("six",),
+        7: ("seven",),
+        8: ("eight",),
+        9: ("nine",),
+        10: ("ten",),
+        11: ("eleven",),
+        12: ("twelve", "noon"),
+    },
+    "ko": {
+        2: ("두", "둘"),
+        3: ("세", "셋"),
+        4: ("네", "넷"),
+        5: ("다섯",),
+        6: ("여섯",),
+        7: ("일곱",),
+        8: ("여덟",),
+        9: ("아홉",),
+        10: ("열",),
+        11: ("열한",),
+        12: ("열두", "정오"),
+    },
+    "ja": {
+        2: ("二",),
+        3: ("三",),
+        4: ("四",),
+        5: ("五",),
+        6: ("六",),
+        7: ("七",),
+        8: ("八",),
+        9: ("九",),
+        10: ("十",),
+        11: ("十一",),
+        12: ("十二", "正午"),
+    },
+}
+
+
+def _number_group(target: str, value: str) -> list[str]:
+    return [value, *_NUMBER_WORDS[target].get(int(value), ())]
+
+
+_TERM_MAPS: dict[str, dict[str, tuple[str, ...]]] = {
+    "ko-en": {
+        "노트": ("notebook", "notebooks"),
+        "우산": ("umbrella", "umbrellas"),
+        "책": ("book", "books"),
+        "사진": ("photo", "photos"),
+        "열쇠": ("key", "keys"),
+        "선물": ("gift", "gifts"),
+        "보고서": ("report", "reports"),
+        "표": ("ticket", "tickets"),
+    },
+    "en-ko": {
+        "notebooks": ("노트",),
+        "umbrellas": ("우산",),
+        "books": ("책",),
+        "photos": ("사진",),
+        "keys": ("열쇠",),
+        "gifts": ("선물",),
+        "reports": ("보고서", "리포트"),
+        "tickets": ("표", "티켓"),
+    },
+    "ko-ja": {
+        "노트": ("ノート",),
+        "우산": ("傘",),
+        "책": ("本",),
+        "사진": ("写真",),
+        "열쇠": ("鍵",),
+        "선물": ("贈り物", "プレゼント"),
+        "보고서": ("報告書",),
+        "표": ("切符", "チケット"),
+    },
+    "ja-ko": {
+        "ノート": ("노트",),
+        "傘": ("우산",),
+        "本": ("책",),
+        "写真": ("사진",),
+        "鍵": ("열쇠",),
+        "贈り物": ("선물",),
+        "報告書": ("보고서",),
+        "切符": ("표", "티켓"),
+    },
+}
+
+_CONTEXT_TERM_MAPS: dict[str, dict[str, tuple[str, ...]]] = {
+    "ko-en": {
+        "월요일": ("Monday",),
+        "화요일": ("Tuesday",),
+        "수요일": ("Wednesday",),
+        "목요일": ("Thursday",),
+        "도서관": ("library",),
+        "공원": ("park",),
+        "카페": ("cafe", "café"),
+        "미술관": ("museum",),
+        "시장": ("market",),
+        "강변": ("riverside", "river"),
+        "역": ("station",),
+        "회의실": ("meeting room",),
+        "받아": ("receive", "collect", "pick up"),
+        "전합니다": ("give", "deliver", "pass"),
+    },
+    "en-ko": {
+        "Monday": ("월요일",),
+        "Tuesday": ("화요일",),
+        "Wednesday": ("수요일",),
+        "Thursday": ("목요일",),
+        "library": ("도서관",),
+        "park": ("공원",),
+        "café": ("카페",),
+        "museum": ("미술관",),
+        "market": ("시장",),
+        "riverside": ("강변",),
+        "station": ("역",),
+        "community center": ("주민센터", "커뮤니티 센터"),
+        "collect": ("받", "수령", "수거"),
+        "give": ("주", "건네", "전하"),
+    },
+    "ko-ja": {
+        "월요일": ("月曜日",),
+        "화요일": ("火曜日",),
+        "수요일": ("水曜日",),
+        "목요일": ("木曜日",),
+        "도서관": ("図書館",),
+        "공원": ("公園",),
+        "카페": ("カフェ",),
+        "미술관": ("美術館",),
+        "시장": ("市場",),
+        "강변": ("川辺", "川沿い"),
+        "역": ("駅",),
+        "회의실": ("会議室",),
+        "받아": ("受け取",),
+        "전합니다": ("渡", "届け"),
+    },
+    "ja-ko": {
+        "月曜日": ("월요일",),
+        "火曜日": ("화요일",),
+        "水曜日": ("수요일",),
+        "木曜日": ("목요일",),
+        "図書館": ("도서관",),
+        "公園": ("공원",),
+        "カフェ": ("카페",),
+        "美術館": ("미술관",),
+        "市場": ("시장",),
+        "川辺": ("강변", "강가"),
+        "駅": ("역",),
+        "公民館": ("주민센터", "커뮤니티 센터"),
+        "受け取り": ("받", "수령"),
+        "渡します": ("주", "건네", "전하"),
+    },
+}
+
+
+def _detected_groups(prompt: str, mapping: dict[str, tuple[str, ...]]) -> list[list[str]]:
+    def present(source: str) -> bool:
+        if source == "本":
+            return f"{source}を" in prompt
+        if source == "역":
+            return (
+                re.search(
+                    r"(?<![가-힣])역(?=(?:에서|에|으로|은|는|이|가|을|를|과|와|도|의)?(?:[^가-힣]|$))",
+                    prompt,
+                )
+                is not None
+            )
+        return source in prompt
+
+    return [list(targets) for source, targets in mapping.items() if present(source)]
+
+
+def response_quality_contract(task: str, prompt: str) -> ResponseQualityContract:
+    target = cast(
+        Literal["ko", "en", "ja"],
+        {
+            "conversation-en": "en",
+            "conversation-ja": "ja",
+            "ko-en": "en",
+            "en-ko": "ko",
+            "ko-ja": "ja",
+            "ja-ko": "ko",
+        }[task],
+    )
+    if task.startswith("conversation-"):
+        return ResponseQualityContract(mode="conversation", target_language=target, max_sentences=2)
+    number_source = re.sub(r"(?<=\d):00\b", "", prompt)
+    numbers = list(dict.fromkeys(re.findall(r"(?<!\d)\d+(?!\d)", number_source)))
+    return ResponseQualityContract(
+        mode="translation-only",
+        target_language=target,
+        max_sentences=2,
+        required_numbers=[_number_group(target, number) for number in numbers],
+        required_entities=_detected_groups(prompt, _ENTITY_MAPS[task]),
+        required_terms=[
+            *_detected_groups(prompt, _TERM_MAPS[task]),
+            *_detected_groups(prompt, _CONTEXT_TERM_MAPS[task]),
+        ],
+    )
 
 
 def _topic_particle(value: str) -> str:
@@ -491,6 +738,9 @@ def _row(
         source_id=identifier,
         source_sha256=source_sha256,
         source_metadata=source_metadata,
+        response_quality=(
+            response_quality_contract(task, prompt) if profile == "natural-v3" else None
+        ),
     )
     messages = [
         Message(role="user", content=prompt),

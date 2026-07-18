@@ -10,7 +10,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import pytest
 from pydantic import ValidationError
@@ -20,9 +20,10 @@ from llmex.chat.data import load_chat_jsonl
 from llmex.cli import app
 from llmex.config import DistillationConfig, load_yaml
 from llmex.data.io import write_jsonl_zst
-from llmex.distill import collect, export, preflight, prepare, status, validate
+from llmex.distill import audit_sample, collect, export, preflight, prepare, status, validate
 from llmex.distill.client import completion, request_body
 from llmex.distill.filters import canonical_response, filter_response, repetition_ratio
+from llmex.distill.schema import LogicalRequest, SpoolRecord
 from llmex.errors import ConflictError, InputError, IntegrityError
 from llmex.fingerprint import fingerprint
 
@@ -172,6 +173,40 @@ def _config(tmp_path: Path, endpoint: str, *, target: int = 16) -> DistillationC
     )
 
 
+def _enable_metadata_quality(config: DistillationConfig) -> DistillationConfig:
+    source = config.source_chat_files[0]
+    rows: list[dict[str, Any]] = []
+    for line in source.read_text(encoding="utf-8").splitlines():
+        row = cast(dict[str, Any], json.loads(line))
+        provenance = cast(dict[str, Any], row["provenance"])
+        provenance["source_metadata"] = {"task": "conversation-ko"}
+        provenance["response_quality"] = {
+            "schema_version": 1,
+            "mode": "conversation",
+            "target_language": "ko",
+            "max_sentences": 3,
+            "required_numbers": [],
+            "required_entities": [],
+            "required_terms": [],
+        }
+        basis = {
+            "id": row["id"],
+            "messages": row["messages"],
+            "provenance": provenance,
+            "split": row["split"],
+        }
+        rows.append({"schema_version": 1, **basis, "sha256": fingerprint(basis)})
+    source.write_text(
+        "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    return config.model_copy(update={"quality_gate_version": "metadata-v1"})
+
+
+def _spool_record(value: dict[str, Any]) -> SpoolRecord:
+    return SpoolRecord.model_validate({**value, "record_sha256": fingerprint(value)})
+
+
 @pytest.mark.parametrize(
     "endpoint",
     [
@@ -225,6 +260,7 @@ def test_빈_내부망_allowlist는_기존_loopback_fingerprint를_보존한다(
     config = _config(tmp_path, "http://localhost:8081/v1")
     legacy_value = config.model_dump(mode="json")
     legacy_value.pop("allowed_endpoint_hosts")
+    legacy_value.pop("quality_gate_version")
     assert prepare(config)["config_fingerprint"] == fingerprint(legacy_value)
 
     lan_config = config.model_copy(
@@ -235,9 +271,9 @@ def test_빈_내부망_allowlist는_기존_loopback_fingerprint를_보존한다(
             "run_dir": tmp_path / "lan-run",
         }
     )
-    assert prepare(lan_config)["config_fingerprint"] == fingerprint(
-        lan_config.model_dump(mode="json")
-    )
+    lan_value = lan_config.model_dump(mode="json")
+    lan_value.pop("quality_gate_version")
+    assert prepare(lan_config)["config_fingerprint"] == fingerprint(lan_value)
 
 
 def test_prepare는_정확한_고유_inventory와_split을_만든다(tmp_path: Path) -> None:
@@ -313,6 +349,117 @@ def test_collect_retry_resume_export_validate와_비밀_비노출(
             path.read_text(encoding="utf-8") for path in config.run_dir.rglob("*") if path.is_file()
         )
         assert credential not in artifacts
+
+
+def test_metadata_quality_collect_spool_export_e2e(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TEST_TEACHER_KEY", "test-key")
+    (tmp_path / "bad").mkdir()
+    (tmp_path / "good").mkdir()
+    with _server() as endpoint:
+        bad = _enable_metadata_quality(_config(tmp_path / "bad", endpoint, target=4))
+        prepare(bad)
+        _TeacherHandler.response_override = "これは日本語の応答です。"
+        rejected = collect(bad)
+        assert rejected["counts"] == {"pending": 0, "rejected": 4}
+        assert rejected["reasons"] == {"quality:language:ko": 4}
+
+    with _server() as endpoint:
+        good = _enable_metadata_quality(_config(tmp_path / "good", endpoint, target=4))
+        prepared = prepare(good)
+        assert prepared["quality_gate_version"] == "metadata-v1"
+        assert prepared["response_quality_contracts"] == 4
+        assert len(prepared["response_quality_fingerprint"]) == 64
+        item = LogicalRequest.model_validate_json(
+            (good.run_dir / "inventory.jsonl").read_text(encoding="utf-8").splitlines()[0]
+        )
+        partial_response = "테스트 응답입니다."
+        partial = _spool_record(
+            {
+                "schema_version": 2,
+                "request_id": item.id,
+                "config_fingerprint": prepared["config_fingerprint"],
+                "status": "accepted",
+                "reason": None,
+                "attempts": 1,
+                "request_sha256": hashlib.sha256(request_body(good, item.prompt)).hexdigest(),
+                "raw_response_sha256": hashlib.sha256(b"partial-raw").hexdigest(),
+                "response_sha256": hashlib.sha256(partial_response.encode()).hexdigest(),
+                "response": partial_response,
+            }
+        )
+        spool_dir = good.run_dir / "spool"
+        spool_dir.mkdir()
+        stale_path = spool_dir / f"{item.id}.json"
+        stale_path.write_text(partial.model_dump_json(), encoding="utf-8")
+        with pytest.raises(IntegrityError, match="전체 수집"):
+            audit_sample(good, reviewer="테스트 검토자", approved=True)
+        stale_path.unlink()
+
+        stale_response = "これは日本語の応答です。"
+        stale = _spool_record(
+            {
+                "schema_version": 2,
+                "request_id": item.id,
+                "config_fingerprint": prepared["config_fingerprint"],
+                "status": "accepted",
+                "reason": None,
+                "attempts": 1,
+                "request_sha256": hashlib.sha256(request_body(good, item.prompt)).hexdigest(),
+                "raw_response_sha256": hashlib.sha256(b"raw").hexdigest(),
+                "response_sha256": hashlib.sha256(stale_response.encode()).hexdigest(),
+                "response": stale_response,
+            }
+        )
+        stale_path = spool_dir / f"{item.id}.json"
+        stale_path.write_text(stale.model_dump_json(), encoding="utf-8")
+        with pytest.raises(IntegrityError, match="accepted spool"):
+            status(good)
+        stale_path.unlink()
+
+        _TeacherHandler.response_override = None
+        assert collect(good)["counts"] == {"accepted": 4, "pending": 0}
+        with pytest.raises(IntegrityError, match="표본 감사"):
+            export(good)
+        audit = audit_sample(good, reviewer="테스트 검토자", approved=True)
+        assert audit["approved"] is True and audit["sample_count"] == 4
+        exported = export(good)
+        assert exported["quality_gate_version"] == "metadata-v1"
+        assert exported["response_quality_fingerprint"] == prepared["response_quality_fingerprint"]
+        assert validate(good)["status"] == "ok"
+        exported_rows = [
+            json.loads(line)
+            for split in ("train", "heldout")
+            for line in (good.run_dir / f"export/{split}.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        ]
+        assert exported_rows
+        assert all(row["provenance"]["response_quality"] for row in exported_rows)
+
+        audit_path = good.run_dir / "sample-audit.json"
+        audit_value = json.loads(audit_path.read_text(encoding="utf-8"))
+        audit_value["samples"][0]["response"] = "변조"
+        audit_path.write_text(json.dumps(audit_value), encoding="utf-8")
+        with pytest.raises(IntegrityError, match="표본 감사"):
+            validate(good)
+
+
+def test_response_quality_manifest_변조를_export에서_거부한다(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("TEST_TEACHER_KEY", "test-key")
+    with _server() as endpoint:
+        config = _enable_metadata_quality(_config(tmp_path, endpoint, target=4))
+        prepare(config)
+        manifest_path = config.run_dir / "run-manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["response_quality_contracts"] = 3
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        with pytest.raises(IntegrityError, match="response quality manifest"):
+            collect(config)
 
 
 def test_spool_손상과_exclusive_lock을_거부한다(

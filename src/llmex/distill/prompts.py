@@ -22,6 +22,33 @@ def normalize_text(value: str) -> str:
     return " ".join(unicodedata.normalize("NFC", value).split())
 
 
+def response_quality_manifest(
+    requests: list[LogicalRequest], quality_gate_version: str
+) -> dict[str, Any]:
+    """inventory에서 품질 계약 증거를 결정적으로 다시 계산한다."""
+
+    contracts = [item.source.response_quality for item in requests]
+    if quality_gate_version == "metadata-v1":
+        if any(contract is None for contract in contracts):
+            raise IntegrityError("metadata-v1 품질 gate에 필요한 response_quality 계약이 없습니다")
+        contract_rows = [
+            {
+                "id": item.id,
+                "contract": item.source.response_quality.model_dump(mode="json"),
+            }
+            for item in requests
+            if item.source.response_quality is not None
+        ]
+        return {
+            "quality_gate_version": quality_gate_version,
+            "response_quality_contracts": len(contract_rows),
+            "response_quality_fingerprint": fingerprint({"contracts": contract_rows}),
+        }
+    if any(contract is not None for contract in contracts):
+        raise IntegrityError("response_quality 계약에는 metadata-v1 품질 gate가 필요합니다")
+    return {}
+
+
 def _request(prompt: str, source: SourceProvenance, heldout_basis_points: int) -> LogicalRequest:
     normalized = normalize_text(prompt)
     prompt_sha = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
@@ -50,6 +77,11 @@ def _chat_candidates(config: DistillationConfig) -> Iterator[LogicalRequest]:
                     users = [message.content for message in row.messages if message.role == "user"]
                     if not users:
                         raise IntegrityError(f"user turn이 없는 instruction 행: {path}:{number}")
+                    metadata = dict(row.provenance.source_metadata or {})
+                    if "upstream_split" in metadata:
+                        raise IntegrityError(
+                            f"예약된 upstream_split metadata가 있습니다: {path}:{number}"
+                        )
                     source = SourceProvenance(
                         dataset=row.provenance.dataset,
                         source=row.provenance.source,
@@ -58,7 +90,8 @@ def _chat_candidates(config: DistillationConfig) -> Iterator[LogicalRequest]:
                         source_id=row.id,
                         source_sha256=row.sha256,
                         source_split=row.split,
-                        metadata={"upstream_split": row.split},
+                        metadata={**metadata, "upstream_split": row.split},
+                        response_quality=row.provenance.response_quality,
                     )
                     yield _request(users[-1], source, config.heldout_basis_points)
         except (json.JSONDecodeError, ValidationError) as exc:
@@ -139,6 +172,7 @@ def build_inventory(config: DistillationConfig) -> tuple[list[LogicalRequest], d
             f"고유 logical request가 부족합니다: {len(unique)}/{config.target_requests}"
         )
     selected = sorted(unique.values(), key=lambda item: item.id)[: config.target_requests]
+    quality_manifest = response_quality_manifest(selected, config.quality_gate_version)
     train_sources = {item.source.source_sha256 for item in selected if item.split == "train"}
     heldout_sources = {item.source.source_sha256 for item in selected if item.split == "heldout"}
     overlap = train_sources & heldout_sources
@@ -163,7 +197,11 @@ def build_inventory(config: DistillationConfig) -> tuple[list[LogicalRequest], d
         "prompt_overlap": 0,
         "upstream_source_overlap": 0,
         "inventory_fingerprint": fingerprint(
-            {"schema_version": 2, "rows": [item.model_dump(mode="json") for item in selected]}
+            {
+                "schema_version": 2,
+                "rows": [item.model_dump(mode="json", exclude_none=True) for item in selected],
+            }
         ),
     }
+    manifest.update(quality_manifest)
     return selected, manifest

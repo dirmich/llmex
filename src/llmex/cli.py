@@ -219,6 +219,24 @@ def distill_status(config_path: Annotated[Path, typer.Option("--config")]) -> No
     _distill_call(config_path, "status")
 
 
+@distill_app.command("audit-sample")
+def distill_audit_sample(
+    config_path: Annotated[Path, typer.Option("--config")],
+    reviewer: Annotated[str, typer.Option("--reviewer")],
+    approved: Annotated[bool, typer.Option("--approve/--reject")] = False,
+) -> None:
+    """현재 accepted spool의 균등 표본과 검토 결정을 강결속합니다."""
+
+    try:
+        config = load_yaml(config_path, DistillationConfig)
+        from llmex.distill import audit_sample
+
+        result = audit_sample(config, reviewer=reviewer, approved=approved)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
 @distill_app.command("export")
 def distill_export(config_path: Annotated[Path, typer.Option("--config")]) -> None:
     """필터를 통과한 응답을 결정적 ChatDataset JSONL로 압축합니다."""

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, ValidationError, model_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
 
 from llmex.config import StrictModel
 from llmex.errors import InputError, IntegrityError
@@ -17,6 +17,29 @@ from llmex.fingerprint import fingerprint, sha256_file
 class Message(StrictModel):
     role: Literal["system", "user", "assistant"]
     content: str = Field(min_length=1)
+
+
+def _empty_term_groups() -> list[list[str]]:
+    return []
+
+
+class ResponseQualityContract(StrictModel):
+    """teacher 응답에 적용할 source 결속 품질 계약."""
+
+    schema_version: Literal[1] = 1
+    mode: Literal["conversation", "translation-only", "direct-message", "uncertainty"]
+    target_language: Literal["ko", "en", "ja"]
+    max_sentences: int = Field(default=3, ge=1, le=8)
+    required_numbers: list[list[str]] = Field(default_factory=_empty_term_groups)
+    required_entities: list[list[str]] = Field(default_factory=_empty_term_groups)
+    required_terms: list[list[str]] = Field(default_factory=_empty_term_groups)
+
+    @field_validator("required_numbers", "required_entities", "required_terms")
+    @classmethod
+    def validate_term_groups(cls, groups: list[list[str]]) -> list[list[str]]:
+        if any(not group or any(not value.strip() for value in group) for group in groups):
+            raise ValueError("응답 품질 계약의 필수 표면형 묶음은 비어 있을 수 없습니다")
+        return groups
 
 
 class Provenance(StrictModel):
@@ -35,6 +58,7 @@ class Provenance(StrictModel):
     source_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     source_collected_at: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
     source_metadata: dict[str, str | int] | None = None
+    response_quality: ResponseQualityContract | None = None
 
 
 class ChatRow(StrictModel):

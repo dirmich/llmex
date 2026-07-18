@@ -124,17 +124,17 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 
 ### `src/llmex/distill/filters.py`
 
-- 책임: 응답 길이·반복·복사·Unicode 품질을 판정하고 canonical response를 만든다.
-- 구현 순서: skeleton 정규화 → repetition ratio → 정책별 rejection reason → 허용 응답 canonicalization 순서다.
-- 실패 사례: 빈 답, prompt 복사, 고반복, 제어문자·깨진 Unicode를 성공으로 내보내면 안 된다.
-- 검증: `tests/test_distill.py`의 임계값 바로 아래·위 사례를 실행한다.
-- 완료 산출물: 안정된 rejection reason 또는 학습 가능한 canonical assistant text다.
+- 책임: 일반 응답 형식과 source에 결속된 목표 언어·응답 모드·사실 보존 계약을 판정하고 canonical response를 만든다.
+- 구현 순서: Unicode/safety/반복/복사 → target script → 문장/직접성 → 숫자·entity·핵심 용어 → uncertainty 경계 순서다.
+- 실패 사례: 일반 휴리스틱만 통과한 일본어 원문, `notebook→노트북`, 메시지 뒤 설명, 조회할 수 없는 실시간 상태 단정을 학습 가능으로 오인하면 안 된다.
+- 검증: `tests/test_distill.py`와 `tests/test_distill_quality.py`에서 정상·실패 경계와 metadata 보존을 실행한다.
+- 완료 산출물: 안정된 rejection reason 또는 자동 계약을 통과한 canonical assistant text다. 실제 학습 승인은 task/category 균등 표본 감사까지 필요하다.
 
 ### `src/llmex/distill/collector.py`
 
 - 책임: `preflight → prepare → collect/resume → status → export → validate` 전체 상태 기계를 소유한다.
 - 구현 순서: 입력 snapshot/manifest → 요청별 원자 spool → 제한 병렬 수집·재시도 → 상태 집계 → chat export → byte 재검산 순서다.
-- 실패 사례: config/source/model 결속이 다른 spool, live 충돌, 부분 write, export 후 변조를 거부한다.
+- 실패 사례: config/source/model/response-quality 결속이 다른 spool, live 충돌, 부분 write, export 후 변조를 거부한다. 표본 감사 전 export하지 않는다.
 - 검증: `uv run pytest -q tests/test_distill.py`와 모든 `llmex distill` 하위 명령을 offline fixture부터 순서대로 실행한다.
 - 완료 산출물: inventory, request별 spool, collection state, train/heldout chat export와 manifest다.
 
@@ -142,6 +142,7 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 
 - [ ] 모든 chat row가 provenance와 결정적 final-user hash를 가진다.
 - [ ] teacher inventory와 mix/curriculum split의 prompt·source overlap이 0이다.
+- [ ] source task별 목표 언어·번역 의미·writing 직접성·uncertainty 경계를 자동 gate와 균등 표본 감사가 모두 통과한다.
 - [ ] assistant-only label에 EOS가 포함되고 user/system/PAD는 `-100`이다.
 - [ ] 자동 품질 artifact는 원 입력에서 byte 단위 재생성된다.
 - [ ] 수동 승인을 개발자 자신의 unsigned 파일로 대체하지 않는다.

@@ -561,6 +561,7 @@ class DistillationConfig(StrictModel):
     max_response_chars: int = Field(default=8_000, gt=0)
     max_repetition_ratio: float = Field(default=0.65, ge=0.0, le=1.0)
     max_prompt_copy_ratio: float = Field(default=0.9, ge=0.0, le=1.0)
+    quality_gate_version: Literal["none", "metadata-v1"] = "none"
     unsafe_concepts: list[UnsafeConceptConfig] = Field(
         default_factory=lambda: [
             UnsafeConceptConfig(

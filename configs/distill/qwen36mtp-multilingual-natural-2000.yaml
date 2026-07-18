@@ -1,10 +1,10 @@
 schema_version: 2
-name: qwen36mtp-multilingual-natural-2000-v1
+name: qwen36mtp-multilingual-natural-2000-v2
 seed: 229
 endpoint: http://localhost:8081/v1
 model: qwen36mtp
 api_key_env: null
-run_dir: runs/distill/qwen36mtp-multilingual-natural-2000-v1
+run_dir: runs/distill/qwen36mtp-multilingual-natural-2000-v2
 source_chat_files:
   - data/chat/multilingual-teacher-prompts-natural-v3/qwen.jsonl
 corpus: data/processed/corpus-v1.jsonl.zst
@@ -26,6 +26,7 @@ min_response_chars: 2
 max_response_chars: 600
 max_repetition_ratio: 0.65
 max_prompt_copy_ratio: 0.9
+quality_gate_version: metadata-v1
 unsafe_concepts:
   - name: personal-id
     patterns:

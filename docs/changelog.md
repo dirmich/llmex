@@ -1,5 +1,14 @@
 # 변경 기록
 
+## 1.22.14 - 2026-07-18
+
+- natural 첫 수집을 Qwen 261/2,000과 Gemma 한국어 251/3,000에서 중단했다. 기존 `accepted`는 일반 휴리스틱만 통과했으며 목표 언어 혼합, 이름·용어 오역, writing 메타답변과 실시간 혼잡도 단정을 허용했으므로 export하지 않았다.
+- `ResponseQualityContract`를 source provenance부터 distill inventory·export까지 보존하고 `metadata-v1`이 빠진 계약을 실패-폐쇄하도록 구현했다.
+- 목표 언어, 문장 수, 번역-only, 숫자·이름·핵심 용어, 직접 메시지, 불확실성 한계·확인 경로를 수집과 spool 재검증에서 동일하게 검사한다.
+- 영어·한국어·일본어 숫자 단어의 추가 수량, `번역문`의 `역` 부분 일치, writing 인용 안내와 범용 지도 서비스 실시간 단정을 막고 회귀로 고정했다.
+- `audit-sample`이 task/category 균등 최대 50개 검토와 승인 결정을 inventory·전체 accepted spool에 결속하며, 이 artifact 없이는 metadata-v1 export를 실패-폐쇄한다.
+- 새 v2 inventory와 endpoint preflight를 재생성했으며 과거 spool 역감사에서 Qwen 192/261, Gemma 50/251을 품질 거절했다.
+
 ## 1.22.13 - 2026-07-18
 
 - expanded 1차 tranche를 Qwen 1,296/2,000, Gemma 다국어 433/2,000, Gemma 한국어 369/3,000에서 표본 감사하고 source 결함 때문에 export 없이 폐기했다.

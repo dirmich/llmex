@@ -1,5 +1,17 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.14 source 결속 teacher 응답 품질 gate
+
+- natural 첫 수집은 Qwen 261/2,000(13.05%, 1.152 req/s)과 Gemma 한국어 251/3,000(8.37%, 0.613 req/s)에서 독립 표본 감사를 실패해 중단했다. 두 run 모두 기존 필터에서는 전량 accepted였지만 export·validate·학습 혼합은 실행하지 않았다.
+- Qwen 표본 50개는 37개만 엄격 통과했다. ja→ko의 일본어 유지·`蒼` 혼입, ko→ja의 한국어 원문, `notebooks→노트북`, `Avery→아버리`, `현우→Hyuwoo`, `표→表`를 확인했다. Gemma 표본 50개는 40개만 통과했고 writing 5/5가 메시지 외 설명·대안을 붙였으며 uncertainty는 지도 서비스 실시간 혼잡도를 단정했다.
+- `prompts.py`가 원 source의 task/category metadata를 버리고 있던 원인을 고쳤다. typed `ResponseQualityContract`가 target language, mode, 문장 상한, 숫자·entity·핵심 용어 허용 표면형을 ChatRow→LogicalRequest→export provenance까지 결속한다.
+- `metadata-v1`은 계약 누락을 prepare에서 실패-폐쇄하고, 수집·accepted/rejected spool 재검증에 같은 합성 필터를 사용한다. 영어·한국어·일본어 script, 번역-only, 숫자와 숫자 단어 변경/추가, entity/term, direct writing, uncertainty 한계·검증 행동과 범용 지도 혼잡도 단정을 안정된 reason으로 판정한다. `번역문`의 `역`을 station으로 오인하던 부분 일치도 실제 natural prompt 회귀로 제거했다.
+- run manifest의 품질 gate 버전·계약 수·계약 fingerprint를 inventory에서 매번 재계산한다. `audit-sample`은 pending/failed 0인 전체 수집에서만 task/category 균등 최대 50개 응답과 승인 결정을 inventory·전체 accepted spool 집합에 결속하고, 부분 수집·artifact 누락·미승인·변조·stale 상태의 metadata-v1 export를 거부한다.
+- 신규 품질 회귀와 metadata-v1 collect·stale spool·export E2E를 통과했다. 과거 spool을 새 계약으로 역감사해 Qwen 69 accepted/192 rejected, Gemma 201 accepted/50 rejected로 재분류했으며 알려진 결함 사례가 모두 거절되는 것을 확인했다.
+- 최종 `make release-check`는 247 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다. 독립 code reviewer는 `APPROVE`, architect는 `CLEAR`로 판정했고 부분 수집 audit/export와 mixer incomplete 우회까지 차단됐음을 확인했다.
+- 최종 다국어 source SHA는 Qwen `6568b13802613221084a4d3a7f8f80b0ee51f38238928941adb727becdcceca8`, Gemma `2648e1de7cf29b2238849f70a8afe52e4c1c539604d261e07a2d8d17586c8d18`, manifest fingerprint는 `07b26c84369b2eecc38b9d0019d607ebdc9be071b574d1600b99f4616cc90cfa`다. Qwen/Gemma v2 inventory fingerprint는 `b5f44db90884f1f3232aacbc80477ced5304538227e5d73c0eeebd9353982dbe`/`6cb3e358ee4d50c9b7804e82a7cb97e0a54acfc77c3d497071abe2c5dccdc537`다. 한국어 source와 inventory fingerprint는 `c17b628d…e0da`/`36310381…6259`다.
+- 이후 작업은 v2 collect→독립 표본 감사→export/validate→public+teacher 비누출 mix→100M latest SFT→390응답·suite 밖 smoke→HF/GGUF parity→private Hugging Face 업로드 순서다.
+
 ## 2026-07-18 · 1.22.13 자연대화 source 결함 폐기와 의미 범위 분리
 
 - expanded 1차 tranche의 teacher 표본을 조기에 감사했다. Qwen 다국어는 1,296/2,000 처리 시점에 accepted 1,271·`prompt_copy` rejected 25, Gemma 다국어는 433/2,000, Gemma 한국어는 369/3,000에서 중단했다. 세 run 모두 source 품질 결함으로 기각했으며 export·validate와 학습 입력 혼합을 실행하지 않았다.

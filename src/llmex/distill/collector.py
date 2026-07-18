@@ -27,8 +27,8 @@ from .client import (
     request_body,
     response_contains_secret,
 )
-from .filters import SAFETY_FILTER_SCOPE, canonical_response, filter_response
-from .prompts import build_inventory
+from .filters import SAFETY_FILTER_SCOPE, canonical_response, filter_logical_response
+from .prompts import build_inventory, response_quality_manifest
 from .schema import LogicalRequest, SpoolRecord
 
 
@@ -40,6 +40,8 @@ def _config_fingerprint(config: DistillationConfig) -> str:
     value = config.model_dump(mode="json")
     if not config.allowed_endpoint_hosts:
         value.pop("allowed_endpoint_hosts")
+    if config.quality_gate_version == "none":
+        value.pop("quality_gate_version")
     return fingerprint(value)
 
 
@@ -116,10 +118,22 @@ def _inventory(config: DistillationConfig) -> list[LogicalRequest]:
     if len({item.prompt_sha256 for item in values}) != len(values):
         raise IntegrityError("distill inventory에 중복 prompt가 있습니다")
     expected_fingerprint = fingerprint(
-        {"schema_version": 2, "rows": [item.model_dump(mode="json") for item in values]}
+        {
+            "schema_version": 2,
+            "rows": [item.model_dump(mode="json", exclude_none=True) for item in values],
+        }
     )
     if manifest.get("inventory_fingerprint") != expected_fingerprint:
         raise IntegrityError("distill inventory fingerprint가 다릅니다")
+    expected_quality = response_quality_manifest(values, config.quality_gate_version)
+    quality_names = {
+        "quality_gate_version",
+        "response_quality_contracts",
+        "response_quality_fingerprint",
+    }
+    actual_quality = {name: manifest[name] for name in quality_names if name in manifest}
+    if actual_quality != expected_quality:
+        raise IntegrityError("distill response quality manifest가 inventory와 다릅니다")
     return values
 
 
@@ -136,7 +150,7 @@ def prepare(config: DistillationConfig) -> dict[str, Any]:
         requests, summary = build_inventory(config)
         payload = "".join(
             json.dumps(
-                item.model_dump(mode="json"),
+                item.model_dump(mode="json", exclude_none=True),
                 ensure_ascii=False,
                 sort_keys=True,
                 separators=(",", ":"),
@@ -196,13 +210,13 @@ def _validate_spool_binding(
     if record.status == "accepted":
         if record.reason is not None or record.response is None:
             raise IntegrityError("accepted spool 조합이 올바르지 않습니다")
-        if filter_response(item.prompt, record.response, config) is not None:
+        if filter_logical_response(item, record.response, config) is not None:
             raise IntegrityError("accepted spool이 현재 필터를 통과하지 못합니다")
     elif record.status == "rejected":
         if not record.reason:
             raise IntegrityError("rejected spool에 reason이 없습니다")
         if record.response is not None:
-            expected_reason = filter_response(item.prompt, record.response, config)
+            expected_reason = filter_logical_response(item, record.response, config)
             if expected_reason != record.reason:
                 raise IntegrityError("rejected spool reason이 현재 필터와 다릅니다")
     elif not (
@@ -287,7 +301,7 @@ def _collect_one(
                         "response": None,
                     }
                 )
-            reason = filter_response(item.prompt, response, config)
+            reason = filter_logical_response(item, response, config)
             normalized = response.strip()
             return _record(
                 {
@@ -525,6 +539,8 @@ def _chat_row(
         "source_collected_at": item.source.collected_at,
         "source_metadata": item.source.metadata,
     }
+    if item.source.response_quality is not None:
+        provenance["response_quality"] = item.source.response_quality.model_dump(mode="json")
     messages = [
         {"role": "user", "content": item.prompt},
         {"role": "assistant", "content": record.response},
@@ -533,27 +549,15 @@ def _chat_row(
     return {"schema_version": 1, **basis, "sha256": fingerprint(basis)}
 
 
-def _export_material(
-    config: DistillationConfig,
-) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
-    run_manifest = _load_manifest(config)
-    requests = _inventory(config)
-    records = _records(config, requests)
-    rows: dict[str, list[dict[str, Any]]] = {"train": [], "heldout": []}
-    seen_responses: set[str] = set()
-    duplicate_responses = 0
-    rejected = 0
-    incomplete = 0
-    accepted_bindings: list[dict[str, str]] = []
+def _accepted_bindings(
+    requests: list[LogicalRequest], records: Mapping[str, SpoolRecord]
+) -> list[dict[str, str]]:
+    bindings: list[dict[str, str]] = []
     for item in requests:
         record = records.get(item.id)
-        if record is None or record.status == "failed":
-            incomplete += 1
+        if record is None or record.status != "accepted" or record.response is None:
             continue
-        if record.status != "accepted" or record.response is None:
-            rejected += 1
-            continue
-        accepted_bindings.append(
+        bindings.append(
             {
                 "id": item.id,
                 "record_sha256": record.record_sha256,
@@ -562,6 +566,158 @@ def _export_material(
                 "raw_response_sha256": str(record.raw_response_sha256),
             }
         )
+    return bindings
+
+
+def _audit_group(item: LogicalRequest) -> str:
+    metadata = item.source.metadata
+    parts = [f"{name}:{metadata[name]}" for name in ("task", "category") if name in metadata]
+    return "|".join(parts) or f"dataset:{item.source.dataset}"
+
+
+def _audit_samples(
+    requests: list[LogicalRequest], records: Mapping[str, SpoolRecord]
+) -> list[dict[str, str]]:
+    groups: dict[str, list[tuple[LogicalRequest, SpoolRecord]]] = {}
+    for item in requests:
+        record = records.get(item.id)
+        if record is None or record.status != "accepted" or record.response is None:
+            continue
+        groups.setdefault(_audit_group(item), []).append((item, record))
+    target = min(50, sum(len(values) for values in groups.values()))
+    selected: list[tuple[str, LogicalRequest, SpoolRecord]] = []
+    offsets = {name: 0 for name in groups}
+    while len(selected) < target:
+        progressed = False
+        for name in sorted(groups):
+            offset = offsets[name]
+            if offset >= len(groups[name]):
+                continue
+            item, record = groups[name][offset]
+            offsets[name] += 1
+            selected.append((name, item, record))
+            progressed = True
+            if len(selected) == target:
+                break
+        if not progressed:
+            break
+    return [
+        {
+            "group": name,
+            "request_id": item.id,
+            "prompt": item.prompt,
+            "response": str(record.response),
+            "response_sha256": str(record.response_sha256),
+        }
+        for name, item, record in selected
+    ]
+
+
+def _require_complete_quality_collection(
+    requests: list[LogicalRequest], records: Mapping[str, SpoolRecord]
+) -> None:
+    incomplete = [
+        item.id
+        for item in requests
+        if item.id not in records or records[item.id].status == "failed"
+    ]
+    if incomplete:
+        raise IntegrityError(
+            "metadata-v1 표본 감사와 export에는 pending/failed 없는 전체 수집이 필요합니다"
+        )
+
+
+def audit_sample(config: DistillationConfig, *, reviewer: str, approved: bool) -> dict[str, Any]:
+    """task/category 균등 응답 표본과 명시적 검토 결정을 현재 spool에 결속한다."""
+
+    if not reviewer.strip():
+        raise InputError("표본 감사 reviewer는 비어 있을 수 없습니다")
+    with _run_lock(config.run_dir):
+        manifest = _load_manifest(config)
+        requests = _inventory(config)
+        records = _records(config, requests)
+        if config.quality_gate_version == "metadata-v1":
+            _require_complete_quality_collection(requests, records)
+        samples = _audit_samples(requests, records)
+        if not samples:
+            raise InputError("표본 감사에 사용할 accepted 응답이 없습니다")
+        accepted_bindings = _accepted_bindings(requests, records)
+        basis: dict[str, Any] = {
+            "schema_version": 1,
+            "approved": approved,
+            "reviewer": reviewer.strip(),
+            "inventory_fingerprint": manifest["inventory_fingerprint"],
+            "response_quality_fingerprint": manifest.get("response_quality_fingerprint"),
+            "accepted_spool_set_fingerprint": fingerprint({"accepted": accepted_bindings}),
+            "sample_count": len(samples),
+            "samples": samples,
+        }
+        artifact = {**basis, "artifact_sha256": fingerprint(basis)}
+        write_json(config.run_dir / "sample-audit.json", artifact)
+        return artifact
+
+
+def _validated_sample_audit(
+    config: DistillationConfig,
+    manifest: Mapping[str, Any],
+    requests: list[LogicalRequest],
+    records: Mapping[str, SpoolRecord],
+) -> dict[str, Any]:
+    _require_complete_quality_collection(requests, records)
+    path = config.run_dir / "sample-audit.json"
+    if not path.is_file():
+        raise IntegrityError("metadata-v1 export에는 승인된 표본 감사 artifact가 필요합니다")
+    try:
+        artifact = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise IntegrityError("distill 표본 감사 artifact가 손상되었습니다") from exc
+    basis = {name: value for name, value in artifact.items() if name != "artifact_sha256"}
+    accepted_bindings = _accepted_bindings(requests, records)
+    expected = {
+        "schema_version": 1,
+        "approved": True,
+        "reviewer": artifact.get("reviewer"),
+        "inventory_fingerprint": manifest["inventory_fingerprint"],
+        "response_quality_fingerprint": manifest.get("response_quality_fingerprint"),
+        "accepted_spool_set_fingerprint": fingerprint({"accepted": accepted_bindings}),
+        "sample_count": len(_audit_samples(requests, records)),
+        "samples": _audit_samples(requests, records),
+    }
+    if (
+        not isinstance(expected["reviewer"], str)
+        or not expected["reviewer"].strip()
+        or basis != expected
+        or artifact.get("artifact_sha256") != fingerprint(basis)
+    ):
+        raise IntegrityError("distill 표본 감사 artifact가 current inventory/spool과 다릅니다")
+    return artifact
+
+
+def _export_material(
+    config: DistillationConfig,
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    run_manifest = _load_manifest(config)
+    requests = _inventory(config)
+    records = _records(config, requests)
+    sample_audit = (
+        _validated_sample_audit(config, run_manifest, requests, records)
+        if config.quality_gate_version == "metadata-v1"
+        else None
+    )
+    rows: dict[str, list[dict[str, Any]]] = {"train": [], "heldout": []}
+    seen_responses: set[str] = set()
+    duplicate_responses = 0
+    rejected = 0
+    incomplete = 0
+    accepted_bindings = _accepted_bindings(requests, records)
+    for item in requests:
+        record = records.get(item.id)
+        if record is None or record.status == "failed":
+            incomplete += 1
+            continue
+        if record.status != "accepted" or record.response is None:
+            rejected += 1
+            continue
         canonical = canonical_response(record.response)
         if canonical in seen_responses:
             duplicate_responses += 1
@@ -593,6 +749,17 @@ def _export_material(
         "release_gate": "blocked",
         "safety_filter_scope": SAFETY_FILTER_SCOPE,
     }
+    for name in (
+        "quality_gate_version",
+        "response_quality_contracts",
+        "response_quality_fingerprint",
+    ):
+        if name in run_manifest:
+            manifest[name] = run_manifest[name]
+    if sample_audit is not None:
+        manifest["sample_audit_sha256"] = sample_audit["artifact_sha256"]
+        manifest["sample_audit_reviewer"] = sample_audit["reviewer"]
+        manifest["sample_audit_count"] = sample_audit["sample_count"]
     return rows, manifest
 
 

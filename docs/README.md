@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.13. focused-v12 step 150은 실제 자유대화 비문으로 기각했고, 이어진 expanded 1차 수집도 source 문형과 split·teacher 의미 누출 결함 때문에 export 없이 중단했다. `prompt_index` 전단사 순열로 의미 조합 범위를 분리한 natural-v3 다국어와 natural-v2 한국어 source를 다시 생성해 Qwen/Gemma 다국어 각 2,000, Gemma 한국어 3,000 inventory의 고유 request·canonical 본문 교집합 0·모든 의미 축의 양 split 분포·Wikipedia 보충 0·endpoint preflight를 확인했다. 다음 단계는 새 source의 collect→export→validate→mix→100M latest SFT→390응답과 suite 밖 smoke다.
+현재 상태: 1.22.14. natural 첫 수집은 Qwen 261/2,000, Gemma 한국어 251/3,000에서 목표 언어·번역 의미·직접 메시지·불확실성 품질 감사를 실패해 중단했고 export하지 않았다. source의 typed 응답 계약을 distill inventory와 spool 검증에 보존하는 `metadata-v1` gate와 v2 run을 준비했으며, 과거 응답 역감사에서 Qwen 192건과 Gemma 50건을 새 규칙이 거절했다. 새 export는 task/category 균등 최대 50개 표본의 명시적 승인 artifact를 inventory와 전체 accepted spool에 결속한다. 다음 단계는 v2 collect→독립 표본 감사→export/validate→mix→100M latest SFT→390응답과 suite 밖 smoke다.

@@ -109,6 +109,7 @@ def _teacher_manifest_binding(
             or value.get("teacher_output_license") != _INTERNAL_LICENSE
             or value.get("redistribution_allowed") is not False
             or value.get("release_gate") != "blocked"
+            or value.get("incomplete") != 0
             or hashes["train"] != sha256_file(train_data)
             or hashes["heldout"] != sha256_file(heldout_data)
             or counts != expected_counts

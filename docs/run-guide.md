@@ -314,6 +314,8 @@ uv run llmex sft eval \
 
 대화 품질 보강용 정식 확장에서는 `docs/teacher-distillation.md`의 1.22.11 절에 따라 한국어 10,000개와 Qwen/Gemma 다국어 각 6,000개를 생성·수집한다. 단순히 기존 한국어 config의 target만 늘리면 Wikipedia fallback이 섞이므로 금지한다. 세 export는 통합 suite 비누출 curriculum을 만든 뒤에만 재학습 입력으로 사용한다.
 
+1.22.14 이후 natural 수집은 `quality_gate_version: metadata-v1`인 v2 run만 사용한다. Qwen v1 261건과 Gemma 한국어 v1 251건은 일반 휴리스틱상 accepted였지만 목표 언어·번역 의미·writing/uncertainty 표본 감사를 실패했으므로 resume/export하지 않는다. 새 run도 `status`의 accepted 수만 보지 말고 `distill audit-sample --reviewer <식별자> --approve`로 task/category 균등 최대 50개 표본을 실제 검토해 현재 accepted spool 집합에 결속한 뒤에만 export·validate한다. 표본 artifact가 없거나 미승인·변조·stale이면 export가 실패한다.
+
 pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite SHA-256을 먼저 고정한다. suite는 repository의 `data/evaluation/ko-chat-quality-v1.jsonl`이며 MIT 24 scenarios·27 unique turns다. 공개 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다. 품질 설정 파일에는 `SFTQualityConfig`의 모든 필드와 SHA를 기록하고 SFT 설정은 `deterministic: true`로 유지한다.
 
 자연 대화 일반화는 별도 `data/evaluation/ko-conversation-readiness-v1.jsonl`로 평가한다. SHA는 `9d69ff68…c57c`이며 18 scenarios·20 unique turns에 greedy 1회와 sampling seed 5회를 적용해 120응답을 만든다. 인사·일상 대화·실시간 한계/제공 반례·근거 누락/제공 반례·다중 턴 기억/정정·안전을 모두 포함하며 기존 quality v1, focused-v11 train/heldout, Gemma4 2,200 inventory와 exact prompt overlap은 0이다. curriculum 비누출은 두 원본을 byte 그대로 결합한 `ko-chat-quality-and-readiness-v1.jsonl` SHA `4461f760…fd94` 하나에 결속한다. Gemma 수집은 `http://macmini:11434/v1`에서 2,200건을 완료했고 export train 1,160·heldout 496행, manifest SHA `824329dd…d601`, overlap 0으로 검증됐다. 정식 후보는 통합 282응답 gate를 통과해야 한다.

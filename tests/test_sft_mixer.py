@@ -172,6 +172,7 @@ def _fixture(tmp_path: Path) -> tuple[SFTMixConfig, int]:
                 "teacher_output_license": internal,
                 "redistribution_allowed": False,
                 "release_gate": "blocked",
+                "incomplete": 0,
                 "counts": {"train": 2, "heldout": 1},
                 "sha256": {
                     "train": sha256_file(teacher_train),
@@ -251,6 +252,19 @@ def _upstream_manifest(
     path.write_text(json.dumps(value, sort_keys=True), encoding="utf-8")
 
 
+def test_mix는_부분_teacher_export를_거부한다(tmp_path: Path) -> None:
+    config, _ = _fixture(tmp_path)
+    teacher = json.loads(config.teacher_manifest.read_text(encoding="utf-8"))
+    teacher["incomplete"] = 1
+    config.teacher_manifest.write_text(json.dumps(teacher, sort_keys=True), encoding="utf-8")
+    partial = config.model_copy(
+        update={"expected_teacher_manifest_sha256": sha256_file(config.teacher_manifest)}
+    )
+
+    with pytest.raises(IntegrityError, match="teacher export manifest"):
+        preflight_mix(partial)
+
+
 def test_mix는_legacy_fingerprint를_보존하고_세_원천_manifest를_결속한다(
     tmp_path: Path,
 ) -> None:
@@ -297,6 +311,7 @@ def test_mix는_legacy_fingerprint를_보존하고_세_원천_manifest를_결속
                 "teacher_output_license": internal,
                 "redistribution_allowed": False,
                 "release_gate": "blocked",
+                "incomplete": 0,
                 "counts": {"train": 1, "heldout": 1},
                 "sha256": {
                     "train": sha256_file(gemma_train),

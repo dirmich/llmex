@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from llmex.chat.data import ChatRow, Message, Provenance
+from llmex.chat.data import ChatRow, Message, Provenance, ResponseQualityContract
 from llmex.errors import ConflictError, IntegrityError
 from llmex.fingerprint import fingerprint
 
@@ -22,6 +22,36 @@ _CATEGORIES = (
     "uncertainty",
 )
 _COLLECTED_AT = "2026-07-18"
+
+_KOREAN_HOURS = {
+    9: "아홉",
+    10: "열",
+    11: "열한",
+    12: "열두",
+    13: "오후 한",
+    14: "오후 두",
+    15: "오후 세",
+    16: "오후 네",
+}
+
+
+def _response_quality(category: str, prompt_index: int) -> ResponseQualityContract:
+    combination_index = (prompt_index * 641) % 2048
+    d = (combination_index // 64) % 4
+    c = (combination_index // 256) % 8
+    timing = ("오늘", "내일", "이번 주", "이번 주말")[d]
+    if category == "writing":
+        hour = 9 + c
+        return ResponseQualityContract(
+            mode="direct-message",
+            target_language="ko",
+            max_sentences=1,
+            required_numbers=[[str(hour), _KOREAN_HOURS[hour]]],
+            required_terms=[[timing], ["도착"]],
+        )
+    if category == "uncertainty":
+        return ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3)
+    return ResponseQualityContract(mode="conversation", target_language="ko", max_sentences=3)
 
 
 def _companion_particle(value: str) -> str:
@@ -290,6 +320,11 @@ def _row(
                 else {}
             ),
         },
+        response_quality=(
+            _response_quality(category, prompt_index)
+            if profile == "natural-v2" and prompt_index is not None
+            else None
+        ),
     )
     messages = [
         Message(role="user", content=prompt),

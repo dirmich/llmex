@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 from pydantic import Field, model_validator
 
+from llmex.chat.data import ResponseQualityContract
 from llmex.config import StrictModel
 from llmex.fingerprint import fingerprint
 
@@ -18,6 +19,7 @@ class SourceProvenance(StrictModel):
     source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     source_split: Literal["train", "heldout"]
     metadata: dict[str, str | int]
+    response_quality: ResponseQualityContract | None = None
 
 
 class LogicalRequest(StrictModel):
