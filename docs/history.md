@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.54 정렬 멀티턴 SFT 오염 차단
+
+- 실제 교대 turn 구조로 11,675행 aligned SFT를 완료했다.
+- readiness 자동 평가는 train에 suite prompt가 직접 포함되어 contamination 방어로 차단됐다.
+- 오염된 점수는 산출하지 않으며, 별도 비중복 멀티턴 평가 split을 만들어야 한다.
+
 ## 2026-07-19 · 1.22.53 멀티턴 SFT 입력 정렬
 
 - teacher 문맥을 한 user 문자열로 학습하던 보강 데이터를 실제 `user → assistant → user → assistant` 구조로 재구성했다.
