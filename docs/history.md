@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.35 균형 curriculum SFT 완료
+
+- public+teacher train 12,606행에 remediation 3,151행(약 20%)을 섞어 15,757행 curriculum을 만들고, 원 410스텝 checkpoint에서 1e-6 학습률로 100스텝 추가 SFT했다.
+- 최종 validation PPL `6.2321`, heldout NLL `1.3764`, PPL `3.9606`이며 EOS·반복·safety 단순 게이트는 통과했다.
+- heldout 일부 사실성/다국어 혼합 문제가 남아 전체 quality suite와 수동 검토를 이어간다.
+
 ## 2026-07-19 · 1.22.34 remediation SFT 결과
 
 - 410스텝 checkpoint에서 capability-remediation-v3 focused 데이터를 200스텝 추가 SFT했다. 최종 validation PPL `2.2847`, heldout NLL `0.0912`, PPL `1.0955`이며 EOS·반복·safety 단순 게이트는 통과했다.
