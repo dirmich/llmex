@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.16. Qwen 다국어 v2는 수집 중이며, 지도 혼잡도 우회 응답이 섞인 Gemma 한국어 v2는 격리·미export했다. 부정형 안전 안내를 보존하는 강화 gate로 Gemma 한국어 v3를 fresh 수집한다. source의 typed 응답 계약과 최대 50개 승인 표본 artifact를 inventory·전체 accepted spool에 결속하며, 다음 단계는 두 수집 완료→독립 표본 감사→export/validate→Gemma 다국어 순차 수집→mix→100M latest SFT→390응답과 suite 밖 smoke다.
+현재 상태: 1.22.17. Qwen 다국어 v2는 수집 중이며, 지도 혼잡도 우회 응답이 섞인 Gemma 한국어 v2는 격리·미export했다. 부정형 안전 안내를 보존하는 강화 gate로 Gemma 한국어 v3를 fresh 수집한다. source의 typed 응답 계약과 최대 50개 승인 표본 artifact를 inventory·전체 accepted spool에 결속하며, 다음 단계는 두 수집 완료→독립 표본 감사→export/validate→Gemma 다국어 순차 수집→mix→100M latest SFT→390응답과 suite 밖 smoke다.

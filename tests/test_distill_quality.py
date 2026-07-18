@@ -341,6 +341,20 @@ def test_qwen_번역_합성_품질_회귀(
             True,
         ),
         (
+            "지도 혼잡도 긍정 뒤 비의존 혼합 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보를 참고할 수도 있지만 "
+            "의존하지 말고 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 실시간 혼잡도 직접 부정",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 서비스에서 실시간 혼잡도를 확인할 수 없습니다. 정확한 정보는 공식 페이지나 "
+            "주최 측에 문의하세요.",
+            True,
+        ),
+        (
             "확인 불가 경계 누락",
             ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
             "아마 오늘 오후 9시까지 영업합니다.",

@@ -1,6 +1,6 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.22.16의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. 새 자연대화 수집은 exact hash와 의미 조합 범위뿐 아니라 source 결속 목표 언어·응답 계약도 검증한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
+LLMEX 1.22.17의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. 새 자연대화 수집은 exact hash와 의미 조합 범위뿐 아니라 source 결속 목표 언어·응답 계약도 검증한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
 
 1.22.15 조기 감사에서는 Gemma가 실시간 혼잡도를 직접 알 수 없다고 말한 뒤에도 지도 서비스의 혼잡도 정보를 참고하거나 제공 정보를 보라고 답하는 우회를 확인했다. 이 응답은 `quality:unsupported_realtime_claim`으로 거절한다. 해당 Gemma 한국어 v2 run은 보존·미export하고, 부정형 비의존 안내는 허용하는 1.22.16 gate로 v3를 fresh 수집한다. Qwen 다국어 v2는 영향 없이 계속 수집한다.
 

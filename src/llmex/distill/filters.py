@@ -231,22 +231,18 @@ _UNCERTAINTY_ACTION = re.compile(
     r"(?:주최|운영|공식|예약|전화|문의|웹사이트|홈페이지|공지|SNS|현장)"
 )
 _UNSUPPORTED_REALTIME = re.compile(
-    r"(?:(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,35}"
-    r"실시간.{0,15}(?:혼잡도|혼잡|붐빔).{0,25}"
-    r"(?:기능|활용|확인|제공|표시|보여|알\s*수|가능)|"
+    r"(?:(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,45}(?:"
+    r"실시간.{0,15}(?:혼잡도|혼잡|붐빔).{0,25}(?:"
+    r"기능|활용(?:하세요|해|할\s*수)|확인할\s*수\s*있|"
+    r"제공(?:합니다|됩니다|한다|해요)|표시(?:합니다|됩니다)|보여(?:줍니다|준다))|"
+    r"(?:제공하는|제공되는).{0,15}(?:혼잡도|혼잡|붐빔)|"
+    r"(?:혼잡도|혼잡|붐빔).{0,20}(?:정보.{0,8}(?:"
+    r"참고(?:하세요|해|할\s*수|할\s*수도)|활용(?:하세요|해|할\s*수))|"
+    r"제공(?:합니다|됩니다)|표시(?:합니다|됩니다)|확인할\s*수\s*있))|"
     r"실시간.{0,15}(?:혼잡도|혼잡|붐빔).{0,35}"
-    r"(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,25}"
-    r"(?:기능|활용|확인|제공|표시|보여|알\s*수|가능)|"
-    r"(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,35}"
-    r"(?:(?:제공하는|제공되는).{0,15}(?:혼잡도|혼잡|붐빔)|"
-    r"(?:혼잡도|혼잡|붐빔).{0,20}(?:정보.{0,8}참고|제공|표시|확인)))",
-    re.IGNORECASE,
-)
-_NEGATED_REALTIME_GUIDANCE = re.compile(
-    r"(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,45}"
-    r"(?:혼잡도|혼잡|붐빔).{0,25}"
-    r"(?:(?:정보.{0,8})?(?:참고|사용|의존)(?:하|해)?지\s*말|"
-    r"(?:제공|표시)(?:하|되)?지\s*않)",
+    r"(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,25}(?:"
+    r"활용(?:하세요|해|할\s*수)|확인할\s*수\s*있|제공(?:합니다|됩니다)|"
+    r"표시(?:합니다|됩니다)|보여(?:줍니다|준다)))",
     re.IGNORECASE,
 )
 
@@ -331,8 +327,7 @@ def _allowed_numbers(contract: ResponseQualityContract) -> set[str]:
 
 
 def _unsupported_realtime_claim(value: str) -> bool:
-    without_negated_guidance = _NEGATED_REALTIME_GUIDANCE.sub("", value)
-    return _UNSUPPORTED_REALTIME.search(without_negated_guidance) is not None
+    return _UNSUPPORTED_REALTIME.search(value) is not None
 
 
 def _quality_failure(response: str, contract: ResponseQualityContract) -> str | None:
