@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.5 한국어·다국어 SFT 준비 완료
+## 1.22.6 한국어·다국어 SFT와 private 모델 배포 준비
 
 ### 완료
 
@@ -28,7 +28,8 @@
 - [x] 최종 train 14,374·heldout 2,430행과 prompt/source overlap 0
 - [x] base checkpoint SHA pin과 600-step CUDA bf16 SFT preflight
 - [ ] 100M latest 기반 fresh SFT·통합 자동 평가·실제 대화 추론
-- [ ] 선별 checkpoint의 HF 호환 export·GGUF 변환·llama.cpp parity·private Hub 업로드
+- [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity
+- [ ] 선별 checkpoint의 HF·GGUF 최종 export·llama.cpp parity·private Hub 업로드
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
 - [x] train 10,800/heldout 1,080행과 suite·split·source overlap 0

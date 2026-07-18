@@ -96,6 +96,15 @@
 - **관련 테스트와 명령:** `uv run pytest -q tests/test_m3_model.py`; `uv run llmex model inspect --config configs/model/smoke.yaml`.
 - **완료 산출물:** `[B,T,V]` logits·shifted loss·layer cache, cache parity를 갖는 생성 결과, 정확한 parameter 및 memory report다.
 
+### `src/llmex/model/export.py`
+
+- **책임:** release 차단 SFT checkpoint를 private HF Llama 디렉터리와 GGUF로 무결하게 변환한다.
+- **먼저 구현할 계약:** `export_hf(config, checkpoint, expected_checkpoint_sha256, output_dir)`, `export_gguf(hf_dir, expected_hf_manifest_sha256, llama_cpp_dir, output, outtype)`다.
+- **단계별 구현:** ① checkpoint immutable snapshot의 SHA·fingerprint·tensor shape/dtype/finite 값을 검증한다. ② LLMEX 이름을 HF Llama tensor 이름으로 완전 매핑하고 Q/K RoPE 배열을 half-split으로 변환한다. ③ tokenizer·BOS/EOS chat template·release 차단 manifest를 private mode staging에 기록하고 원자 게시한다. ④ 예상 HF manifest와 artifact SHA를 다시 확인한다. ⑤ 고정 ByteLevel BPE wrapper로 공식 llama.cpp converter를 실행한다. ⑥ GGUF magic·private mode를 확인하고 기존 출력 없이 게시한다. ⑦ Transformers logits와 llama.cpp greedy/EOS를 원본과 비교한다.
+- **반드시 실패해야 할 사례:** checkpoint·manifest·artifact SHA 변조, tensor 누락·NaN·shape 불일치, public release policy, tokenizer 계약 불일치, 미지원 outtype, 변환 실패·timeout·동시 출력 생성, GGUF magic 손상이다.
+- **관련 테스트와 명령:** `uv run pytest -q tests/test_model_export.py`; `uv run llmex model export-hf --help`; `uv run llmex model export-gguf --help`.
+- **완료 산출물:** 0700/0600 private HF 디렉터리와 `export-manifest.json`, 0600 GGUF, 원본/HF/llama.cpp parity 증거다.
+
 ## 묶음 완료 기준
 
 1. `uv run pytest -q tests/test_m2_tokenizer.py tests/test_m3_model.py`가 통과한다.

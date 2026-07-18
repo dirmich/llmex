@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.6 - 2026-07-18
+
+- release 차단 checkpoint를 private HF Llama 형식으로 원자 게시하는 SHA 고정 export를 추가했다.
+- 공식 llama.cpp converter wrapper와 HF manifest·tokenizer·artifact 무결성 검증을 갖춘 GGUF export를 추가했다.
+- 기존 checkpoint에서 Transformers logits argmax와 llama.cpp F16 greedy/EOS parity를 실제 확인했다.
+
 ## 1.21.2 - 2026-07-18
 
 - v11 step 50을 한국어 대화 준비도 120응답으로 생성하고 byte 재유도했다.

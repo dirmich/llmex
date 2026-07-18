@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.5는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 한국어 curriculum, Qwen36mtp 다국어, Gemma4 다국어 세 manifest를 직접 결속한 train 14,374·heldout 2,430행을 검증했다. 다국어 18 scenario·108응답 평가 suite로 영어·일본어 언어 유지와 한↔영·한↔일 번역의 이름·숫자·의미 보존을 별도 검증한다. 내부 teacher 출력·가중치·corpus는 외부 공개하지 않는다.
+LLMEX 1.22.6은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 한국어 curriculum, Qwen36mtp 다국어, Gemma4 다국어 세 manifest를 직접 결속한 train 14,374·heldout 2,430행을 검증했다. HF Llama private export와 GGUF 변환을 제공하며 Transformers logits와 llama.cpp greedy 생성 parity를 실제 검증했다. 내부 teacher 출력·가중치·corpus는 외부 공개하지 않고 Hugging Face에서도 private 저장소로만 취급한다.
 
 ## 빠른 시작
 

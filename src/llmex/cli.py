@@ -778,6 +778,50 @@ def model_inspect(
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
+@model_app.command("export-hf")
+def model_export_hf(
+    config_path: Annotated[Path, typer.Option("--config")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    expected_checkpoint_sha256: Annotated[str, typer.Option("--expected-checkpoint-sha256")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+) -> None:
+    """검증된 SFT checkpoint를 private HF Llama 디렉터리로 내보냅니다."""
+
+    try:
+        from llmex.model.export import export_hf
+
+        config = load_yaml(config_path, SFTConfig)
+        result = export_hf(config, checkpoint, expected_checkpoint_sha256, output_dir)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@model_app.command("export-gguf")
+def model_export_gguf(
+    hf_dir: Annotated[Path, typer.Option("--hf-dir")],
+    expected_hf_manifest_sha256: Annotated[str, typer.Option("--expected-hf-manifest-sha256")],
+    llama_cpp_dir: Annotated[Path, typer.Option("--llama-cpp-dir")],
+    output: Annotated[Path, typer.Option("--output")],
+    outtype: Annotated[str, typer.Option("--outtype")] = "f16",
+) -> None:
+    """HF Llama export를 llama.cpp 공식 converter로 GGUF로 변환합니다."""
+
+    try:
+        from llmex.model.export import export_gguf
+
+        result = export_gguf(
+            hf_dir,
+            expected_hf_manifest_sha256,
+            llama_cpp_dir,
+            output,
+            outtype=outtype,
+        )
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
 def _training_command(config_path: Path, resume: Path | None, dry_run: bool) -> None:
     try:
         config = load_yaml(config_path, TrainingConfig)

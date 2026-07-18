@@ -442,7 +442,53 @@ template은 자동 full-row와 artifact SHA, sampling challenge에 결속되며 
 
 production trust policy에는 신규 quality 역할이 아직 없으므로 현재 운영 서명은 의도적으로 실패한다. 고정 root private key 없이 policy를 수정하지 않는다. 구현·테스트 완료와 실제 best/latest 모델에 대한 사람 검토 완료를 혼동하지 않는다.
 
-## 13. 실행 전후 점검
+## 13. 선택 checkpoint를 HF·GGUF로 내보내기
+
+자동·실제 대화 품질에서 선택한 checkpoint의 경로와 SHA를 먼저 고정한다. 내부 teacher 파생 모델은 `release_gate=blocked`, `redistribution_allowed=false`이므로 public Hub에 올리지 않는다. HF 디렉터리와 GGUF는 각각 0700/0600 권한으로 만들어진다.
+
+```bash
+CHECKPOINT=runs/<선택-run>/checkpoints/step-XXXXXXXX.pt
+CHECKPOINT_SHA=$(sha256sum "$CHECKPOINT" | cut -d' ' -f1)
+HF_DIR=dist/llmex-ko-en-ja-87m-hf-private
+
+uv run llmex model export-hf \
+  --config configs/sft/<선택-config>.yaml \
+  --checkpoint "$CHECKPOINT" \
+  --expected-checkpoint-sha256 "$CHECKPOINT_SHA" \
+  --output-dir "$HF_DIR"
+
+HF_MANIFEST_SHA=$(sha256sum "$HF_DIR/export-manifest.json" | cut -d' ' -f1)
+uv run llmex model export-gguf \
+  --hf-dir "$HF_DIR" \
+  --expected-hf-manifest-sha256 "$HF_MANIFEST_SHA" \
+  --llama-cpp-dir ../llama.cpp \
+  --output dist/llmex-ko-en-ja-87m-f16.gguf \
+  --outtype f16
+```
+
+llama.cpp에서는 자동 chat 변환을 끄고 학습과 같은 BOS·role marker를 직접 넣어 먼저 greedy/EOS parity를 확인한다.
+
+```bash
+../llama.cpp/build/bin/llama-completion \
+  -m dist/llmex-ko-en-ja-87m-f16.gguf \
+  -no-cnv -ngl 99 \
+  -p $'<bos><|user|>\n안녕하세요\n<|assistant|>\n' \
+  -n 128 --temp 0 --repeat-penalty 1.2 --seed 0 --special
+```
+
+1.22.6 구현 검증에서는 focused-v9 step 2 checkpoint를 HF로 변환한 뒤 61-token 다중 턴 입력에서 원본 LLMEX와 Transformers의 최대 logit 절대 오차 `9.5367431640625e-05`, 모든 위치 argmax 일치를 확인했다. 같은 export의 F16 GGUF SHA는 `efb2671a9fa7de0f653ba08f72d9664be3f1858ca7b997e51869d0b903452070`이며 llama.cpp `b9550-f0156d140`에서 원본과 같은 `[[안녕하세요` token sequence와 EOS를 생성했다. 이는 converter 검증이고 현재 학습 중인 최종 모델의 품질 승인이 아니다.
+
+Hugging Face 업로드는 [공식 upload 가이드](https://huggingface.co/docs/huggingface_hub/en/guides/upload)와 [repository 가이드](https://huggingface.co/docs/huggingface_hub/guides/repository)에 따라 private 저장소만 만든다. `hf auth login` 뒤 실제 계정 이름과 private repo ID를 사용한다.
+
+```bash
+hf auth whoami
+hf repos create <계정>/llmex-ko-en-ja-87m-private --private
+hf upload <계정>/llmex-ko-en-ja-87m-private "$HF_DIR" .
+```
+
+업로드 뒤 Hub UI에서 visibility가 `Private`인지 확인하고 `export-manifest.json`의 SHA와 내려받은 파일 SHA를 다시 비교한다. 외부 법무·수동 품질·공개 배포 승인 전에는 public 전환, 공개 PR, 공개 링크 공유를 하지 않는다.
+
+## 14. 실행 전후 점검
 
 명령 계약은 각 단계의 `--help`로 확인하고 문서 변경 뒤 Markdown 링크와 공백 오류를 검사한다.
 

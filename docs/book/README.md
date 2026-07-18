@@ -61,6 +61,6 @@
 
 `uv run pytest -q`, `uv run ruff check .`, `uv run ruff format --check .`, `uv run pyright`, `uv run llmex release audit`가 통과하고, capstone의 manifest·checkpoint·평가 artifact가 현재 입력에서 재검증되어야 한다. 외부 공개는 별도의 수동 품질·법무·책임자 승인이 있어야 한다.
 
-00~08장은 저장소에 포함된 fixture로 실행 가능한 기본 capstone이다. 09~13장은 teacher 또는 offline fixture, 검증된 chat data와 동적 SHA가 필요한 대화 확장이다. 14장의 GGUF/llama.cpp parity는 현재 구현된 CLI가 아니라 후속 연구실의 acceptance contract이므로, converter와 parity test를 실제 구현하기 전에는 필수 실행 성공으로 기록하지 않는다.
+00~08장은 저장소에 포함된 fixture로 실행 가능한 기본 capstone이다. 09~13장은 teacher 또는 offline fixture, 검증된 chat data와 동적 SHA가 필요한 대화 확장이다. 14장의 private HF/GGUF CLI는 구현됐지만 선택 checkpoint의 실제 SHA, llama.cpp checkout과 외부 승인 경계가 필요하다. 기존 checkpoint의 F16 parity 검증을 최종 모델 parity나 공개 승인으로 대체하지 않는다.
 
 책 원고의 독자 약속, 문체, 출처와 검증 가능한 주장은 [제작 메타데이터](meta/README.md)에서 관리한다.

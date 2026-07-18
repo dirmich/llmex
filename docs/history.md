@@ -1,5 +1,16 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.6 private HF·GGUF 내보내기
+
+- SFT checkpoint를 immutable snapshot으로 한 번 읽어 SHA-256·fingerprint·release 차단·finite tensor·현재 모델 shape/dtype을 검증한 뒤 HF Llama 형식으로 원자 게시하는 `llmex model export-hf`를 구현했다.
+- LLMEX 인접쌍 RoPE Q/K를 HF Llama half-split 배열로 변환하고 tied embedding, GQA, RMSNorm, RoPE theta와 16k tokenizer를 보존했다. HF chat template는 학습과 같은 BOS, 과거 assistant EOS, trailing CR/LF 제거를 적용한다.
+- 예상 HF manifest SHA와 고정 artifact 집합의 SHA/bytes를 검증한 뒤 llama.cpp 공식 converter를 격리 실행하는 `llmex model export-gguf`를 구현했다. ByteLevel BPE 전체 계약과 tokenizer SHA를 wrapper에서 다시 확인한다.
+- HF 출력은 디렉터리 0700·파일 0600, GGUF는 0600으로 고정했다. 변환 중 같은 출력이 생기면 덮어쓰지 않고 실패하며, GGUF magic과 release 차단·상위 manifest 결속을 결과에 기록한다.
+- focused-v9 step 2 checkpoint SHA `59af3549…438`를 실제 HF로 변환했다. 61-token 다중 턴 입력에서 원본 LLMEX와 Transformers 최대 logit 절대 오차는 `9.5367431640625e-05`, 모든 위치 argmax는 일치했다.
+- 같은 HF export를 llama.cpp `b9550-f0156d140`로 F16 GGUF `200,967,680` bytes, SHA `efb2671a…2070`으로 변환했다. `llama-completion -no-cnv` greedy 결과가 원본과 같은 `[[안녕하세요` 뒤 EOS에 도달했다.
+- 표적 회귀는 모델 export·checkpoint 학습 테스트 `34 passed`, Ruff·Pyright 오류 0으로 통과했다. 이 검증은 converter 계약 증거이며 현재 600-step 학습의 최종 checkpoint 품질 또는 public release 승인이 아니다.
+- 내부 teacher 파생 산출물은 `redistribution_allowed=false`, `release_gate=blocked`, `hub_visibility=private`를 유지한다. Hugging Face에는 외부 승인 전 private 저장소로만 업로드한다.
+
 ## 2026-07-18 · 1.22.5 다국어 SFT 실행 계약
 
 - `expected_base_checkpoint_sha256`를 추가해 지정한 base checkpoint를 immutable snapshot으로 읽은 직후 역직렬화 전에 SHA 불일치를 실패-폐쇄한다. 필드를 쓰지 않는 기존 SFT config fingerprint는 새 필드를 생략해 호환성을 유지한다.

@@ -8,7 +8,7 @@
 
 - 포함: 단일 노드 PyTorch, byte-level BPE, 100M급 decoder, offline fixture, localhost teacher, SFT, 품질 artifact
 - 제외: 분산 학습 최적화, 상용 서비스 SLA, 법률 자문, 자동 production 승인
-- 후속 연구실: GGUF 변환과 llama.cpp parity는 acceptance contract까지만 제공하며 현재 구현 완료로 주장하지 않는다.
+- private HF/GGUF 연구실: SHA 고정 변환 CLI와 기존 checkpoint parity를 제공하되 선택 모델 parity·공개 승인을 별도로 요구한다.
 
 ## 성공 기준
 

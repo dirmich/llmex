@@ -234,6 +234,21 @@ def load_checkpoint(
     ).checkpoint
 
 
+def load_checkpoint_snapshot(
+    path: Path,
+    expected_fingerprints: dict[str, str],
+    *,
+    supported_schema_versions: Collection[int],
+    required_state: Collection[str] = SFT_CHECKPOINT_REQUIRED_STATE,
+) -> tuple[dict[str, Any], str]:
+    """한 번 고정해 읽은 checkpoint payload와 그 bytes의 SHA-256을 반환한다."""
+
+    snapshot = _load_checkpoint_snapshot(
+        path, expected_fingerprints, required_state, supported_schema_versions
+    )
+    return snapshot.checkpoint, snapshot.sha256
+
+
 def validate_model_state(
     raw_state: object, *, context: str = "checkpoint model"
 ) -> dict[str, torch.Tensor]:

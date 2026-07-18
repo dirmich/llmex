@@ -6,7 +6,7 @@
 |---|---|
 | `config`, `fingerprint`, `run` | 설정·입력·실행 identity |
 | `data`, `tokenizer` | corpus와 token shard 생성 |
-| `model`, `train` | inspect, 학습, 재개, smoke |
+| `model`, `train` | inspect, private HF Llama·GGUF 내보내기, 학습, 재개, smoke |
 | `sft` | 공개·teacher mix, 실제 SFT preflight, train/resume/eval/generate, SHA 고정 자동·서명 수동 품질 gate |
 | `eval`, `generate`, `benchmark` | 품질·안전 평가와 추론 |
 | `distill` | teacher preflight/prepare/collect/resume/status/export/validate |
@@ -15,6 +15,15 @@
 
 사용자 출력과 오류는 한국어다. JSON 결과는 stdout, 로그는 stderr이며 종료 코드는 0 성공, 2 설정,
 3 입력, 4 충돌, 5 무결성, 70 내부 오류다. option은 `llmex <명령> --help`로 확인한다.
+
+## 모델 내보내기 CLI
+
+| 명령 | 계약 |
+|---|---|
+| `llmex model export-hf` | SFT config와 checkpoint SHA·fingerprint·release 차단을 검증하고 private HF Llama 디렉터리를 0700/0600 권한으로 원자 게시한다. |
+| `llmex model export-gguf` | 예상 HF manifest SHA와 모든 artifact SHA를 검증한 뒤 llama.cpp 공식 converter로 GGUF를 만들고 0600 권한으로 충돌 없이 게시한다. |
+
+Q/K projection은 LLMEX의 인접쌍 RoPE 배열에서 HF Llama의 half-split 배열로 바꾼다. HF chat template는 학습과 같은 BOS, assistant EOS, trailing CR/LF 제거를 보존한다. GGUF는 현재 `f32`, `f16`, `bf16`, `q8_0`을 지원하지만, 모델 동등성 기준은 먼저 F16 Transformers/llama.cpp parity를 통과하는 것이다.
 
 ## SFT mix CLI
 
