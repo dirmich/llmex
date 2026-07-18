@@ -1,0 +1,105 @@
+name: ko-qwen-gemma-multilingual-repair-v12
+seed: 173
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+replay_train_data: runs/distill/qwen36mtp-multilingual-1080-v1/export/train.jsonl
+replay_heldout_data: runs/distill/qwen36mtp-multilingual-1080-v1/export/heldout.jsonl
+suite: data/evaluation/ko-multilingual-chat-quality-v1.jsonl
+expected_suite_sha256: bd76a4333ef5a423e3f22733ed85100178b0c38ac44f8881d3a7b6c4b6c3fb23
+output_dir: data/chat/ko-qwen-gemma-multilingual-repair-v12
+allowed_replay_licenses:
+  - LicenseRef-LLMEX-Internal-Distillation
+curriculum_license: LicenseRef-LLMEX-Internal-Curriculum-Qwen-Gemma-V12
+generator_profile: focused-v12
+train_rows_per_category: 8
+heldout_rows_per_category: 2
+replay_train_rows: 799
+replay_heldout_rows: 100
+additional_replay_sources:
+  - name: gemma-multilingual
+    train_data: runs/distill/gemma4-multilingual-1080-v1/export/train.jsonl
+    heldout_data: runs/distill/gemma4-multilingual-1080-v1/export/heldout.jsonl
+    allowed_licenses:
+      - LicenseRef-LLMEX-Internal-Distillation
+    train_rows: 733
+    heldout_rows: 100
+  - name: preserve-benign-safety
+    train_data: data/chat/ko-capability-remediation-v11/train.jsonl
+    heldout_data: data/chat/ko-capability-remediation-v11/heldout.jsonl
+    allowed_licenses:
+      - LicenseRef-LLMEX-Internal-Curriculum-V11
+    train_rows: 117
+    heldout_rows: 0
+    categories:
+      - benign-safety
+  - name: preserve-uncertainty-live
+    train_data: data/chat/ko-capability-remediation-v11/train.jsonl
+    heldout_data: data/chat/ko-capability-remediation-v11/heldout.jsonl
+    allowed_licenses:
+      - LicenseRef-LLMEX-Internal-Curriculum-V11
+    train_rows: 117
+    heldout_rows: 0
+    categories:
+      - uncertainty-live
+  - name: preserve-uncertainty-evidence
+    train_data: data/chat/ko-capability-remediation-v11/train.jsonl
+    heldout_data: data/chat/ko-capability-remediation-v11/heldout.jsonl
+    allowed_licenses:
+      - LicenseRef-LLMEX-Internal-Curriculum-V11
+    train_rows: 117
+    heldout_rows: 0
+    categories:
+      - uncertainty-evidence
+  - name: preserve-harmful-pii-secret
+    train_data: data/chat/ko-capability-remediation-v11/train.jsonl
+    heldout_data: data/chat/ko-capability-remediation-v11/heldout.jsonl
+    allowed_licenses:
+      - LicenseRef-LLMEX-Internal-Curriculum
+      - LicenseRef-LLMEX-Internal-Curriculum-V11
+    train_rows: 117
+    heldout_rows: 0
+    categories:
+      - harmful-pii-secret
+train_rows_by_category:
+  fact: 100
+  arithmetic: 100
+  extraction: 100
+  instruction: 100
+  korean: 100
+  eos: 100
+  harmful-self: 100
+  harmful-explosive: 100
+  harmful-jailbreak: 100
+  harmful-pii-secret: 100
+  context: 400
+  korean-greeting: 120
+  korean-everyday: 120
+  conversation-en: 47
+  conversation-ja: 47
+  translation-ko-en: 47
+  translation-en-ko: 47
+  translation-ko-ja: 46
+  translation-ja-ko: 46
+  repetition: 80
+heldout_rows_by_category:
+  fact: 10
+  arithmetic: 10
+  extraction: 10
+  instruction: 10
+  korean: 10
+  eos: 10
+  harmful-self: 10
+  harmful-explosive: 10
+  harmful-jailbreak: 10
+  harmful-pii-secret: 10
+  context: 40
+  korean-greeting: 12
+  korean-everyday: 12
+  conversation-en: 5
+  conversation-ja: 5
+  translation-ko-en: 5
+  translation-en-ko: 5
+  translation-ko-ja: 4
+  translation-ja-ko: 4
+  repetition: 8
+max_seq_len: 1024
+generation_reserve_tokens: 128

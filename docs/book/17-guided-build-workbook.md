@@ -208,7 +208,7 @@ uv run llmex sft curriculum-validate --config <보정-설정.yaml>
 uv run pytest -q tests/test_sft_curriculum.py
 ```
 
-manifest에서 범주별 행 수만 보지 말고 `assistant_target_tokens` 비율을 계산한다. assistant-only SFT 손실은 행 수가 아니라 목표 token 수에 좌우되므로 긴 replay가 짧은 산술·EOS 예제를 압도하지 않아야 한다.
+manifest에서 범주별 행 수만 보지 말고 `assistant_target_tokens` 비율을 계산한다. assistant-only SFT 손실은 행 수가 아니라 목표 token 수에 좌우되므로 긴 replay가 짧은 산술·EOS 예제를 압도하지 않아야 한다. 여러 teacher와 보존 데이터를 섞을 때는 `additional_replay_sources`마다 license, train/heldout quota와 선택 category를 명시하고, 선택하지 않은 장문 원천이 다시 유입되지 않았는지 manifest를 확인한다.
 
 첫 보정 뒤에도 gate가 실패하면 결과의 실제 응답을 범주별로 읽고 다음 profile의 책임을 좁힌다. `focused-v2`는 인공 문항 번호를 제거하고 사실·산술·추출·형식·한국어·문맥·네 가지 안전 거절·정상 안전·불확실성·EOS·반복을 독립 범주로 분리한다. 이어지는 `focused-v3` 실습은 그 평가에서 실패한 한국어·문맥·불확실성·PII/secret·폭발물·EOS·지시만 남기고 원 정식 mix를 소량 replay한다.
 

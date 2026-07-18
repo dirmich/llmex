@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.7은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 한국어 curriculum, Qwen36mtp 다국어, Gemma4 다국어 세 manifest를 직접 결속한 train 14,374·heldout 2,430행으로 600-step SFT를 완료했다. HF Llama private export와 GGUF 변환을 제공하지만, 한국어·영어·일본어·번역·안전을 합친 390응답 품질 gate 실패로 현재 checkpoint의 배포는 차단한다. 내부 teacher 출력·가중치·corpus는 외부 공개하지 않고 Hugging Face에서도 private 저장소로만 취급한다.
+LLMEX 1.22.8은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 실패한 600-step 모델을 보정하기 위해 suite 문장을 복제하지 않은 train 4,000·heldout 400행 focused-v12 repair curriculum을 준비했다. HF Llama private export와 GGUF 변환을 제공하지만, 통합 390응답 품질 gate를 통과한 후속 checkpoint만 배포 후보가 된다. 내부 teacher 출력·가중치·corpus는 외부 공개하지 않고 Hugging Face에서도 private 저장소로만 취급한다.
 
 ## 빠른 시작
 

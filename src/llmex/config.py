@@ -347,6 +347,30 @@ class SFTMixConfig(StrictModel):
         return self
 
 
+class SFTCurriculumReplaySourceConfig(StrictModel):
+    """능력 보정 curriculum에 추가로 결속할 replay 원천과 고정 quota."""
+
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    train_data: YamlPath
+    heldout_data: YamlPath
+    allowed_licenses: list[str] = Field(min_length=1)
+    train_rows: int = Field(ge=0)
+    heldout_rows: int = Field(ge=0)
+    categories: list[str] | None = None
+
+    @model_validator(mode="after")
+    def validate_source(self) -> "SFTCurriculumReplaySourceConfig":
+        if self.train_rows == 0 and self.heldout_rows == 0:
+            raise ValueError("추가 replay 원천은 train 또는 heldout 행을 선택해야 합니다")
+        if len(self.allowed_licenses) != len(set(self.allowed_licenses)):
+            raise ValueError("추가 replay allowed_licenses는 중복될 수 없습니다")
+        if self.categories is not None and (
+            not self.categories or len(self.categories) != len(set(self.categories))
+        ):
+            raise ValueError("추가 replay categories는 비어 있거나 중복될 수 없습니다")
+        return self
+
+
 class SFTCurriculumConfig(StrictModel):
     """대화 취약점 보정용 결정적 합성·replay 커리큘럼 설정."""
 
@@ -373,6 +397,7 @@ class SFTCurriculumConfig(StrictModel):
             "focused-v9",
             "focused-v10",
             "focused-v11",
+            "focused-v12",
         ]
         | None
     ) = None
@@ -380,6 +405,11 @@ class SFTCurriculumConfig(StrictModel):
     heldout_rows_per_category: int = Field(default=60, ge=2)
     replay_train_rows: int = Field(default=1_200, ge=0)
     replay_heldout_rows: int = Field(default=120, ge=0)
+    additional_replay_sources: list[SFTCurriculumReplaySourceConfig] = Field(
+        default_factory=lambda: list[SFTCurriculumReplaySourceConfig]()
+    )
+    train_rows_by_category: dict[str, int] | None = None
+    heldout_rows_by_category: dict[str, int] | None = None
     max_seq_len: int = Field(default=1_024, gt=2)
     generation_reserve_tokens: int = Field(default=128, gt=0)
 
@@ -391,6 +421,17 @@ class SFTCurriculumConfig(StrictModel):
             raise ValueError("allowed_replay_licenses는 중복될 수 없습니다")
         if self.curriculum_license in self.allowed_replay_licenses:
             raise ValueError("curriculum_license는 replay 라이선스와 구분되어야 합니다")
+        names = [source.name for source in self.additional_replay_sources]
+        if len(names) != len(set(names)):
+            raise ValueError("추가 replay 원천 이름은 중복될 수 없습니다")
+        for field_name, rows in (
+            ("train_rows_by_category", self.train_rows_by_category),
+            ("heldout_rows_by_category", self.heldout_rows_by_category),
+        ):
+            if rows is not None and (not rows or any(count <= 0 for count in rows.values())):
+                raise ValueError(
+                    f"{field_name}는 양수 quota를 가진 비어 있지 않은 mapping이어야 합니다"
+                )
         return self
 
 

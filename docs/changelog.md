@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.22.8 - 2026-07-18
+
+- 범주별 생성 quota와 이름 있는 다중 replay 원천·license·category filter를 curriculum 설정에 추가했다.
+- 한국어 형식·문맥·대화·안전, 영어·일본어 대화와 네 번역 방향을 합친 focused-v12를 구현했다.
+- Qwen 799·Gemma 733·보존 replay 468행을 신규 합성 2,000행과 결합한 train 4,000·heldout 400행을 byte 재유도했다.
+- step 600 SHA에서 optimizer를 초기화하는 LR 2e-6/4e-6 25-step A/B 설정을 preflight했다.
+
 ## 1.22.7 - 2026-07-18
 
 - 100M latest 기반 Qwen36mtp·Gemma4 혼합 SFT를 600 step까지 완료하고 checkpoint SHA와 validation 결과를 고정했다.

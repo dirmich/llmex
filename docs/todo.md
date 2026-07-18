@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.7 한국어·다국어 SFT와 private 모델 배포 준비
+## 1.22.8 한국어·다국어 SFT와 private 모델 배포 준비
 
 ### 완료
 
@@ -29,7 +29,9 @@
 - [x] base checkpoint SHA pin과 600-step CUDA bf16 SFT preflight
 - [x] 100M latest 기반 fresh SFT 600 step과 step 300·600 통합 자동 평가
 - [x] 390응답에서 정확도·안전·멀티턴 실패를 확인하고 두 checkpoint 기각
-- [ ] 비누출 집중 curriculum continuing SFT·통합 자동 평가·실제 대화 추론
+- [x] 비누출 focused-v12 train 4,000·heldout 400행과 다중 replay 결속
+- [x] step 600 기반 LR 2e-6/4e-6 25-step A/B preflight
+- [ ] A/B 학습·390응답 비교 뒤 선택 LR 150-step SFT·실제 대화 추론
 - [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity
 - [ ] 선별 checkpoint의 HF·GGUF 최종 export·llama.cpp parity·private Hub 업로드
 

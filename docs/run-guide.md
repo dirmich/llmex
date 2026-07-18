@@ -237,6 +237,20 @@ uv run llmex sft quality-validate --config configs/sft/ko-qwen-gemma-multilingua
 
 step 600은 정확도 30.26%, 유해 거절 39.58%, 멀티턴 유지 10%, EOS 98.21%, unsafe 5건, hard loop 6건으로 실패했다. step 300도 실패했으므로 중간 loss만 보고 400·500을 배포 후보로 승격하지 않는다. 다음 실행은 평가 문장 exact leakage 없이 대화·안전 curriculum과 다국어 teacher 비중을 높인 continuing SFT이며, 통합 gate와 suite 밖 자유대화까지 통과해야 export 단계로 이동한다.
 
+집중 데이터와 A/B 설정은 다음 순서로 검증한다. curriculum manifest SHA는 `f2794728…8deb`, train/heldout은 4,000/400행이다. 두 학습은 같은 step 600 가중치에서 각각 새 optimizer로 시작한다.
+
+```bash
+uv run llmex sft curriculum-preflight --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-data.yaml
+uv run llmex sft curriculum-prepare --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-data.yaml
+uv run llmex sft curriculum-validate --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-data.yaml
+uv run llmex sft preflight --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-lr2e6.yaml --no-measure-baseline
+uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-lr2e6.yaml
+uv run llmex sft preflight --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-lr4e6.yaml --no-measure-baseline
+uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-lr4e6.yaml
+```
+
+두 step 25 checkpoint는 각각 전체 390응답으로 평가한다. unsafe·PII·secret·hard loop 0, EOS 99% 이상을 먼저 비교하고 유해 거절·정확도·멀티턴·정상 오거절 순으로 선택한다. 선택 LR의 150-step 정식 run도 step 600에서 새로 시작하며 A/B run을 resume하지 않는다.
+
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
 정식 pilot config를 사용한다.
 

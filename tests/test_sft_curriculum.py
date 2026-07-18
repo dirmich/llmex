@@ -16,7 +16,13 @@ from llmex.chat.curriculum import (
 )
 from llmex.chat.runtime import preflight_sft
 from llmex.cli import app
-from llmex.config import ModelConfig, OptimizerConfig, SFTConfig, SFTCurriculumConfig
+from llmex.config import (
+    ModelConfig,
+    OptimizerConfig,
+    SFTConfig,
+    SFTCurriculumConfig,
+    SFTCurriculumReplaySourceConfig,
+)
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
@@ -45,12 +51,14 @@ def _tokenizer(path: Path) -> None:
     (path / "tokenizer-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
 
-def _row(identifier: str, split: str, user: str) -> dict[str, object]:
+def _row(
+    identifier: str, split: str, user: str, *, category: str | None = None
+) -> dict[str, object]:
     messages = [
         {"role": "user", "content": user},
         {"role": "assistant", "content": f"{identifier}의 간결한 답변"},
     ]
-    provenance = {
+    provenance: dict[str, object] = {
         "dataset": "curriculum-replay-test",
         "source": "local-test",
         "license": "Apache-2.0",
@@ -58,6 +66,8 @@ def _row(identifier: str, split: str, user: str) -> dict[str, object]:
         "source_id": identifier,
         "source_sha256": fingerprint({"source": identifier}),
     }
+    if category is not None:
+        provenance["source_metadata"] = {"category": category}
     basis = {"id": identifier, "messages": messages, "provenance": provenance, "split": split}
     return {"schema_version": 1, **basis, "sha256": fingerprint(basis)}
 
@@ -546,6 +556,91 @@ def test_focused_v11은_일상_대화와_안전을_같이_보정하고_v10을_�
     assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
     assert result["source_overlap"] == 0
     assert preflight_curriculum(focused_v10) == previous
+
+
+def test_focused_v12는_다국어와_여러_replay_quota를_비누출로_결속한다(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path)
+    extra_train = tmp_path / "extra-train.jsonl"
+    extra_heldout = tmp_path / "extra-heldout.jsonl"
+    _write_rows(
+        extra_train,
+        [
+            _row("extra-safe-1", "train", "추가 안전 replay 하나", category="benign-safety"),
+            _row("extra-harm-1", "train", "추가 위험 replay 하나", category="harmful-pii-secret"),
+            _row("extra-other", "train", "선택하지 않을 replay", category="other"),
+        ],
+    )
+    _write_rows(
+        extra_heldout,
+        [_row("extra-heldout-1", "heldout", "추가 검증 replay 하나", category="benign-safety")],
+    )
+    categories = {
+        "fact",
+        "arithmetic",
+        "extraction",
+        "instruction",
+        "korean",
+        "eos",
+        "harmful-self",
+        "harmful-explosive",
+        "harmful-jailbreak",
+        "harmful-pii-secret",
+        "context",
+        "korean-greeting",
+        "korean-everyday",
+        "conversation-en",
+        "conversation-ja",
+        "translation-ko-en",
+        "translation-en-ko",
+        "translation-ko-ja",
+        "translation-ja-ko",
+        "repetition",
+    }
+    focused = config.model_copy(
+        update={
+            "name": "curriculum-focused-v12-test",
+            "generator_profile": "focused-v12",
+            "output_dir": tmp_path / "focused-v12",
+            "replay_train_rows": 1,
+            "replay_heldout_rows": 1,
+            "train_rows_by_category": dict.fromkeys(categories, 2),
+            "heldout_rows_by_category": dict.fromkeys(categories, 1),
+            "additional_replay_sources": [
+                SFTCurriculumReplaySourceConfig(
+                    name="safety",
+                    train_data=extra_train,
+                    heldout_data=extra_heldout,
+                    allowed_licenses=["Apache-2.0"],
+                    train_rows=2,
+                    heldout_rows=1,
+                    categories=["benign-safety", "harmful-pii-secret"],
+                )
+            ],
+        }
+    )
+    result = preflight_curriculum(focused)
+    assert result["selection"] == {
+        "generated_train": 40,
+        "generated_heldout": 20,
+        "replay_train": 3,
+        "replay_heldout": 2,
+    }
+    assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
+    mass = cast(dict[str, object], result["target_token_mass"])
+    assert categories.issubset(mass)
+    assert {"replay", "replay-safety"}.issubset(mass)
+    prepared = prepare_curriculum(focused)
+    assert prepared["reused"] is False
+    manifest = json.loads((focused.output_dir / "manifest.json").read_text(encoding="utf-8"))
+    inputs = cast(dict[str, object], manifest["inputs"])
+    additional = cast(dict[str, object], inputs["additional_replay_sources"])
+    safety = cast(dict[str, object], additional["safety"])
+    train_binding = cast(dict[str, object], safety["train"])
+    assert train_binding["excluded_category"] == 1
+    assert train_binding["selected"] == 2
+    assert validate_curriculum(focused)["fingerprint"] == prepared["fingerprint"]
 
 
 def test_curriculum_config와_CLI가_엄격한_종류를_지원한다(tmp_path: Path) -> None:

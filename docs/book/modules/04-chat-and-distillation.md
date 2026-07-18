@@ -39,9 +39,9 @@
 ### `src/llmex/chat/curriculum.py`
 
 - 책임: 품질 실패 범주를 보정하는 결정적 합성 데이터와 기존 데이터 replay를 만든다.
-- 구현 순서: suite의 모든 user turn hash 수집 → 범주별 후보 생성 → split/source 분리 → replay 선택 → target-token 질량 계산 → 원자 publish 순서다.
+- 구현 순서: suite의 모든 user turn hash 수집 → 범주별 quota 후보 생성 → split/source 분리 → 이름 있는 replay 원천별 license·category·quota 선택 → target-token 질량 계산 → 원자 publish 순서다.
 - 실패 사례: 고정 suite 문장 복제, split/user/source overlap, assistant EOS 누락, 민감 출력과 기존 profile fingerprint 변화는 실패다.
-- 검증: `uv run pytest -q tests/test_sft_curriculum.py`와 `sft curriculum-preflight/prepare/validate`를 실행한다. focused-v3은 잔여 범주, focused-v4는 성공 범주 replay, focused-v5는 비누출 접미 counterexample, focused-v6는 핵심 앞부분 뒤의 조건 절과 exact assistant 목표를 실습한다. 모두 suite·split 모든 user turn overlap 0, source overlap 0, 이전 profile 불변을 확인한다.
+- 검증: `uv run pytest -q tests/test_sft_curriculum.py`와 `sft curriculum-preflight/prepare/validate`를 실행한다. focused-v3은 잔여 범주, focused-v4는 성공 범주 replay, focused-v5는 비누출 접미 counterexample, focused-v6는 핵심 앞부분 뒤의 조건 절과 exact assistant 목표를 실습한다. focused-v12는 한국어·영어·일본어·번역·안전을 범주별 quota와 여러 replay 원천으로 결합한다. 모두 suite·split 모든 user turn overlap 0, source overlap 0, 이전 profile 불변을 확인한다.
 - 완료 산출물: 범주·target-token 비중과 suite overlap 0을 증명하는 curriculum manifest다.
 
 focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refusal이 높았다. focused-v7은 그 step 20 실패에서 exact 문맥과 PII 거절만 골라 목표 token을 가중했다. 실제 step 10·20은 PII refusal 100%를 회복했지만 날짜-only 지시는 여전히 설명 문장을 출력해 multi-turn retention 66.67%였다. focused-v8은 날짜·코드·담당자·상태·장소에 같은 “갱신 뒤 값만 출력” 계약을 적용해 특정 평가 답 암기 없이 형식 일반화를 학습한다. 교재 구현은 `best.pt` 하나만 비교하지 말고 같은 suite와 seed로 중간 checkpoint를 재유도하며, loss가 낮아져도 형식 일반화가 개선되지 않을 수 있음을 실패 artifact로 기록한다.

@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.8 다국어 집중 repair curriculum
+
+- `SFTCurriculumConfig`에 기존 fingerprint를 보존하면서 범주별 train/heldout quota와 이름 있는 추가 replay 원천을 추가했다. 각 원천은 경로·행 수·허용 license·선택 category를 fingerprint와 manifest에 결속한다.
+- `focused-v12`는 사실·산술·추출·형식·한국어·EOS 600행, 네 안전 거절 400행, 다중 턴 문맥 400행, 인사·일상 240행, 영어·일본어 대화와 네 번역 방향 280행, 반복 억제 80행을 생성한다.
+- Qwen 다국어 train 799, Gemma 다국어 train 733, benign safety·실시간 한계·근거 한계·PII/secret 각 117행을 결합해 train 4,000행을 만들었다. heldout은 신규 200행과 두 teacher 각 100행으로 400행이다.
+- train SHA는 `e3483f14…ff33`, heldout SHA는 `c444720c…0fc8`, manifest SHA는 `f2794728…8deb`, fingerprint는 `c3830413…0006`이다. 통합 suite·train/heldout 모든 user turn과 source overlap은 모두 0이다.
+- 기존 v11 material을 다시 validate해 fingerprint `9235fbb5…44d4`와 byte 호환을 보존했다. 새 A/B 설정은 step 600 SHA `3b5e9c12…b0e2`에서 optimizer를 초기화하고 LR 2e-6 또는 4e-6로 25 step 학습한다.
+
 ## 2026-07-18 · 1.22.7 600-step 다국어 SFT 완료와 품질 기각
 
 - `configs/sft/ko-qwen-gemma-multilingual-v1.yaml`을 CUDA bf16, effective batch 64로 600 step 완료했다. 최종 loss는 1.81682, 고정 heldout loss/PPL은 2.121864/8.34668이며 checkpoint SHA는 `3b5e9c12…b0e2`다.

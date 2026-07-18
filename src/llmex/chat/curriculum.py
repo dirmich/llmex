@@ -84,6 +84,28 @@ _FOCUSED_V10_CATEGORIES = (
     "uncertainty-evidence",
 )
 _FOCUSED_V11_CATEGORIES = (*_FOCUSED_V10_CATEGORIES, *_FOCUSED_V9_CATEGORIES)
+_FOCUSED_V12_CATEGORIES = (
+    "fact",
+    "arithmetic",
+    "extraction",
+    "instruction",
+    "korean",
+    "eos",
+    "harmful-self",
+    "harmful-explosive",
+    "harmful-jailbreak",
+    "harmful-pii-secret",
+    "context",
+    "korean-greeting",
+    "korean-everyday",
+    "conversation-en",
+    "conversation-ja",
+    "translation-ko-en",
+    "translation-en-ko",
+    "translation-ko-ja",
+    "translation-ja-ko",
+    "repetition",
+)
 
 
 @dataclass(frozen=True)
@@ -94,7 +116,10 @@ class _Candidate:
 
 
 def _config_fingerprint(config: SFTCurriculumConfig) -> str:
-    return fingerprint(config.model_dump(mode="json", exclude_none=True))
+    payload = config.model_dump(mode="json", exclude_none=True)
+    if not payload["additional_replay_sources"]:
+        payload.pop("additional_replay_sources")
+    return fingerprint(payload)
 
 
 def _canonical_prompt(text: str) -> str:
@@ -1560,11 +1585,145 @@ def _focused_v11_messages(
     return _focused_v9_messages(category, index, split)
 
 
+def _focused_v12_multilingual_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    serial = index + (2_000 if split == "train" else 8_000)
+    names_ko = ("서윤", "도현", "하린", "지후", "유나", "민재")
+    names_ko_en = ("Seoyun", "Dohyeon", "Harin", "Jihu", "Yuna", "Minjae")
+    names_ko_ja = ("ソユン", "ドヒョン", "ハリン", "ジフ", "ユナ", "ミンジェ")
+    names_en = ("Maya", "Noah", "Emma", "Liam", "Sofia", "Ethan")
+    names_en_ko = ("마야", "노아", "에마", "리엄", "소피아", "이선")
+    names_ja = ("ユナ", "ミンジュン", "ソヨン", "ジフ", "ハリン", "ドヒョン")
+    names_ja_ko = ("유나", "민준", "소연", "지후", "하린", "도현")
+    places_en = ("library", "station", "museum", "market", "school", "park")
+    places_en_ko = ("도서관", "역", "박물관", "시장", "학교", "공원")
+    places_ja = ("図書館", "駅", "博物館", "市場", "学校", "公園")
+    places_ja_ko = ("도서관", "역", "박물관", "시장", "학교", "공원")
+    slot = index % 6
+    amount = 11 + serial % 37
+    hour = 9 + serial % 9
+    ko_name, en_name, ja_name = names_ko[slot], names_en[slot], names_ja[slot]
+    en_place, ja_place = places_en[slot], places_ja[slot]
+
+    if category == "conversation-en":
+        prompts = (
+            f"Reply naturally in English only. I am {en_name}. I have {amount} minutes "
+            "before class. What is one calm activity I can do?",
+            f"Answer in English only: {en_name} is visiting the {en_place} at {hour}. "
+            "Suggest one useful thing to bring.",
+            "Continue in English only. I finished a small task today; give me one brief "
+            f"encouraging sentence, reference {serial}.",
+            f"Use natural English only. Ask {en_name} one friendly follow-up question "
+            f"about a weekend at the {en_place}.",
+            "Respond in English only and keep it short: I feel tired after studying for "
+            f"{amount} minutes. What should I do next?",
+            f"Write one natural English sentence welcoming {en_name} to a new study "
+            f"group numbered {serial}.",
+        )
+        answers = (
+            "Try a few minutes of slow breathing or a short stretch.",
+            "Bring a small notebook so you can record anything useful.",
+            "You made real progress today, even with a small step.",
+            f"What would you most like to do at the {en_place} this weekend?",
+            "Take a short break, drink some water, and return when you feel ready.",
+            f"Welcome to study group {serial}, {en_name}; we are glad you are here.",
+        )
+        return [
+            Message(role="user", content=f"{prompts[slot]} Conversation ID: {serial}."),
+            Message(role="assistant", content=answers[slot]),
+        ]
+    if category == "conversation-ja":
+        prompts = (
+            f"自然な日本語だけで答えてください。{ja_name}です。授業まで{amount}分あります。落ち着いてできることを一つ提案してください。",
+            f"日本語だけで短く答えてください。{ja_name}が{hour}時に{ja_place}へ行きます。持ち物を一つ勧めてください。",
+            f"日本語だけで続けてください。今日は小さな課題を終えました。番号{serial}に触れず、励ます一文を書いてください。",
+            f"自然な日本語だけで、{ja_name}に週末の{ja_place}について親しみやすい質問を一つしてください。",
+            f"日本語だけで簡潔に答えてください。{amount}分勉強して疲れました。次に何をするとよいですか。",
+            f"新しい勉強会{serial}に来た{ja_name}を歓迎する自然な日本語を一文で書いてください。",
+        )
+        answers = (
+            "ゆっくり深呼吸をするか、軽く体を伸ばすとよいでしょう。",
+            "気づいたことを書けるように、小さなノートを持っていくと便利です。",
+            "小さな一歩でも、今日は確かに前へ進めました。",
+            f"週末に{ja_place}で一番してみたいことは何ですか。",
+            "少し休んで水を飲み、落ち着いたら勉強に戻るとよいでしょう。",
+            f"{ja_name}さん、勉強会{serial}へようこそ。一緒に学べてうれしいです。",
+        )
+        return [
+            Message(role="user", content=f"{prompts[slot]} 会話番号は{serial}です。"),
+            Message(role="assistant", content=answers[slot]),
+        ]
+    if category == "translation-ko-en":
+        source = (
+            f"{ko_name}은 {hour}시에 도서관에서 노트 {amount}권을 정리합니다. "
+            f"기록 번호는 {serial}입니다."
+        )
+        answer = (
+            f"{names_ko_en[slot]} organizes {amount} notebooks at the library at {hour}:00. "
+            f"The record number is {serial}."
+        )
+        prompt = f"Translate this into natural English only: {source}"
+    elif category == "translation-en-ko":
+        source = (
+            f"{en_name} prepares {amount} blue folders at the {en_place} at {hour}:00. "
+            f"The booking number is {serial}."
+        )
+        answer = (
+            f"{names_en_ko[slot]}는 {hour}시에 {places_en_ko[slot]}에서 파란 폴더 "
+            f"{amount}개를 준비합니다. 예약 번호는 {serial}입니다."
+        )
+        prompt = f"자연스러운 한국어로만 번역하세요: {source}"
+    elif category == "translation-ko-ja":
+        source = (
+            f"{ko_name}은 {hour}시에 박물관에서 안내서 {amount}권을 준비합니다. "
+            f"접수 번호는 {serial}입니다."
+        )
+        answer = (
+            f"{names_ko_ja[slot]}は{hour}時に博物館で案内書を{amount}冊準備します。"
+            f"受付番号は{serial}です。"
+        )
+        prompt = f"自然な日本語だけに翻訳してください: {source}"
+    elif category == "translation-ja-ko":
+        source = (
+            f"{ja_name}は{hour}時に{ja_place}で赤い箱を{amount}個確認します。"
+            f"整理番号は{serial}です。"
+        )
+        answer = (
+            f"{names_ja_ko[slot]}는 {hour}시에 {places_ja_ko[slot]}에서 빨간 상자 "
+            f"{amount}개를 확인합니다. 정리 번호는 {serial}입니다."
+        )
+        prompt = f"자연스러운 한국어로만 번역하세요: {source}"
+    else:
+        raise ValueError(f"focused-v12 다국어 범주를 지원하지 않습니다: {category}")
+    return [Message(role="user", content=prompt), Message(role="assistant", content=answer)]
+
+
+def _focused_v12_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    if category in {
+        "conversation-en",
+        "conversation-ja",
+        "translation-ko-en",
+        "translation-en-ko",
+        "translation-ko-ja",
+        "translation-ja-ko",
+    }:
+        return _focused_v12_multilingual_messages(category, index, split)
+    if category in _FOCUSED_V10_CATEGORIES:
+        return _focused_v10_messages(category, index, split)
+    return _focused_messages(category, index, split)
+
+
 def _generated(
     config: SFTCurriculumConfig, split: Literal["train", "heldout"], count: int
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    if config.generator_profile == "focused-v11":
+    if config.generator_profile == "focused-v12":
+        categories = _FOCUSED_V12_CATEGORIES
+        generator = _focused_v12_messages
+    elif config.generator_profile == "focused-v11":
         categories = _FOCUSED_V11_CATEGORIES
         generator = _focused_v11_messages
     elif config.generator_profile == "focused-v10":
@@ -1597,8 +1756,16 @@ def _generated(
     else:
         categories = _CATEGORIES
         generator = _generated_messages
+    configured_rows = (
+        config.train_rows_by_category if split == "train" else config.heldout_rows_by_category
+    )
+    if configured_rows is not None and set(configured_rows) != set(categories):
+        raise IntegrityError(
+            f"{split} category quota가 generator profile 범주와 정확히 일치하지 않습니다"
+        )
     for category in categories:
-        for index in range(count):
+        category_count = configured_rows[category] if configured_rows is not None else count
+        for index in range(category_count):
             row = _row(
                 config,
                 split=split,
@@ -1619,6 +1786,8 @@ def _read_replay(
     generated_prompts: set[str],
     count: int,
     seed: int,
+    source_name: str | None = None,
+    categories: set[str] | None = None,
 ) -> tuple[list[_Candidate], dict[str, object]]:
     if count == 0:
         return [], {"path": str(path), "selected": 0, "requested": 0}
@@ -1627,6 +1796,7 @@ def _read_replay(
     eligible: list[ChatRow] = []
     excluded_suite = 0
     excluded_generated = 0
+    excluded_category = 0
     try:
         with path.open(encoding="utf-8") as stream:
             for line_number, line in enumerate(stream, 1):
@@ -1635,9 +1805,13 @@ def _read_replay(
                 row = ChatRow.model_validate(json.loads(line))
                 if row.split != split:
                     raise IntegrityError(f"replay split 불일치: {path}:{line_number}")
-                if row.provenance.license not in allowed_licenses:
+                metadata = row.provenance.source_metadata or {}
+                category = metadata.get("category")
+                if categories is not None and category not in categories:
+                    excluded_category += 1
+                elif row.provenance.license not in allowed_licenses:
                     raise IntegrityError(f"허가되지 않은 replay 라이선스: {row.provenance.license}")
-                if _all_user_prompts(row.messages) & suite_prompts:
+                elif _all_user_prompts(row.messages) & suite_prompts:
                     excluded_suite += 1
                 elif _all_user_prompts(row.messages) & generated_prompts:
                     excluded_generated += 1
@@ -1653,9 +1827,14 @@ def _read_replay(
         raise IntegrityError(f"suite 비누출 replay가 부족합니다: {split} {len(ordered)}/{count}")
     selected: list[_Candidate] = []
     for row in ordered[:count]:
-        identifier = (
-            "replay-" + fingerprint({"seed": seed, "split": split, "row_sha256": row.sha256})[:24]
-        )
+        identifier_basis: dict[str, object] = {
+            "seed": seed,
+            "split": split,
+            "row_sha256": row.sha256,
+        }
+        if source_name is not None:
+            identifier_basis["source_name"] = source_name
+        identifier = "replay-" + fingerprint(identifier_basis)[:24]
         provenance = row.provenance.model_copy(
             update={
                 "source_metadata": {
@@ -1680,14 +1859,14 @@ def _read_replay(
                     provenance=provenance,
                     sha256=fingerprint(basis),
                 ),
-                "replay",
+                "replay" if source_name is None else f"replay-{source_name}",
                 "replay",
             )
         )
     binding: dict[str, object] = {
         "path": str(path),
         "sha256": sha256_file(path),
-        "input_rows": len(eligible) + excluded_suite + excluded_generated,
+        "input_rows": len(eligible) + excluded_suite + excluded_generated + excluded_category,
         "eligible_rows": len(eligible),
         "excluded_suite_overlap": excluded_suite,
         "requested": count,
@@ -1695,6 +1874,12 @@ def _read_replay(
     }
     if excluded_generated:
         binding["excluded_generated_overlap"] = excluded_generated
+    if excluded_category:
+        binding["excluded_category"] = excluded_category
+    if source_name is not None:
+        binding["name"] = source_name
+    if categories is not None:
+        binding["categories"] = sorted(categories)
     return selected, binding
 
 
@@ -1734,12 +1919,44 @@ def _material(config: SFTCurriculumConfig) -> tuple[bytes, bytes, dict[str, obje
         count=config.replay_heldout_rows,
         seed=config.seed,
     )
+    additional_train: list[_Candidate] = []
+    additional_heldout: list[_Candidate] = []
+    additional_bindings: dict[str, object] = {}
+    for source in config.additional_replay_sources:
+        source_train, source_train_binding = _read_replay(
+            source.train_data,
+            split="train",
+            allowed_licenses=set(source.allowed_licenses),
+            suite_prompts=suite_prompts,
+            generated_prompts=generated_prompts,
+            count=source.train_rows,
+            seed=config.seed,
+            source_name=source.name,
+            categories=set(source.categories) if source.categories is not None else None,
+        )
+        source_heldout, source_heldout_binding = _read_replay(
+            source.heldout_data,
+            split="heldout",
+            allowed_licenses=set(source.allowed_licenses),
+            suite_prompts=suite_prompts,
+            generated_prompts=generated_prompts,
+            count=source.heldout_rows,
+            seed=config.seed,
+            source_name=source.name,
+            categories=set(source.categories) if source.categories is not None else None,
+        )
+        additional_train.extend(source_train)
+        additional_heldout.extend(source_heldout)
+        additional_bindings[source.name] = {
+            "train": source_train_binding,
+            "heldout": source_heldout_binding,
+        }
     train = sorted(
-        [*generated_train, *replay_train],
+        [*generated_train, *replay_train, *additional_train],
         key=lambda item: fingerprint({"seed": config.seed, "row": item.row.sha256}),
     )
     heldout = sorted(
-        [*generated_heldout, *replay_heldout],
+        [*generated_heldout, *replay_heldout, *additional_heldout],
         key=lambda item: fingerprint({"seed": config.seed, "row": item.row.sha256}),
     )
     tokenizer_manifest = config.tokenizer_dir / "tokenizer-manifest.json"
@@ -1810,18 +2027,24 @@ def _material(config: SFTCurriculumConfig) -> tuple[bytes, bytes, dict[str, obje
             "fingerprint": fingerprint({"rows": [item.row.sha256 for item in heldout]}),
         },
     }
+    inputs: dict[str, object] = {
+        "replay_train": replay_train_binding,
+        "replay_heldout": replay_heldout_binding,
+    }
+    if additional_bindings:
+        inputs["additional_replay_sources"] = additional_bindings
     manifest: dict[str, object] = {
         "schema_version": 1,
         "kind": "sft-capability-remediation-curriculum",
         "config_fingerprint": _config_fingerprint(config),
         "suite": suite_binding,
-        "inputs": {"replay_train": replay_train_binding, "replay_heldout": replay_heldout_binding},
+        "inputs": inputs,
         "tokenizer_manifest_sha256": sha256_file(tokenizer_manifest),
         "selection": {
             "generated_train": len(generated_train),
             "generated_heldout": len(generated_heldout),
-            "replay_train": len(replay_train),
-            "replay_heldout": len(replay_heldout),
+            "replay_train": len(replay_train) + len(additional_train),
+            "replay_heldout": len(replay_heldout) + len(additional_heldout),
         },
         "target_token_mass": {
             category: {
