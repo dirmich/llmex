@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.5 다국어 SFT 실행 계약
+
+- `expected_base_checkpoint_sha256`를 추가해 지정한 base checkpoint를 immutable snapshot으로 읽은 직후 역직렬화 전에 SHA 불일치를 실패-폐쇄한다. 필드를 쓰지 않는 기존 SFT config fingerprint는 새 필드를 생략해 호환성을 유지한다.
+- `runs/baseline-100m/checkpoints/latest.pt` SHA `dae1b01b…33b3`와 최종 3원천 manifest SHA `f3c11daf…ce58`를 고정한 600-step CUDA bf16 설정을 만들었다. LR은 1.2e-5→1.2e-6, warmup 30, effective batch 64, validation 25-step, checkpoint 50-step이다.
+- 실제 no-baseline preflight는 87,804,672 parameters, train 14,374·heldout 2,430행, 총 4,105,835 token과 32,981,128-byte 연속 cache, base/source/release fingerprint 결속을 확인했다. 학습 산출물은 내부 전용이며 HF 업로드도 공개가 아닌 private로 제한한다.
+
 ## 2026-07-18 · 1.22.4 한국어·Qwen·Gemma 다국어 3원천 결속
 
 - 기존 `SFTMixConfig`에 선택적 public upstream manifest와 이름 있는 추가 teacher export 목록을 추가했다. 새 필드를 쓰지 않는 legacy config는 필드를 fingerprint 입력과 manifest에서 생략해 기존 mix 출력과 fingerprint를 그대로 재유도한다.

@@ -157,6 +157,8 @@ def _fingerprints(
     if config.source_manifest is None:
         config_value.pop("source_manifest", None)
         config_value.pop("expected_source_manifest_sha256", None)
+    if config.expected_base_checkpoint_sha256 is None:
+        config_value.pop("expected_base_checkpoint_sha256", None)
     result = {
         "config": fingerprint(config_value),
         "model": fingerprint(config.model.model_dump(mode="json")),
@@ -171,7 +173,9 @@ def _fingerprints(
     return result
 
 
-def _load_base(path: Path | None) -> tuple[dict[str, torch.Tensor] | None, dict[str, object]]:
+def _load_base(
+    path: Path | None, expected_sha256: str | None = None
+) -> tuple[dict[str, torch.Tensor] | None, dict[str, object]]:
     if path is None:
         absent = fingerprint({"base_checkpoint": None})
         return None, {"present": False, "sha256": absent}
@@ -196,6 +200,9 @@ def _load_base(path: Path | None) -> tuple[dict[str, torch.Tensor] | None, dict[
         )
         if identity_before != identity_after or len(data) != before.st_size:
             raise IntegrityError("base checkpoint immutable snapshot을 읽을 수 없습니다")
+        actual_sha256 = hashlib.sha256(data).hexdigest()
+        if expected_sha256 is not None and actual_sha256 != expected_sha256:
+            raise IntegrityError("base checkpoint SHA-256이 설정 pin과 다릅니다")
         value = torch.load(io.BytesIO(data), map_location="cpu", weights_only=True)
         if (
             not isinstance(value, dict)
@@ -217,7 +224,7 @@ def _load_base(path: Path | None) -> tuple[dict[str, torch.Tensor] | None, dict[
         provenance: dict[str, object] = {
             "present": True,
             "path": str(path.resolve()),
-            "sha256": hashlib.sha256(data).hexdigest(),
+            "sha256": actual_sha256,
             "schema_version": value["schema_version"],
             "kind": value.get("kind", "pretrain"),
             "step": step,
@@ -468,7 +475,9 @@ class SFTTrainer:
             self.heldout_tokenized,
             self.token_cache_stats,
         ) = self._validate_runtime_lengths()
-        base_state, self.base_checkpoint_provenance = _load_base(config.base_checkpoint)
+        base_state, self.base_checkpoint_provenance = _load_base(
+            config.base_checkpoint, config.expected_base_checkpoint_sha256
+        )
         self.release_policy = _release_policy(
             config,
             self.train_data,

@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.5 - 2026-07-18
+
+- SFT base checkpoint의 예상 SHA-256을 선택적으로 pin하고 immutable snapshot을 역직렬화하기 전에 불일치를 거부하도록 했다.
+- 100k pretrain latest와 최종 3원천 manifest에 결속한 600-step 한국어·영어·일본어·번역 SFT 설정을 추가했다.
+- CUDA bf16 preflight에서 87,804,672 parameters, effective batch 64, 16,804행·4,105,835 token cache 32,981,128 bytes와 release blocked를 검증했다.
+
 ## 1.22.4 - 2026-07-18
 
 - 기존 SFT mix의 byte와 fingerprint 호환을 유지하면서 public upstream manifest와 여러 teacher export manifest를 직접 SHA 결속하도록 확장했다.

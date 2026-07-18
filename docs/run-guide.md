@@ -216,6 +216,14 @@ uv run llmex sft validate-mix --config configs/sft/ko-qwen-gemma-multilingual-v1
 
 2026-07-18 실행 결과는 입력 16,921행, heldout prompt 중복 제외 117행, 최종 train 14,374(`1251c2a3…1d41`)·heldout 2,430(`7992479a…e650`)행이다. manifest SHA는 `f3c11daf…ce58`이고 prompt/source overlap 0, release blocked다.
 
+최종 SFT는 `configs/sft/ko-qwen-gemma-multilingual-v1.yaml`을 사용한다. 이 설정은 base checkpoint와 source manifest SHA를 모두 pin하며, 실행 전 preflight가 87,804,672 parameters와 effective batch 64를 확인해야 한다.
+
+```bash
+uv run llmex config validate --kind sft configs/sft/ko-qwen-gemma-multilingual-v1.yaml
+uv run llmex sft preflight --config configs/sft/ko-qwen-gemma-multilingual-v1.yaml --no-measure-baseline
+uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-v1.yaml
+```
+
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
 정식 pilot config를 사용한다.
 

@@ -462,7 +462,13 @@ def test_base_checkpoint_weights_are_reused(tmp_path: Path) -> None:
         parameter.data.fill_(0.125)
     base = trainer.save()
     reused = SFTTrainer(
-        config.model_copy(update={"base_checkpoint": base, "run_dir": tmp_path / "reused"})
+        config.model_copy(
+            update={
+                "base_checkpoint": base,
+                "expected_base_checkpoint_sha256": sha256_file(base),
+                "run_dir": tmp_path / "reused",
+            }
+        )
     )
     assert all(
         torch.allclose(parameter, torch.full_like(parameter, 0.125))
@@ -474,6 +480,16 @@ def test_base_checkpoint_weights_are_reused(tmp_path: Path) -> None:
     manifest = json.loads((reused.run_dir / "data-manifest.json").read_text())
     assert manifest["base_checkpoint"]["sha256"] == sha256_file(base)
     assert manifest["base_checkpoint"]["training_fingerprints"] == trainer.fingerprints
+    with pytest.raises(IntegrityError, match="SHA-256"):
+        SFTTrainer(
+            config.model_copy(
+                update={
+                    "base_checkpoint": base,
+                    "expected_base_checkpoint_sha256": "0" * 64,
+                    "run_dir": tmp_path / "sha-mismatch",
+                }
+            )
+        )
     base_payload = torch.load(base, map_location="cpu", weights_only=True)
     first_tensor = next(iter(base_payload["model"].values()))
     first_tensor.view(-1)[0] += 1.0

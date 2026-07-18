@@ -239,6 +239,7 @@ class SFTConfig(StrictModel):
     run_dir: YamlPath
     allowed_licenses: list[str] = Field(min_length=1)
     base_checkpoint: YamlPath | None = None
+    expected_base_checkpoint_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     device: Literal["auto", "cpu", "cuda", "mps"] = "auto"
     precision: Literal["auto", "bf16", "fp16", "fp32"] = "auto"
     sequence_length: int = Field(gt=2)
@@ -269,6 +270,8 @@ class SFTConfig(StrictModel):
             raise ValueError(
                 "source_manifest와 expected_source_manifest_sha256는 함께 지정해야 합니다"
             )
+        if self.base_checkpoint is None and self.expected_base_checkpoint_sha256 is not None:
+            raise ValueError("expected_base_checkpoint_sha256에는 base_checkpoint가 필요합니다")
         return self
 
 
