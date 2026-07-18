@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.10.1 - 2026-07-18
+
+- full best 기반 결정적 curriculum SFT를 CUDA bf16 350 step으로 실행해 step 175 validation PPL 1.48262를 기록했다.
+- best checkpoint의 100개 heldout 생성에서 PPL 1.29828, EOS 99%, 반복·안전 통과를 확인했다.
+- 고정 162응답 자동 품질을 재실행·재유도해 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn 44.44%, unsafe 0을 실측했다.
+- 자동 gate 실패와 사실·산술·PII/secret·jailbreak·문맥의 잔여 취약점을 숨기지 않고 다음 보정 대상으로 기록했다.
+
 ## 1.10.0 - 2026-07-18
 
 - 품질 suite를 복제하지 않는 9개 범주의 결정적 대화 능력 보정 curriculum과 hash replay 생성기를 추가했다.

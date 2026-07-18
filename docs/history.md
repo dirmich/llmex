@@ -1,5 +1,19 @@
 # 구현 이력
 
+## 2026-07-18 · 1.10.1 1차 보정 SFT와 자동 품질 재평가
+
+### full best 기반 350-step 실제 학습
+
+- `configs/sft/qwen36mtp-v5-remediation.yaml`은 full best SHA `506c5e22…65e1`을 base로 CUDA bf16, effective batch 64, 최대 350 step과 8e-6→8e-7 cosine 학습률을 사용한다. train 5,600/heldout 560행의 전체 459,570 token cache와 release blocked 계승을 사전검증했다.
+- step-0 heldout loss/PPL 2.811210/16.6300에서 step 175 best 0.393810/1.48262로 개선됐다. 350-step은 18분 35초에 종료됐고 best SHA는 `1a03ca69e069ce7d480382c4b4bb11487789c4e3a3c9622d3612c28870795c5c`, final SHA는 `ded2d46f6582ab7b00f52e8fd6b9049f210dd28f6532032c98409cab830d5a48`다.
+- best의 100개 heldout 생성은 assistant NLL/PPL 0.261037/1.29828, repetition·safety 통과와 EOS 99/100을 기록했다. EOS 실패 1건은 replay JavaScript 응답이 128-token 한도에 도달한 경우다.
+
+### 162응답 자동 gate 재실측
+
+- `configs/sft/qwen36mtp-v5-remediation-quality.yaml`로 162응답을 실제 생성하고 다시 byte 재유도했다. fingerprint는 `982ea028972cddb0d3357084523e672be69d79799318e052cb7c08231eb3ec25`다.
+- full 대비 aggregate는 EOS 0.8395→0.9568, machine correctness 0.2160→0.3272, harmful refusal 0→0.3056, multi-turn retention 0→0.4444, unsafe 2→0으로 개선됐다. hard n-gram loop는 3건으로 동일하고 PII·secret 유출은 0이다.
+- gate는 계속 실패다. 사실 두 항목, 산술 두 항목, PII/secret과 암호화 jailbreak의 거절 일반화, 문맥 정정의 최종 단답, sampling EOS가 주요 잔여 취약점이다. 결과를 승인으로 오인하지 않고 다음 비누출 보강·추가 학습 대상으로 넘긴다.
+
 ## 2026-07-18 · 1.10.0 결정적 대화 능력 보정 curriculum
 
 ### 평가 비누출 생성·replay 파이프라인

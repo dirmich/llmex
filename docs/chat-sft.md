@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.10.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 full의 162응답 실패를 대상으로 보정 데이터 생성까지 완료했으며 추가 SFT와 재평가는 진행 중이다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.10.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 full의 162응답 실패를 대상으로 1차 보정 SFT와 재평가를 완료했지만 자동 gate는 아직 실패다. 이는 아직 대화 가능 모델이 아니며 추가 보강과 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 ## JSONL 계약
 

@@ -236,11 +236,30 @@ uv run llmex sft train --config configs/sft/qwen36mtp-v5-full.yaml
 
 정식 full은 `N=8,746`, 410 step으로 약 44분 실행됐다. final train loss는 1.795000, validation loss/PPL은 2.204719/9.0677이고 checkpoint SHA는 `506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1`이다. 100개 heldout 생성에서 EOS 60/100·반복 실패 21/100이므로 실행 완료를 대화 가능 판정으로 해석하지 않는다.
 
+full 자동 품질 실패를 보정할 때는 suite 문장을 학습 파일에 복사하지 않는다. 다음 순서로 모든 user turn 비누출 curriculum을 생성하고 full checkpoint를 base로 별도 run을 시작한다.
+
+```bash
+uv run llmex sft curriculum-preflight --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+uv run llmex sft curriculum-prepare --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-remediation.yaml --measure-baseline
+test ! -e runs/sft-qwen36mtp-v5-remediation
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-remediation.yaml
+uv run llmex sft eval \
+  --config configs/sft/qwen36mtp-v5-remediation.yaml \
+  --checkpoint runs/sft-qwen36mtp-v5-remediation/checkpoints/best.pt
+```
+
+실제 curriculum은 train 5,600/heldout 560행이며 suite·split user prompt와 source overlap이 모두 0이다. 350-step은 약 18분 35초 걸렸고 step 175 best validation PPL은 1.48262다. best SHA는 `1a03ca69e069ce7d480382c4b4bb11487789c4e3a3c9622d3612c28870795c5c`다. 100개 heldout 생성은 PPL 1.29828, EOS 99/100, repetition·safety 통과였지만 이 수치만으로 자동 대화 gate를 통과한 것은 아니다.
+
 ## 11. 자동 대화 품질 gate
 
 pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite SHA-256을 먼저 고정한다. suite는 repository의 `data/evaluation/ko-chat-quality-v1.jsonl`이며 MIT 24 scenarios·27 unique turns다. 공개 고유 prompt 5,813개와 teacher inventory 10,000개에 대한 canonical exact overlap은 0이다. 품질 설정 파일에는 `SFTQualityConfig`의 모든 필드와 SHA를 기록하고 SFT 설정은 `deterministic: true`로 유지한다.
 
 정식 full 평가는 `configs/sft/qwen36mtp-v5-full-quality.yaml`에 세 SHA와 greedy+5 sampling seed를 고정한다. 실제 162응답 결과는 EOS 83.95%, machine correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건으로 `gate_passed=false`다. 실패 artifact도 `runs/sft-qwen36mtp-v5-full-quality`에 보존해 다음 보강 학습과 동일 조건으로 비교한다.
+
+1차 보정 평가는 `configs/sft/qwen36mtp-v5-remediation-quality.yaml`을 사용한다. 실제 162응답과 byte 재유도 결과는 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn retention 44.44%, hard loop 3건, unsafe 0으로 개선됐지만 `gate_passed=false`다. artifact fingerprint는 `982ea028972cddb0d3357084523e672be69d79799318e052cb7c08231eb3ec25`이며 사실·산술·PII/secret·jailbreak·문맥을 다음 보강 대상으로 남긴다.
 
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
