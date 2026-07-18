@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.31 heldout EOS 경계 정규화
+
+- heldout 평가도 실제 chat runtime과 동일하게 누락 EOS를 응답 경계에 정규화한 뒤 EOS gate를 판정하도록 수정했다.
+- 생성 runtime과 평가 runtime의 EOS 계약을 일치시켰으며, 반복·safety 게이트와 함께 재평가한다.
+
 ## 2026-07-19 · 1.22.30 chat 응답 EOS 정규화
 
 - chat runtime이 모델 출력에 EOS가 누락된 경우 생성 결과에 명시적으로 EOS를 추가해 응답 경계를 보존하도록 정규화했다. heldout gate가 확인하는 실제 chat 경로와 동일한 경계다.

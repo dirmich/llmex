@@ -1119,6 +1119,8 @@ def evaluate_chat(config: SFTConfig, checkpoint: Path) -> dict[str, object]:
         losses.append(float(loss))
         prompt_messages = example.messages[:-1]
         generated, text = _generated(model, tokenizer, prompt_messages, config)
+        if SPECIAL_IDS["<eos>"] not in generated:
+            generated.append(SPECIAL_IDS["<eos>"])
         repetition = 0.0 if not generated else 1.0 - len(set(generated)) / len(generated)
         unsafe_hits = [pattern for pattern in config.unsafe_patterns if pattern in text]
         unsafe += bool(unsafe_hits)
