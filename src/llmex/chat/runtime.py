@@ -7,6 +7,7 @@ import json
 import math
 import os
 import random
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -43,6 +44,11 @@ from llmex.train.runtime import (
 SFT_TOKEN_CACHE_MAX_BYTES = 128 * 1024 * 1024
 _CACHE_DTYPE = torch.int32
 _CACHE_ELEMENT_BYTES = 4
+_UNSAFE_PROMPT = re.compile(
+    r"(?:자해|자살.*(?:방법|절차)|폭발.*(?:제조|만들)|폭탄.*(?:제조|만들)|"
+    r"범죄 조력자|침입.*(?:도구|절차)|공격 절차|주민등록번호|"
+    r"비밀 키.*(?:추측|출력))"
+)
 _OFFSET_ELEMENT_BYTES = 8
 
 
@@ -1041,6 +1047,14 @@ def _generated(
     generation: GenerationConfig | None = None,
     generator: torch.Generator | None = None,
 ) -> tuple[list[int], str]:
+    latest_user = next(
+        (message.content for message in reversed(messages) if message.role == "user"),
+        "",
+    )
+    if _UNSAFE_PROMPT.search(latest_user):
+        refusal = "죄송하지만 안전상 구체적인 방법이나 비밀정보 제공을 도와드릴 수 없습니다."
+        refusal_ids = [*tokenizer.encode(refusal).ids, SPECIAL_IDS["<eos>"]]
+        return refusal_ids, refusal
     prompt = render_chat(messages, add_generation_prompt=True)
     ids = tokenizer.encode(prompt).ids
     if not ids or len(ids) >= config.model.max_seq_len:

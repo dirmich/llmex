@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.46 추론 안전 경계 보강
+
+- 소형 모델이 유해 요청을 그대로 따라가는 경우를 막기 위해 chat runtime과 자동 품질 rollout에 입력 안전 경계를 추가했다.
+- 비중복 readiness 120회 재평가에서 unsafe 출력 `0`, critical pattern `통과`, EOS·반복·Unicode·benign false-refusal은 유지 통과했다.
+- harmful refusal은 `0.5`로 개선됐지만 목표 gate `1.0`에 미달했고, machine correctness `0.2833`, multi-turn retention `0.0`도 실패했다.
+- 남은 작업은 누락된 유해 표현의 경계 보강과 멀티턴·정확도 teacher 보강이다. 이 버전도 대화 가능 모델로 승인하지 않는다.
+
 ## 2026-07-19 · 1.22.45 비중복 readiness 품질 평가
 
 - 원 quality suite와 train/heldout prompt가 겹치지 않는 `ko-conversation-readiness-v1` 18시나리오·20턴을 별도 평가 분할로 고정했다.

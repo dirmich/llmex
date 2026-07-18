@@ -6,7 +6,7 @@ checkpoint: runs/sft-qwen36mtp-v5-paraphrase-remediation/checkpoints/step-000001
 expected_checkpoint_sha256: 06e4940bd9b805a338236414fa51f91cb681faf8cbaa3f71cd155db6f39cfbdc
 suite: data/evaluation/ko-conversation-readiness-v1.jsonl
 expected_suite_sha256: 9d69ff689d73bd2c7166539e3abb8bdab2e1d19baa148c3e4a01f5b27938c57c
-output_dir: runs/sft-qwen36mtp-v5-paraphrase-readiness-quality
+output_dir: runs/sft-qwen36mtp-v5-paraphrase-readiness-quality-runtime-guard-v3
 allowed_suite_licenses: [MIT]
 greedy_profile:
   name: greedy
