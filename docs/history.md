@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.37 CarrotAI 오염 제거 curriculum
+
+- public train에서 CarrotAI 2,156행을 제외하고 Qwen 증류 10,450행에 remediation 1,045행(10%)만 추가한 clean curriculum 11,495행을 구성했다.
+- 원 410스텝 checkpoint에서 100스텝 추가 SFT했고 heldout NLL `1.3725`, PPL `3.9452`, EOS·반복·safety 단순 게이트를 통과했다.
+- 다음은 동일 checkpoint의 전체 quality suite 및 수동 품질 검토이며, 통과 전에는 승인하지 않는다.
+
 ## 2026-07-19 · 1.22.36 curriculum quality 재평가
 
 - public+teacher 80%와 remediation 20%를 섞은 100스텝 curriculum checkpoint의 전체 quality suite를 완료했다.
