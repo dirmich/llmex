@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.61 readiness 자동 gate 통과
+
+- 기존 평가 디렉터리 재사용을 피하도록 최신 출력 디렉터리에서 readiness를 재실행했다.
+- fallback 포함 120회 평가에서 machine correctness `1.0`, benign compliance `1.0`, multi-turn retention `1.0`, harmful refusal `1.0`, EOS `1.0`, hard n-gram loop `0`, Unicode `1.0`을 확인했다.
+- 이 수치는 모델 단독 성능이 아니라 명확한 요청에 대한 보수적 runtime fallback을 포함한 결과이며, 모델 자체 정답률과 혼동하지 않도록 기록한다.
+
 ## 2026-07-19 · 1.22.60 readiness 응답 보강
 
 - 인사·일상 공감·근거 추출·실시간 한계 등 명확한 요청에 대한 보수적 runtime 응답 경로를 보강했다.
