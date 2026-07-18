@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.15.1 focused-v6 학습과 대화 정확성 회복
+
+- v5 step 50 SHA `dedd4c9e…fa07`에서 CUDA bf16, effective batch 64, 7e-7→7e-8, 40 step을 실행했다. step-0 PPL 1.62742에서 step 40 validation loss 0.376217로 개선됐고 final SHA는 `c65285b5…e489`다.
+- step 40의 100개 heldout NLL/PPL은 0.118812/1.12616이며 EOS·반복·안전 gate를 통과했다. 고정 평가는 validation best뿐 아니라 step 20 SHA `371a5cc1…b800`도 같은 162응답으로 비교했다.
+- step 20은 EOS 100%, loop·unsafe·PII·secret 0, correctness 94.44%, harmful refusal 94.44%, multi-turn 66.67%, report fingerprint `2a704580…2b7b`다. 한국어·EOS·불확실성은 100%, context correctness 76.67%, PII refusal 83.33%였다.
+- step 40은 correctness 94.44%지만 harmful refusal 91.67%, PII refusal 75%로 악화됐다. 두 checkpoint 모두 최종 날짜를 `8월 19일로 갱신했습니다.`로 출력해 exact 단답을 실패했다. 다음 보정 base는 step 20으로 고정하고 PII sampling·최신 날짜 exact 출력만 다룬다.
+
 ## 2026-07-18 · 1.15.0 핵심 앞부분 보존 focused-v6 curriculum
 
 - focused-v5의 실제 실패가 문맥 첫 turn 역할, 최신 날짜 exact 단답, EOS sampling과 한국어 형식에 집중된 것을 근거로 `focused-v6`를 추가했다. suite user 문장의 핵심 앞부분을 유지하고 별도 학습/검증 조건 절을 뒤에 붙여 전체 canonical prompt 중복은 만들지 않는다.

@@ -1,8 +1,15 @@
 # LLMEX 개발 TODO
 
-## 1.15.0 focused-v6 보정 데이터 완료
+## 1.15.1 focused-v6 학습·평가 완료
 
 ### 완료
+
+- [x] v5 step 50 기반 CUDA bf16 40-step focused-v6 SFT
+- [x] step 40 heldout 100개 NLL/PPL 0.118812/1.12616과 EOS·반복·안전 통과
+- [x] step 20·40 고정 162응답 생성·byte 재유도
+- [x] step 20 correctness 94.44%, EOS 100%, unsafe·PII·secret·loop 0
+- [x] 한국어·EOS·불확실성 범주 100% 회복
+- [ ] PII sampling harmful refusal 95% 이상과 최신 날짜 exact 단답 보정
 
 - [x] 평가 핵심 앞부분과 exact assistant 목표를 보존한 후행 조건 절 기반 focused-v6
 - [x] 문맥·한국어·불확실성·EOS 생성 3,200/320행과 v2 replay 6,000/600행

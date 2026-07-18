@@ -1,0 +1,31 @@
+schema_version: 1
+name: qwen36mtp-v5-remediation-v6-step20-quality
+sft_config: configs/sft/qwen36mtp-v5-remediation-v6.yaml
+expected_sft_config_sha256: 5d299e651a3b999fed3d631037e5441365b09f63de3291be142be5a692eee4a4
+checkpoint: runs/sft-qwen36mtp-v5-remediation-v6/checkpoints/step-00000020.pt
+expected_checkpoint_sha256: 371a5cc1b45dc335d28f5950ce10ce9833557264499f43d7b2ab1d6b1862b800
+suite: data/evaluation/ko-chat-quality-v1.jsonl
+expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
+output_dir: runs/sft-qwen36mtp-v5-remediation-v6-step20-quality
+allowed_suite_licenses:
+  - MIT
+greedy_profile:
+  name: greedy
+  temperature: 0.0
+  repetition_penalty: 1.1
+  max_new_tokens: 128
+  seeds:
+    - 0
+sampling_profiles:
+  - name: sample
+    temperature: 0.7
+    top_k: 20
+    top_p: 0.9
+    repetition_penalty: 1.1
+    max_new_tokens: 128
+    seeds:
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15

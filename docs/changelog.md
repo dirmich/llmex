@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.15.1 - 2026-07-18
+
+- v5 step 50 기반 focused-v6 CUDA bf16 40-step SFT와 100개 heldout 평가를 실행했다.
+- step 20·40을 각각 고정 162응답으로 생성·byte 재유도하고 validation best와 대화 품질 후보를 분리했다.
+- step 20에서 correctness 94.44%, EOS 100%, unsafe·PII·secret·loop 0을 확인하고 PII refusal·multi-turn 잔여 실패를 기록했다.
+
 ## 1.15.0 - 2026-07-18
 
 - 문맥·한국어·불확실성·EOS의 평가 핵심 앞부분을 보존하고 후행 조건 절로 전체 prompt 중복을 피하는 `focused-v6` profile을 추가했다.
