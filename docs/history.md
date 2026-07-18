@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.41 targeted remediation SFT 완료
+
+- quality 실패 시나리오에서 승인한 teacher 15행을 10배 가중해 clean curriculum checkpoint에 100스텝 보강 SFT했다.
+- heldout assistant NLL `1.3709`, PPL 약 `3.94`, EOS·반복·safety 단순 게이트를 통과했다.
+- 전체 quality suite 재평가와 수동 blind review는 아직 남아 있으며, 통과 전에는 승인하지 않는다.
+
 ## 2026-07-19 · 1.22.40 quality 실패 시나리오 teacher 재수집
 
 - quality suite 27개 실제 턴을 qwen36mtp에 직접 재질의해 18건을 승인(훈련 15/heldout 3), 9건을 품질·안전 필터로 거절했다.
