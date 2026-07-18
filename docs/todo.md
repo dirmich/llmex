@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.12 한국어·다국어 SFT와 private 모델 배포 준비
+## 1.22.13 한국어·다국어 SFT와 private 모델 배포 준비
 
 ### 완료
 
@@ -36,8 +36,14 @@
 - [x] 원 step 600 기반 4e-6 150-step SFT와 step 50·150 통합 평가
 - [x] suite 밖 한국어·영어·일본어 자유대화 비문 확인과 checkpoint 기각
 - [x] 한국어 자연대화 10,000·teacher별 다국어 6,000 고유 prompt와 endpoint preflight
-- [ ] Qwen36mtp·Gemma4 대규모 수집·export·validate
+- [x] expanded 1차 tranche의 Reference/serial·조사·큰 수치와 teacher 본문 중복 표본 결함 확인
+- [x] Qwen 1,296/2,000·Gemma 다국어 433/2,000·Gemma 한국어 369/3,000에서 중단하고 export 미실행
+- [x] 초기 natural train/heldout 의미 조합 100% 누출을 `prompt_index` 범위 분리로 차단
+- [x] 다국어 natural-v3 Qwen/Gemma SHA와 한국어 natural-v2 SHA·manifest fingerprint 고정
+- [x] 새 2,000/2,000/3,000 inventory의 고유 request target·Wikipedia 0·overlap 0·release block·endpoint preflight
+- [ ] natural-v3/v2 Qwen36mtp·Gemma4 collect→export→validate
 - [ ] 새 teacher 데이터 비누출 혼합·재학습·통합 품질 평가
+- [ ] 390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint 선별
 - [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity
 - [ ] 선별 checkpoint의 HF·GGUF 최종 export·llama.cpp parity·private Hub 업로드
 

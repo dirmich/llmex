@@ -130,3 +130,68 @@ def test_expanded_v2는_대규모_자유대화와_번역_prompt를_비누출로_
     ]
     suite_prompts = {turn.user for scenario in scenarios for turn in scenario.turns}
     assert not suite_prompts.intersection(prompts)
+
+
+def test_natural_v3는_일련번호_없이_teacher별_6천_prompt를_분리한다(
+    tmp_path: Path,
+) -> None:
+    inventory = tmp_path / "natural"
+    result = prepare_multilingual_prompts(
+        inventory,
+        train_rows_per_task=800,
+        heldout_rows_per_task=200,
+        profile="natural-v3",
+    )
+    assert result["profile"] == "natural-v3"
+    assert result["rows_per_teacher"] == 6000
+    rows = [row for teacher in ("qwen", "gemma") for row in _rows(inventory / f"{teacher}.jsonl")]
+    prompts = [row.messages[0].content for row in rows]
+    assert len(prompts) == len(set(prompts)) == 12000
+    assert all("Reference " not in prompt and "整理番号" not in prompt for prompt in prompts)
+    assert not any(
+        "현우은" in prompt or "지호은" in prompt or "수아은" in prompt for prompt in prompts
+    )
+    assert not any("책 " in prompt and "개를" in prompt for prompt in prompts)
+    assert not any("사진 " in prompt and "개를" in prompt for prompt in prompts)
+    assert not any("보고서 " in prompt and "개를" in prompt for prompt in prompts)
+    assert not any("개을" in prompt or "부을" in prompt for prompt in prompts)
+    assert not any("今日は葵です" in prompt or "今週は葵です" in prompt for prompt in prompts)
+    assert not any("\u30ceートを2個" in prompt or "写真を2個" in prompt for prompt in prompts)
+    assert {row.provenance.dataset for row in rows} == {
+        "llmex-multilingual-teacher-prompts-natural-v3"
+    }
+    qwen_rows = _rows(inventory / "qwen.jsonl")
+    gemma_rows = _rows(inventory / "gemma.jsonl")
+    qwen_indexes = {
+        cast(dict[str, str | int], row.provenance.source_metadata)["prompt_index"]
+        for row in qwen_rows
+    }
+    gemma_indexes = {
+        cast(dict[str, str | int], row.provenance.source_metadata)["prompt_index"]
+        for row in gemma_rows
+    }
+    assert qwen_indexes == set(range(1000))
+    assert gemma_indexes == set(range(1024, 2024))
+    assert not qwen_indexes.intersection(gemma_indexes)
+    for teacher_rows in (qwen_rows, gemma_rows):
+        train_c = {
+            cast(
+                int,
+                cast(dict[str, str | int], row.provenance.source_metadata)["combination_index"],
+            )
+            // 256
+            % 8
+            for row in teacher_rows
+            if row.split == "train"
+        }
+        heldout_c = {
+            cast(
+                int,
+                cast(dict[str, str | int], row.provenance.source_metadata)["combination_index"],
+            )
+            // 256
+            % 8
+            for row in teacher_rows
+            if row.split == "heldout"
+        }
+        assert train_c == heldout_c == set(range(8))

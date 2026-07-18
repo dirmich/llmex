@@ -1232,7 +1232,7 @@ def data_multilingual_prompts(
     train_rows_per_task: Annotated[int, typer.Option("--train-rows-per-task")] = 150,
     heldout_rows_per_task: Annotated[int, typer.Option("--heldout-rows-per-task")] = 30,
     profile: Annotated[
-        Literal["compact-v1", "expanded-v2"], typer.Option("--profile")
+        Literal["compact-v1", "expanded-v2", "natural-v3"], typer.Option("--profile")
     ] = "compact-v1",
 ) -> None:
     """Qwen·Gemma용 영어·일본어 대화/번역 prompt inventory를 생성합니다."""
@@ -1259,6 +1259,9 @@ def data_korean_conversation_prompts(
     heldout_rows_per_category: Annotated[
         int, typer.Option("--heldout-rows-per-category", min=1)
     ] = 200,
+    profile: Annotated[
+        Literal["expanded-v1", "natural-v2"], typer.Option("--profile")
+    ] = "expanded-v1",
 ) -> None:
     """Gemma4용 한국어 자연대화 prompt inventory를 생성합니다."""
     try:
@@ -1268,6 +1271,7 @@ def data_korean_conversation_prompts(
             output,
             train_rows_per_category=train_rows_per_category,
             heldout_rows_per_category=heldout_rows_per_category,
+            profile=profile,
         )
     except LlmexError as error:
         _emit_error(error)

@@ -51,18 +51,18 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 ### `src/llmex/chat/multilingual.py`
 
 - 책임: Qwen·Gemma에 서로 겹치지 않는 영어·일본어 대화와 한↔영·한↔일 teacher prompt inventory를 결정적으로 만든다.
-- 구현 순서: 6개 task template → teacher별 문구 분리 → train/heldout 고유 ID·provenance → canonical JSONL·manifest → 재사용 검증 순서다.
-- 실패 사례: teacher 간 prompt 중복, split/source ID 충돌, task 불균형, 기존 출력과 현재 설정의 불일치를 거부한다.
-- 검증: `uv run pytest -q tests/test_multilingual.py`와 `uv run llmex data multilingual-prompts`를 실행한다.
-- 완료 산출물: teacher별 1,080개 prompt JSONL, SHA가 고정된 manifest와 독립 108응답 평가 suite다.
+- 구현 순서: 6개 task template → `prompt_index` 전단사 순열 기반 split·teacher 의미 조합 범위 분리 → train/heldout 고유 ID·provenance → canonical JSONL·manifest → 재사용 검증 순서다.
+- 실패 사례: exact 문장만 다르고 train/heldout 의미 조합이 같거나 Qwen/Gemma 본문이 중복되는 경우, Reference/serial을 본문에 노출하는 경우, split/source ID 충돌과 기존 출력 불일치를 거부한다.
+- 검증: `uv run pytest -q tests/test_multilingual.py`와 `uv run llmex data multilingual-prompts`를 실행하고 natural-v3의 split·teacher 의미 조합 교집합 0을 확인한다.
+- 완료 산출물: 기존 v1과 의미 범위가 분리된 natural-v3 prompt JSONL, SHA가 고정된 manifest와 독립 108응답 평가 suite다.
 
 ### `src/llmex/chat/korean_prompts.py`
 
 - 책임: Gemma4 teacher가 답할 한국어 자연대화 prompt를 10개 범주로 결정적으로 만든다.
-- 구현 순서: 범주별 문형·조합 → train/heldout 고유 ID → MIT provenance → exact 중복 검사 → canonical JSONL·manifest 원자 게시 순서다.
-- 실패 사례: 기존 합성 행의 user prompt 중복을 행 수로 오인하거나, target 부족분을 Wikipedia 질문으로 자동 보충하면 자연대화 학습량이 부풀려진다.
-- 검증: `uv run pytest -q tests/test_korean_prompts.py`와 `uv run llmex data korean-conversation-prompts`를 실행하고 `distill prepare`의 `source_chat_unique_prompts=target_requests`, `wikipedia_rows_examined=0`을 확인한다.
-- 완료 산출물: train 8,000·heldout 2,000 고유 prompt, SHA와 범주·split 통계가 고정된 manifest다.
+- 구현 순서: 범주별 문형·조합 → `prompt_index` 전단사 순열 기반 split 의미 조합 범위 분리 → train/heldout 고유 ID → MIT provenance → exact·의미 중복 검사 → canonical JSONL·manifest 원자 게시 순서다.
+- 실패 사례: 부자연스러운 조사·큰 수치를 생성하거나 exact 문장만 바꾼 같은 의미 조합을 train/heldout에 배치하거나, target 부족분을 Wikipedia 질문으로 자동 보충하면 자연대화 학습량이 부풀려진다.
+- 검증: `uv run pytest -q tests/test_korean_prompts.py`와 `uv run llmex data korean-conversation-prompts`를 실행하고 natural-v2의 split 의미 조합 교집합 0, `distill prepare`의 고유 request target 일치와 `wikipedia_rows_examined=0`을 확인한다.
+- 완료 산출물: 의미 범위를 분리한 natural-v2 고유 prompt, SHA와 범주·split 통계가 고정된 manifest다.
 
 ### `src/llmex/chat/runtime.py`
 

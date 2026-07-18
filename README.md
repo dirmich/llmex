@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.12는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 한국어 3,000개와 Qwen36mtp·Gemma4별 다국어 2,000개의 1차 tranche를 먼저 평가하고, 부족하면 보존된 10,000/6,000 full 수집을 재개한다. 자동 품질과 suite 밖 실제 대화를 통과한 후속 checkpoint만 HF·GGUF와 private Hub 배포 후보가 된다.
+LLMEX 1.22.13은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. Reference/serial과 부자연스러운 조사·큰 수치가 섞이고 split·teacher 의미가 중복된 1차 tranche는 export 없이 폐기했다. `prompt_index` 전단사 순열로 train/heldout과 Qwen/Gemma 의미 조합 범위를 분리한 natural-v3 다국어 2,000개씩과 natural-v2 한국어 3,000개를 새로 준비했으며, collect→export→validate→비누출 mix→100M latest SFT→390응답·suite 밖 smoke를 통과한 checkpoint만 HF·GGUF와 private Hub 배포 후보가 된다.
 
 ## 빠른 시작
 

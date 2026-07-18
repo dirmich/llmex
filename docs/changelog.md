@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.13 - 2026-07-18
+
+- expanded 1차 tranche를 Qwen 1,296/2,000, Gemma 다국어 433/2,000, Gemma 한국어 369/3,000에서 표본 감사하고 source 결함 때문에 export 없이 폐기했다.
+- Reference/serial, 부자연스러운 조사·큰 수치, train/heldout 의미 100% 누출과 Qwen/Gemma 본문 중복을 제거했다.
+- `prompt_index` 전단사 순열로 split·teacher 의미 조합 범위를 분리한 다국어 natural-v3와 한국어 natural-v2를 게시하고, canonical 본문 교집합 0과 모든 의미 축의 양 split 분포를 독립 전수 감사했다. 세 신규 2,000/2,000/3,000 inventory의 고유 request·Wikipedia 보충 0·overlap 0·endpoint preflight도 확인했다.
+
 ## 1.22.12 - 2026-07-18
 
 - 두 Gemma 수집을 동시에 실행한 실제 처리량을 측정하고 동일 endpoint 병렬화가 총 완료 시간을 늘리는 것을 확인했다.

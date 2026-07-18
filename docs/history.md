@@ -1,5 +1,15 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.13 자연대화 source 결함 폐기와 의미 범위 분리
+
+- expanded 1차 tranche의 teacher 표본을 조기에 감사했다. Qwen 다국어는 1,296/2,000 처리 시점에 accepted 1,271·`prompt_copy` rejected 25, Gemma 다국어는 433/2,000, Gemma 한국어는 369/3,000에서 중단했다. 세 run 모두 source 품질 결함으로 기각했으며 export·validate와 학습 입력 혼합을 실행하지 않았다.
+- 다국어 source에는 `Reference`/serial이 대화 본문에 노출되고 조사와 큰 수치가 부자연스러웠다. 초기 natural 생성본은 train/heldout이 같은 의미 조합을 100% 공유했고 Qwen/Gemma 본문도 의미상 중복돼, exact prompt overlap 0만으로는 막지 못하는 의미 누출을 확인했다.
+- 생성기의 `prompt_index`에 전단사 순열을 적용해 split과 teacher별 의미 조합 선택에 반영했다. train/heldout 및 Qwen/Gemma가 서로 다른 조합 범위를 쓰고, 장소·물체·스타일 축은 양 split에 모두 분포한다. 최종 다국어 natural-v3 SHA는 Qwen `3f4048811d17f9d026b49ff5a9a40e96f90cd7e9e6af9522c7478e2f24faac64`, Gemma `04f7607d87a9fa4b56d950ca787d2b9c9f391a2472013a5a3ef6166189b89272`, manifest fingerprint는 `ff52580ce26acb1a1a966d08c1c08f76b7db5687423a51e3c1667323c46f166d`다.
+- 한국어 natural-v2 prompt SHA는 `f854929cf83afb168584aa63969479e69a8ca8e9d3e0ff96ea17646062d5c407`, manifest fingerprint는 `410a98b4330663213064d6f851e44facce9df421b276bb2d0c218af08d61cff8`이다. 조사와 비현실적인 큰 수치를 제거하고 split별 의미 조합 범위와 각 의미 축을 분리했다.
+- 새 설정은 `qwen36mtp-multilingual-natural-2000.yaml`, `gemma4-multilingual-natural-2000.yaml`, `gemma4-conversation-natural-3000.yaml`이다. prepare 결과는 각각 train/heldout 1,410/590, 1,421/579, 2,167/833이고 inventory fingerprint는 `3b970e90db06eaa00e06aa59c556d8e1a930944edfdfc7a8b6d4a7ad97e94b09`, `cd006e3843350a719c66f0b1f4ea9396550c20a7c4612d03a3f87300d7ddfb71`, `c82eb66052990802929eef45364c2d0bbb49a57dff8e8981bc4540b8f5d9e2dd`다. 모두 선택 request가 target만큼 고유하고 Wikipedia 보충·prompt/source overlap이 0이며 release blocked와 실제 endpoint preflight를 통과했다.
+- 독립 전수 감사에서 22,000행의 row/source SHA 오류와 중복이 0이고, train/heldout 및 Qwen/Gemma canonical 본문 교집합이 모든 task/category에서 0임을 확인했다. 장소·물체·스타일 조합 축은 양 split에 모두 분포했다. 전체 품질 검사는 207 tests, Ruff, format, Pyright 0 오류, 참조 checksum, release audit를 통과했다.
+- 다음 실행 순서는 세 수집의 collect→export→validate, 통합 suite 비누출 mix, 100M latest 기반 SFT, 60 scenario·390응답과 suite 밖 자연대화 smoke, 선별 checkpoint의 HF·GGUF parity와 private Hub 업로드다.
+
 ## 2026-07-18 · 1.22.12 단계적 teacher 수집
 
 - Qwen full 수집은 306/6,000에서 1.25 req/s, Gemma 두 full 수집 동시 실행은 합산 약 0.79 req/s를 실측했다. Gemma 한국어 ETA가 7.7시간까지 늘어 두 작업을 안전 중단했고 완료 spool은 보존했다.

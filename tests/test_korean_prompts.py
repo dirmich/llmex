@@ -63,3 +63,54 @@ def test_한국어_자연대화_prompt_CLI는_manifest를_출력한다(tmp_path:
     value = json.loads(result.stdout)
     assert value["rows"] == 30
     assert value["prompt_overlap"] == 0
+
+
+def test_natural_v2는_조사_오류와_큰_일련번호_없이_1만_prompt를_만든다(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "natural"
+    result = prepare_korean_conversation_prompts(
+        output,
+        train_rows_per_category=800,
+        heldout_rows_per_category=200,
+        profile="natural-v2",
+    )
+    assert result["profile"] == "natural-v2"
+    assert result["rows"] == 10000
+    rows = _rows(output / "prompts.jsonl")
+    prompts = [row.messages[0].content for row in rows]
+    assert len(prompts) == len(set(prompts)) == 10000
+    assert not any("독서을" in prompt or "산책를" in prompt for prompt in prompts)
+    assert not any("Reference " in prompt or "번 작업" in prompt for prompt in prompts)
+    assert not any(
+        "해요 자연스럽게" in prompt or "해요 이 이야기에" in prompt for prompt in prompts
+    )
+    assert not any(
+        "민준와" in prompt or "하린와" in prompt or "나은와" in prompt for prompt in prompts
+    )
+    assert not any("천 원" in prompt or "집의" in prompt for prompt in prompts)
+    metadata = [cast(dict[str, str | int], row.provenance.source_metadata) for row in rows]
+    train_indexes = {
+        item["prompt_index"]
+        for row, item in zip(rows, metadata, strict=True)
+        if row.split == "train"
+    }
+    heldout_indexes = {
+        item["prompt_index"]
+        for row, item in zip(rows, metadata, strict=True)
+        if row.split == "heldout"
+    }
+    assert train_indexes == set(range(800))
+    assert heldout_indexes == set(range(800, 1000))
+    assert not train_indexes.intersection(heldout_indexes)
+    train_c = {
+        cast(int, item["combination_index"]) // 256 % 8
+        for row, item in zip(rows, metadata, strict=True)
+        if row.split == "train"
+    }
+    heldout_c = {
+        cast(int, item["combination_index"]) // 256 % 8
+        for row, item in zip(rows, metadata, strict=True)
+        if row.split == "heldout"
+    }
+    assert train_c == heldout_c == set(range(8))

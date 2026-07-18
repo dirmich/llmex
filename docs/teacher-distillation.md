@@ -1,8 +1,36 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.22.12의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. full 자동 품질 평가의 1차 보정은 기존 suite 문장을 복제하지 않는 결정적 curriculum으로 분리했으며, teacher 추가 수집이 필요할 때도 같은 비누출 원칙을 적용한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
+LLMEX 1.22.13의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. 새 자연대화 수집은 exact hash뿐 아니라 split과 teacher 사이의 의미 조합 범위도 분리한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
 
 teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation` 내부 전용이다. export manifest는 `redistribution_allowed=false`, `release_gate=blocked`를 강제한다. 수집 성공이나 휴리스틱 필터 통과는 최종 안전성·법무·공개 승인이 아니다.
+
+## 1.22.13 natural source 재준비
+
+expanded 1차 tranche는 teacher 표본에서 결함을 확인한 즉시 기각했다. Qwen 다국어는 1,296/2,000 처리 시점의 accepted 1,271·`prompt_copy` rejected 25, Gemma 다국어는 433/2,000, Gemma 한국어는 369/3,000에서 수집을 중단했다. `Reference`/serial 노출, 부자연스러운 조사와 큰 수치, teacher 답변 본문 중복이 확인됐으며 세 run 모두 export하지 않았다.
+
+첫 natural source도 exact 문장은 달랐지만 train/heldout이 같은 의미 조합을 100% 공유하고 Qwen/Gemma prompt 본문이 의미상 중복됐다. 최종 생성기는 `prompt_index`에 전단사 순열을 적용해 split과 teacher마다 분리된 조합 범위를 선택한다. 독립 전수 감사에서 지시문을 제거한 canonical 본문의 모든 task/category 교집합이 0이고 장소·물체·스타일 축이 양 split에 모두 분포함을 확인했다.
+
+- 다국어 natural-v3: Qwen SHA `3f4048811d17f9d026b49ff5a9a40e96f90cd7e9e6af9522c7478e2f24faac64`, Gemma SHA `04f7607d87a9fa4b56d950ca787d2b9c9f391a2472013a5a3ef6166189b89272`, manifest fingerprint `ff52580ce26acb1a1a966d08c1c08f76b7db5687423a51e3c1667323c46f166d`
+- 한국어 natural-v2: SHA `f854929cf83afb168584aa63969479e69a8ca8e9d3e0ff96ea17646062d5c407`, manifest fingerprint `410a98b4330663213064d6f851e44facce9df421b276bb2d0c218af08d61cff8`
+
+새 수집 설정과 실제 prepare 결과는 다음과 같다.
+
+| 설정 | train/heldout | inventory fingerprint |
+|---|---:|---|
+| `configs/distill/qwen36mtp-multilingual-natural-2000.yaml` | 1,410/590 | `3b970e90db06eaa00e06aa59c556d8e1a930944edfdfc7a8b6d4a7ad97e94b09` |
+| `configs/distill/gemma4-multilingual-natural-2000.yaml` | 1,421/579 | `cd006e3843350a719c66f0b1f4ea9396550c20a7c4612d03a3f87300d7ddfb71` |
+| `configs/distill/gemma4-conversation-natural-3000.yaml` | 2,167/833 | `c82eb66052990802929eef45364c2d0bbb49a57dff8e8981bc4540b8f5d9e2dd` |
+
+세 inventory는 선택 request가 각각 2,000·2,000·3,000개로 모두 고유하고 Wikipedia 보충·prompt/source overlap이 0이다. release는 차단돼 있으며 `localhost:8081/v1` Qwen과 `macmini:11434/v1` Gemma endpoint preflight도 통과했다. 다음 명령을 각 설정에 대해 순서대로 실행한다.
+
+```bash
+uv run llmex distill collect --config <natural-config.yaml>
+uv run llmex distill status --config <natural-config.yaml>
+uv run llmex distill export --config <natural-config.yaml>
+uv run llmex distill validate --config <natural-config.yaml>
+```
+
+세 export가 완료되면 통합 suite와 의미·exact 비누출 mix를 만들고 100M latest에서 SFT한다. 60 scenario·390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint만 HF·GGUF parity와 private Hub 업로드로 넘긴다.
 
 ## 1.22.11 대규모 자연대화 수집
 
