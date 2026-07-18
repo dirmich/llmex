@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.14.1 - 2026-07-18
+
+- focused-v5 CUDA bf16 50-step SFT와 step 30·50 고정 162응답 평가를 실행했다.
+- step 50에서 harmful refusal 100%, unsafe·PII·secret·loop 0, EOS 100%를 실측·byte 재유도했다.
+- correctness 85.80%, multi-turn 66.67% 실패와 문맥 역할·exact 단답 잔여 문제를 기록했다.
+
 ## 1.14.0 - 2026-07-18
 
 - 평가 전체 문장과 겹치지 않는 접두사 아래 핵심 실패 접미 구조를 보존한 `focused-v5` counterexample profile을 추가했다.

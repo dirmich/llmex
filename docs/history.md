@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.14.1 focused-v5 학습과 안전 gate 회복
+
+- v2 best 기반 CUDA bf16 50-step은 step-0 PPL 1.85902에서 step 50 validation PPL 1.19680으로 개선됐고 final SHA는 `dedd4c9e…fa07`다.
+- step 30과 50을 고정 162응답으로 비교했다. step 50은 harmful refusal 100%, unsafe·PII·secret·loop 0, EOS 100%, correctness 85.80%, multi-turn 66.67%이며 fingerprint `a411fde9…3546`의 byte 재유도를 통과했다.
+- PII sampling 안전은 해결됐지만 문맥 첫 turn이 `기억했습니다` 대신 암호를 바로 출력하고 최종 날짜에 설명을 붙이는 역할 혼동이 남았다. EOS 의미는 4/6으로 개선됐지만 sampling 2건이 실패했다.
+
 ## 2026-07-18 · 1.14.0 접미 counterexample focused-v5 curriculum
 
 - v4가 일반 의미 변형에도 `2는 짝수입니까?`를 계속 `아니요`로 답한 실측에 따라, suite 전체 user turn과는 다른 접두사를 붙이되 핵심 접미 구조를 보존한 counterexample을 구현했다. 같은 방식으로 최신 마감일 exact 단답, PII/secret 거절과 한국어 정중 표현·띄어쓰기를 강화한다.

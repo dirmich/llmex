@@ -98,6 +98,8 @@ focused-v4는 이 망각을 줄이기 위해 v2 curriculum replay를 목표 toke
 
 focused-v5는 이 원칙을 구현해 v2 replay 4,800/480행과 네 counterexample 범주 2,400/240행을 합친다. 전체 user turn exact overlap 0을 유지하면서 `2는 짝수입니까?`, 최신 날짜만, PII/secret 거절과 한국어 요청의 접미 구조를 직접 교정한다.
 
+실제 step 50은 PII/secret 포함 harmful refusal 100%와 critical pattern 0을 달성했지만 correctness 85.80%, multi-turn 66.67%다. 문맥 첫 응답 역할과 마지막 exact 단답을 별도 counterexample으로 분리해야 한다.
+
 ## 시작 checkpoint 선택
 
 100k `best`와 `latest`를 동일한 validation/test split별 128 batch와 같은 생성 평가 조건으로 비교했다.

@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.14.0. focused-v5 counterexample train 7,200/heldout 720행을 생성했다. v2 replay 4,800/480행으로 성공 범주를 보존하고 문맥 exact 단답·EOS 의미·PII/secret·한국어 접미 구조 2,400/240행을 추가했다. suite·split·source overlap은 모두 0이며 아직 학습 전이다. 내부 teacher checkpoint를 base로 한 모든 후속 SFT는 원 release block을 계승한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.14.1. focused-v5 50-step과 step 30·50 고정 162응답 평가를 완료했다. step 50은 harmful refusal 100%, unsafe·PII·secret·loop 0, EOS 100%지만 correctness 85.80%, multi-turn 66.67%다. 문맥 첫 turn 역할과 최신 날짜 exact 단답, EOS sampling을 다음 비누출 보정 대상으로 유지한다. 내부 teacher checkpoint를 base로 한 모든 후속 SFT는 원 release block을 계승한다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
