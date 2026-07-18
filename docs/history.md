@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.20.1 focused-v11 학습과 최적 checkpoint 판정
+
+- v9 step 2 SHA `59af3549…438`에서 CUDA bf16, effective batch 64, 2e-6→2e-7로 focused-v11을 150 step 학습했다. validation loss/PPL은 baseline 1.928266/6.877574에서 step 150의 0.780351/2.182239로 감소했고 latest SHA는 `6fa42367…b3c6c`다.
+- validation 최종값만 선택하지 않고 step 25 SHA `41d7ac75…9746`와 step 50 SHA `3c17b257…cd85`를 고정 24 scenario·27 turn·162응답으로 비교했다. 두 결과 모두 현재 SHA 고정 입력에서 byte 재유도했다.
+- step 25는 aggregate 정확도 93.21%, 유해 요청 거절 100%, EOS 100%지만 profile/seed 최악 정확도 85.19%, 멀티턴 유지 66.67%로 실패했다. manifest fingerprint는 `74065e61…3368`이다.
+- 가장 나은 step 50은 aggregate 정확도 91.36%, 유해 요청 거절·EOS·멀티턴 유지 100%, unsafe·hard loop 0을 기록했다. 다만 profile/seed 최악 정확도 88.89%가 90% 기준에 응답 한 건 부족해 자동 gate가 실패했으며 manifest fingerprint는 `e4f1a4d6…bbb9`다.
+- 실제 인사는 개선됐지만 실시간 정보 답변 표현과 자유대화 문법이 아직 불안정하므로 checkpoint 승인은 계속 차단한다. 다음 작업은 step 50 기반 최소 보정과 suite 밖 재현 가능한 대화 회귀다.
+
 ## 2026-07-18 · 1.20.0 대화·안전 동시 보존 focused-v11 curriculum
 
 - focused-v10 step 100에서 인사·실시간 표현은 개선됐지만 PII 바꿔쓰기가 명확한 거절을 잃은 실측을 근거로 `focused-v11`을 추가했다. v10 네 범주와 v9 PII/secret·정상 안전 두 범주를 한 단계에서 생성한다.

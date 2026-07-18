@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.20.1 - 2026-07-18
+
+- focused-v11을 v9 step 2 기반 CUDA bf16, effective batch 64로 150 step 학습했다.
+- validation PPL은 baseline 6.87757에서 step 150의 2.18224로 감소했다.
+- step 25·50을 각각 고정 162응답으로 생성하고 현재 SHA 고정 입력에서 byte 재유도했다.
+- step 50은 EOS·유해 요청 거절·멀티턴 유지 100%지만 최악 정확도 88.89%로 자동 gate가 실패해 승인을 차단했다.
+
 ## 1.20.0 - 2026-07-18
 
 - 일반 대화·불확실성과 PII/secret 거절·정상 안전을 동시에 보정하는 `focused-v11` profile을 추가했다.

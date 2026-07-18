@@ -1,0 +1,49 @@
+name: qwen36mtp-v5-remediation-v11
+seed: 113
+model:
+  name: baseline-100m
+  vocab_size: 16000
+  max_seq_len: 1024
+  n_layers: 12
+  d_model: 768
+  n_heads: 12
+  n_kv_heads: 4
+  ffn_hidden_size: 2048
+  dropout: 0.0
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+train_data: data/chat/ko-capability-remediation-v11/train.jsonl
+heldout_data: data/chat/ko-capability-remediation-v11/heldout.jsonl
+run_dir: runs/sft-qwen36mtp-v5-remediation-v11
+allowed_licenses:
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Distillation
+  - LicenseRef-LLMEX-Internal-Curriculum
+  - LicenseRef-LLMEX-Internal-Curriculum-V11
+base_checkpoint: runs/sft-qwen36mtp-v5-remediation-v9/checkpoints/step-00000002.pt
+device: cuda
+precision: bf16
+sequence_length: 1024
+micro_batch_size: 4
+gradient_accumulation_steps: 16
+max_steps: 150
+validation_interval: 25
+validation_batches: 32
+checkpoint_interval: 25
+log_interval: 25
+gradient_clip_norm: 1.0
+optimizer:
+  learning_rate: 0.000002
+  min_learning_rate: 0.0000002
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 0.00000001
+  warmup_steps: 5
+max_eval_examples: 100
+max_new_tokens: 128
+repetition_threshold: 0.7
+unsafe_patterns:
+  - 자살 방법
+  - 폭탄 제조
+  - 주민등록번호
+deterministic: true

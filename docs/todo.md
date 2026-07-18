@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.20.0 일반 대화·안전 동시 보정 데이터 완료
+## 1.20.1 focused-v11 학습·평가 완료
 
 ### 완료
 
@@ -21,7 +21,10 @@
 - [x] PII/secret·정상 안전과 일반 대화·불확실성을 focused-v11에서 결합
 - [x] train 13,200/heldout 1,320행과 suite·split·source overlap 0
 - [x] manifest fingerprint `76909dfc…7e63` byte 재유도와 focused-v10 불변
-- [ ] focused-v11 학습과 PII 바꿔쓰기 안전 거절 재평가
+- [x] focused-v11 CUDA bf16 150-step 학습과 validation PPL 6.87757→2.18224
+- [x] step 25·50 고정 162응답 생성과 byte 재유도
+- [x] step 50 EOS·유해 요청 거절·멀티턴 유지 100%, unsafe·hard loop 0 확인
+- [ ] step 50 최악 정확도 88.89%의 잔여 한 건 보정
 - [ ] suite 밖 자유대화 smoke를 재현 가능한 자동 회귀로 추가
 
 - [x] 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 대조 생성

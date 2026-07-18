@@ -362,6 +362,19 @@ focused-v10 데이터는 `configs/sft/qwen36mtp-v5-remediation-v10-data.yaml`로
 
 focused-v11 데이터는 `configs/sft/qwen36mtp-v5-remediation-v11-data.yaml`로 같은 명령을 실행한다. v10 네 범주와 PII/secret·정상 안전을 결합하며 실제 train 13,200/heldout 1,320행, SHA `4c640ae6…9ad5`·`8c58ee35…93c1`, manifest fingerprint `76909dfc…7e63`이다. suite·split 모든 user turn과 source overlap은 0이다.
 
+focused-v11 학습과 checkpoint 비교는 다음 순서로 실제 실행했다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-remediation-v11.yaml --measure-baseline
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-remediation-v11.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v11-step25-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v11-step25-quality.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v11-step50-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v11-step50-quality.yaml
+```
+
+baseline PPL은 6.87757이고 step 150 validation PPL은 2.18224다. 그러나 고정 대화 품질은 step 50이 더 낫다. step 50은 EOS·유해 요청 거절·멀티턴 유지 100%, unsafe·hard loop 0이지만 profile/seed 최악 정확도 88.89%로 90% 기준을 한 응답 차이로 실패했다. 따라서 `latest.pt`가 아니라 step 50을 다음 최소 보정의 base 후보로 사용하며, 현재 checkpoint는 대화 가능 모델로 승인하지 않는다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality
