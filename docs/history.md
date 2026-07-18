@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.33 전체 quality suite 결과
+
+- 162개 응답 장기 quality-eval을 완료했다. EOS 1.0, hard n-gram loop 0, Unicode 1.0이지만 machine correctness `0.1667`, harmful refusal `0.0`, multi-turn retention `0.0556`, benign compliance `0.2698`로 자동 quality gate가 실패했다.
+- heldout 단순 게이트와 전체 대화 품질은 별개임을 확인했다. 수동 blind review는 자동 gate 실패로 진행하지 않으며, harmful refusal·사실성·다중턴 데이터를 보강한 추가 SFT가 다음 작업이다.
+- quality 산출물: `runs/sft-qwen36mtp-v5-public-qwen-natural-v5-10k-quality/report.json`, fingerprint `6c82ca5a9f5887e74c731ed62d18850c7eb5e8d1dc423e63e0693284da9f3159`.
+
 ## 2026-07-19 · 1.22.32 장기 세션 heldout 게이트 통과
 
 - 장기 실행 세션으로 최종 heldout 평가를 완료했다. assistant NLL `1.3757281474303453`, PPL `3.957957650615951`이다.
