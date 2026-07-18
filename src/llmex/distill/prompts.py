@@ -9,7 +9,7 @@ from typing import Any, cast
 
 from pydantic import ValidationError
 
-from llmex.chat.data import ChatRow
+from llmex.chat.data import ChatRow, ResponseQualityContract
 from llmex.config import DistillationConfig
 from llmex.data.io import read_jsonl_zst
 from llmex.errors import InputError, IntegrityError
@@ -91,13 +91,34 @@ def _chat_candidates(config: DistillationConfig) -> Iterator[LogicalRequest]:
                         source_sha256=row.sha256,
                         source_split=row.split,
                         metadata={**metadata, "upstream_split": row.split},
-                        response_quality=row.provenance.response_quality,
+                        response_quality=_source_response_quality(metadata, users[-1])
+                        or row.provenance.response_quality,
                     )
                     yield _request(users[-1], source, config.heldout_basis_points)
         except (json.JSONDecodeError, ValidationError) as exc:
             raise IntegrityError(
                 f"instruction JSONL schema가 손상되었습니다: {path}: {exc}"
             ) from exc
+
+
+def _source_response_quality(
+    metadata: dict[str, Any], prompt: str
+) -> ResponseQualityContract | None:
+    """오래 저장된 natural inventory에도 최신 품질 계약을 재결속한다."""
+    profile = metadata.get("profile")
+    task = metadata.get("task")
+    if profile not in {"natural-v3", "natural-v4", "natural-v5"} or not isinstance(task, str):
+        return None
+    from llmex.chat.multilingual import response_quality_contract
+
+    act = metadata.get("conversation_act")
+    conversation_act = act if act in {"question", "suggestion"} else None
+    return response_quality_contract(
+        task,
+        prompt,
+        conversation_act=conversation_act,
+        translation_contract="natural-v5" if profile == "natural-v5" else "base",
+    )
 
 
 def _wiki_candidates(config: DistillationConfig) -> Iterator[LogicalRequest]:

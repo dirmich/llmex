@@ -1,5 +1,11 @@
 # LLMEX 개발 TODO
 
+## 1.22.24 Qwen multilingual 정식 10k 수집
+
+- [x] 최신 `natural-v5` 계약으로 teacher별 10,002행(6 task, train 8,400/heldout 1,602) prompt를 생성했다.
+- [x] Qwen 10k config prepare/preflight: requests 10,000, contracts 10,000, source 중복 0, overlap 0, endpoint 정상.
+- [ ] Qwen 10k 수집 → 작업별 분포·독립 50건 수동 감사 → 승인 export/validate.
+
 ## 1.22.23 Qwen v4 감사 보강과 재수집 준비
 
 - Qwen v4 2,000건 수집은 pending 0, accepted 1,036, rejected 964로 완료했으나 독립 50건 표본에서 `에이브리로 건넬`처럼 수령인 조사 오류가 발견되어 export를 보류했다.

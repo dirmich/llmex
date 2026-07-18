@@ -368,13 +368,16 @@ def _recipient_particle_groups(task: str, prompt: str) -> list[list[str]]:
     if task == "en-ko":
         match = re.search(r"\bgive them to\s+([A-Za-z-]+)", prompt, re.IGNORECASE)
     elif task == "ja-ko":
-        match = re.search(r"([葵蓮陽菜湊結衣悠真凛蒼])に渡します", prompt)
+        names = "|".join(map(re.escape, _ENTITY_MAPS[task]))
+        match = re.search(rf"({names})に渡します", prompt)
     else:
         return []
     if match is None:
         return []
     source = match.group(1)
     aliases = _ENTITY_MAPS[task].get(source, ())
+    if not aliases:
+        return []
     # 한 원문 이름의 표기 변형은 하나의 대안 그룹이어야 한다.
     return [[form for alias in aliases for form in (f"{alias}에게", f"{alias}께")]]
 
@@ -385,6 +388,7 @@ def response_quality_contract(
     *,
     conversation_act: Literal["question", "suggestion"] | None = None,
     translation_contract: Literal["base", "natural-v5"] = "base",
+    include_recipient_particles: bool = True,
 ) -> ResponseQualityContract:
     target = cast(
         Literal["ko", "en", "ja"],
@@ -424,7 +428,7 @@ def response_quality_contract(
     required_terms = [
         *_detected_groups(prompt, _TERM_MAPS[task], strict_ascii_boundaries=strict_detection),
         *_detected_groups(prompt, term_maps, strict_ascii_boundaries=strict_detection),
-        *_recipient_particle_groups(task, prompt),
+        *(_recipient_particle_groups(task, prompt) if include_recipient_particles else []),
     ]
     return ResponseQualityContract(
         mode="translation-only",
@@ -959,6 +963,7 @@ def _row(
                     source_metadata.get("conversation_act"),
                 ),
                 translation_contract="natural-v5" if profile == "natural-v5" else "base",
+                include_recipient_particles=False,
             )
             if profile in {"natural-v3", "natural-v4", "natural-v5"}
             else None
@@ -1032,9 +1037,9 @@ def prepare_multilingual_prompts(
     if train_rows_per_task < 1 or heldout_rows_per_task < 1:
         raise IntegrityError("다국어 task별 train/heldout 행 수는 1 이상이어야 합니다")
     if profile in {"natural-v3", "natural-v4", "natural-v5"} and (
-        train_rows_per_task + heldout_rows_per_task > 1024
+        train_rows_per_task + heldout_rows_per_task > 2048
     ):
-        raise IntegrityError(f"{profile}는 teacher별 task당 최대 1,024개 prompt를 지원합니다")
+        raise IntegrityError(f"{profile}는 teacher별 task당 최대 2,048개 prompt를 지원합니다")
     payloads = {
         teacher: _payload(teacher, train_rows_per_task, heldout_rows_per_task, profile)
         for teacher in _TEACHERS

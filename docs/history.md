@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.24 Qwen 정식 10k inventory 결속
+
+- `natural-v5`의 한국어 수령인 `에게/께` 계약과 오래된 JSONL의 계약 재결속 경계를 구현했다. 일본어 다문자 이름도 정확히 매칭한다.
+- teacher별 10,002행(6 task, train 8,400/heldout 1,602) fresh inventory를 생성했다: fingerprint `a97d01473c4b5d41c5e301e357a7238ac67506d0d92638f284a509dacf521385`, Qwen SHA `58b5575a887b0913adcc55ffc1d8ed420d50327d206a9798c9ff22bfca704789`.
+- Qwen 10k prepare/preflight를 통과했다: config `dba401d9e6932d3104e0c0033e8789206286117d4a59f10346553a040adeda80`, inventory `813b1a13cb92009410859da9dfe4cc97aaad8eca97a0a2221a751ce961201653`, contracts 10,000, source duplicate/overlap 0, endpoint 정상.
+- 버전 1.22.24로 올렸다. Hugging Face 공개·비공개 업로드는 수행하지 않는다.
+
 ## 2026-07-18 · 1.22.23 Qwen v4 표본 감사와 조사 계약 보강
 
 - Qwen multilingual natural-v4 수집을 2,000/2,000까지 완료했다: accepted 1,036, rejected 964, pending 0, skipped 0.

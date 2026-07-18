@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.22.24 - 2026-07-18
+
+- 최신 natural-v5 조사 계약을 반영해 teacher별 10,002행 multilingual prompt inventory를 만들었다.
+- Qwen 정식 10k config의 prepare/preflight를 통과했다(contracts 10,000, duplicate/overlap 0, endpoint 정상).
+- 오래된 JSONL에 누락된 quality contract를 profile metadata로 재결속하고 일본어 다문자 이름을 보정했다.
+- Hugging Face 공개·비공개 업로드는 수행하지 않는다.
+
 ## 1.22.23 - 2026-07-18
 
 - Qwen multilingual natural-v4 2,000건 수집을 완료했다(accepted 1,036, rejected 964, pending 0). 독립 표본에서 한국어 수령인 조사 오류가 발견되어 export를 차단했다.
