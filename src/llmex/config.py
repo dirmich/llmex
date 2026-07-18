@@ -346,6 +346,7 @@ class SFTCurriculumConfig(StrictModel):
             "focused-v7",
             "focused-v8",
             "focused-v9",
+            "focused-v10",
         ]
         | None
     ) = None

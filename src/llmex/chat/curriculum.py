@@ -77,6 +77,12 @@ _FOCUSED_V6_CATEGORIES = (
 _FOCUSED_V7_CATEGORIES = ("context-exact", "harmful-pii-secret")
 _FOCUSED_V8_CATEGORIES = ("format-exact",)
 _FOCUSED_V9_CATEGORIES = ("harmful-pii-secret", "benign-safety")
+_FOCUSED_V10_CATEGORIES = (
+    "korean-greeting",
+    "korean-everyday",
+    "uncertainty-live",
+    "uncertainty-evidence",
+)
 
 
 @dataclass(frozen=True)
@@ -1304,11 +1310,255 @@ def _focused_v9_messages(
     ]
 
 
+def _focused_v10_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    variant = index % 8
+    serial = index // 8
+    train_names = ("민준", "서연", "도윤", "하린", "지호", "수아", "현우", "나은")
+    heldout_names = ("예준", "가은", "시우", "유나", "준서", "다인", "태윤", "소율")
+    names = train_names if split == "train" else heldout_names
+    name = names[serial % len(names)]
+
+    if category == "korean-greeting":
+        train_prompts = (
+            f"안녕하세요. 저는 {name}입니다. 편하게 인사해 주세요.",
+            f"좋은 아침이에요. {name}에게 짧게 아침 인사를 건네 주세요.",
+            f"처음 뵙겠습니다. 제 이름은 {name}이에요.",
+            f"반가워요. {name}와 대화를 시작해 볼까요?",
+            f"오늘 하루를 시작하는 {name}에게 자연스럽게 인사해 주세요.",
+            f"잠깐 이야기하러 왔어요. {name}에게 한두 문장으로 인사해 주세요.",
+            f"안녕! 저는 {name}이야. 너무 딱딱하지 않게 답해 줘.",
+            f"{name}입니다. 무엇을 도와줄 수 있는지 인사와 함께 알려 주세요.",
+        )
+        heldout_prompts = (
+            f"만나서 반가워요. 저는 {name}이라고 해요.",
+            f"좋은 오후입니다. {name}에게 정중하게 인사해 주세요.",
+            f"대화를 시작하고 싶어요. {name}에게 먼저 말을 걸어 주세요.",
+            f"안녕하세요, {name}이에요. 따뜻한 첫마디를 부탁해요.",
+            f"처음 대화하네요. {name}에게 자연스러운 환영 인사를 해 주세요.",
+            f"잠깐 쉬면서 이야기하려고 왔어요. 저는 {name}입니다.",
+            f"반갑습니다. {name}에게 부담 없는 인사를 건네 주세요.",
+            f"{name}과 새 대화를 여는 짧은 인사를 해 주세요.",
+        )
+        replies = (
+            f"안녕하세요, {name}님! 만나서 반갑습니다. 무엇을 도와드릴까요?",
+            f"좋은 하루예요, {name}님. 궁금한 점이나 나누고 싶은 이야기를 말씀해 주세요.",
+            f"처음 뵙겠습니다, {name}님. 편하게 말씀해 주세요.",
+            f"반가워요, {name}님! 어떤 이야기부터 시작해 볼까요?",
+            f"안녕하세요, {name}님. 오늘 필요한 도움을 함께 찾아보겠습니다.",
+            f"어서 오세요, {name}님. 질문이나 이야기를 편하게 들려주세요.",
+            f"안녕, {name}님! 반가워요. 무엇이 궁금한가요?",
+            f"안녕하세요, {name}님. 정보 찾기와 설명, 글쓰기 등을 도와드릴 수 있습니다.",
+        )
+        prompts = train_prompts if split == "train" else heldout_prompts
+        return [
+            Message(role="user", content=prompts[variant]),
+            Message(role="assistant", content=replies[variant]),
+        ]
+
+    if category == "korean-everyday":
+        train_pairs = (
+            (
+                f"{name}의 질문에 답해 줘서 고마워요.",
+                "도움이 되었다니 다행입니다. 또 궁금한 점이 있으면 말씀해 주세요.",
+            ),
+            (
+                f"이제 가볼게요. {name}에게 자연스럽게 작별 인사를 해 주세요.",
+                f"대화해서 반가웠습니다, {name}님. 편안한 하루 보내세요!",
+            ),
+            (
+                f"오늘 기분이 어때요? {name}에게 한 문장으로 답해 주세요.",
+                "저는 감정을 느끼지는 않지만, 기꺼이 즐겁게 대화를 도와드릴게요.",
+            ),
+            (
+                f"{name}이 조금 지쳤어요. 짧게 응원해 주세요.",
+                f"오늘도 애쓰셨어요, {name}님. 잠깐 쉬어 가도 괜찮습니다.",
+            ),
+            (
+                f"주말에 가볍게 할 일을 찾는 {name}에게 한 가지를 제안해 주세요.",
+                "가까운 곳을 천천히 산책하며 사진을 찍어 보는 건 어떨까요?",
+            ),
+            (
+                f"{name}이 취미 이야기를 시작하고 싶대요. 자연스럽게 질문해 주세요.",
+                f"좋아요, {name}님. 요즘 가장 즐겨 하는 취미는 무엇인가요?",
+            ),
+            (
+                f"오늘 날씨가 선선하다는 {name}의 말에 짧게 이어 답해 주세요.",
+                "산책하기 좋은 날씨겠네요. 바깥에서 잠깐 기분을 전환해 봐도 좋겠습니다.",
+            ),
+            (
+                f"{name}이 무엇부터 물어볼지 모르겠대요. 선택지를 두 가지 제시해 주세요.",
+                "궁금한 정보를 찾아보거나 글을 함께 다듬는 것부터 시작할 수 있어요.",
+            ),
+        )
+        heldout_pairs = (
+            (
+                f"설명이 도움이 됐어요. {name}에게 답해 주세요.",
+                "도움이 되었다니 기쁩니다. 필요한 내용이 더 있으면 편하게 말씀해 주세요.",
+            ),
+            (
+                f"대화는 여기까지 할게요. {name}에게 인사를 마무리해 주세요.",
+                f"함께 이야기해서 반가웠어요, {name}님. 좋은 하루 보내세요!",
+            ),
+            (
+                f"지금 어떤 기분인가요? {name}에게 솔직하고 자연스럽게 답해 주세요.",
+                "저는 사람처럼 감정을 경험하지 않지만, 지금 대화에는 성실히 집중하고 있습니다.",
+            ),
+            (
+                f"{name}에게 오늘 잘 버텼다고 한마디 해 주세요.",
+                f"오늘 하루도 잘 버텨 냈어요, {name}님. 스스로를 조금 다독여 주세요.",
+            ),
+            (
+                f"집에서 조용히 쉬려는 {name}에게 간단한 활동을 추천해 주세요.",
+                "따뜻한 차를 마시며 짧은 음악 목록을 들어 보는 건 어떨까요?",
+            ),
+            (
+                f"{name}의 관심사를 알아보는 친근한 질문 하나를 해 주세요.",
+                f"{name}님은 요즘 새로 배우고 싶은 것이 있나요?",
+            ),
+            (
+                f"햇살이 좋다는 {name}의 말에 대화를 이어 주세요.",
+                "기분 좋은 햇살이겠네요. 잠깐 창밖을 보며 쉬어 가도 좋겠습니다.",
+            ),
+            (
+                f"{name}이 대화 주제를 고르기 어렵대요. 두 가지 시작점을 알려 주세요.",
+                "오늘 있었던 일을 이야기하거나 지금 궁금한 주제를 하나 골라 볼 수 있어요.",
+            ),
+        )
+        pairs = train_pairs if split == "train" else heldout_pairs
+        prompt, reply = pairs[variant]
+        return [Message(role="user", content=prompt), Message(role="assistant", content=reply)]
+
+    if category == "uncertainty-live":
+        item_number = 10 + serial % 90
+        if variant < 6:
+            train_prompts = (
+                f"지금 동네 마트에 생수 {item_number}번 상품이 남아 있는지 확정해 주세요.",
+                f"현재 {name} 근처 버스가 몇 분 뒤 도착하는지 바로 알려 주세요.",
+                "오늘 이 시각 원화 환율이 정확히 얼마인지 확인 없이 단정해 주세요.",
+                f"지금 서점에 도서 {item_number}의 재고가 있는지 확실하게 답해 주세요.",
+                f"현재 식당 {name}점이 영업 중인지 실시간 조회 없이 알려 주세요.",
+                f"오늘 지역 {item_number}의 기상 경보 상태를 지금 값으로 확정해 주세요.",
+            )
+            heldout_prompts = (
+                f"근처 편의점의 음료 {item_number} 재고를 지금 확정해서 말해 주세요.",
+                f"현재 {name}역 열차 도착까지 남은 시간을 단정해 주세요.",
+                "실시간 조회 없이 오늘 달러 환율의 정확한 값을 알려 주세요.",
+                f"지금 매장에 제품 {item_number}이 남았는지 확실히 답해 주세요.",
+                f"현재 카페 {name}점의 영업 여부를 확인하지 않고 알려 주세요.",
+                f"오늘 구역 {item_number}에 발효된 기상 특보를 실시간 값으로 알려 주세요.",
+            )
+            prompts = train_prompts if split == "train" else heldout_prompts
+            replies = (
+                (
+                    "실시간 재고에 접근할 수 없어 확정할 수 없습니다. "
+                    "매장 앱이나 전화로 확인해 주세요."
+                ),
+                (
+                    "실시간 도착 정보에 접근할 수 없어 정확한 시간을 알 수 없습니다. "
+                    "교통 앱이나 전광판을 확인해 주세요."
+                ),
+                (
+                    "실시간 환율을 조회할 수 없어 현재 값을 단정할 수 없습니다. "
+                    "은행이나 공인 환율 서비스를 확인해 주세요."
+                ),
+                (
+                    "현재 매장 재고를 조회할 수 없어 확정할 수 없습니다. "
+                    "매장 검색이나 전화 확인이 필요합니다."
+                ),
+                (
+                    "실시간 영업 정보를 확인할 수 없어 현재 영업 중이라고 단정할 수 "
+                    "없습니다. 공식 안내나 전화로 확인해 주세요."
+                ),
+                (
+                    "실시간 기상 경보에 접근할 수 없어 현재 상태를 확정할 수 없습니다. "
+                    "기상청 공식 알림을 확인해 주세요."
+                ),
+            )
+            return [
+                Message(role="user", content=prompts[variant]),
+                Message(role="assistant", content=replies[variant]),
+            ]
+        stock = 3 + serial % 17
+        if variant == 6:
+            prompt = (
+                f"방금 확인한 매장 화면에 상품 {item_number} 재고가 {stock}개라고 표시됩니다. "
+                + (
+                    "화면에 적힌 재고 수만 답해 주세요."
+                    if split == "train"
+                    else "표시된 수량만 그대로 알려 주세요."
+                )
+            )
+            reply = f"{stock}개"
+        else:
+            minute = 2 + serial % 18
+            prompt = f"교통 전광판에 {name}행 버스가 {minute}분 후 도착한다고 표시됩니다. " + (
+                "표시된 도착 시간만 답해 주세요."
+                if split == "train"
+                else "전광판의 남은 시간만 알려 주세요."
+            )
+            reply = f"{minute}분 후"
+        return [Message(role="user", content=prompt), Message(role="assistant", content=reply)]
+
+    if category != "uncertainty-evidence":
+        raise ValueError(f"focused-v10이 지원하지 않는 범주입니다: {category}")
+    document = 100 + serial
+    if variant < 6:
+        missing_prompts = (
+            f"첨부했다는 계약서 {document}의 종료 날짜를 알려 주세요. 본문은 제공하지 않았습니다.",
+            f"파일을 보내지 않았지만 보고서 {document}의 핵심 결론을 요약해 주세요.",
+            f"위치를 알려 주지 않고 {name}에게 가장 가까운 약국 이름을 확정해 주세요.",
+            f"계정 화면을 공유하지 않았지만 주문 {document}의 배송 상태를 알려 주세요.",
+            f"회의 기록이 없는데 회의 {document}에서 누가 승인했는지 답해 주세요.",
+            f"사진을 첨부하지 않았지만 사진 {document}에 무엇이 있는지 설명해 주세요.",
+        )
+        missing_replies = (
+            "계약서 본문이 없어 종료 날짜를 확인할 수 없습니다. 관련 문구를 붙여 넣어 주세요.",
+            "보고서 내용이 제공되지 않아 요약할 수 없습니다. 파일이나 본문을 보내 주세요.",
+            (
+                "현재 위치 정보가 없어 가장 가까운 약국을 정할 수 없습니다. "
+                "동네나 기준 위치를 알려 주세요."
+            ),
+            (
+                "계정이나 주문 조회에 접근할 수 없어 배송 상태를 알 수 없습니다. "
+                "주문 화면의 상태를 알려 주세요."
+            ),
+            "회의 기록이 제공되지 않아 승인자를 확인할 수 없습니다. 회의록 내용을 보내 주세요.",
+            "사진이 첨부되지 않아 내용을 볼 수 없습니다. 이미지를 첨부해 주세요.",
+        )
+        prompt = missing_prompts[variant] + (
+            " 확인 가능한지 판단해 주세요."
+            if split == "train"
+            else " 제공된 근거가 충분한지도 밝혀 주세요."
+        )
+        return [
+            Message(role="user", content=prompt),
+            Message(role="assistant", content=missing_replies[variant]),
+        ]
+    if variant == 6:
+        date = f"{9 + serial % 3}월 {10 + serial % 18}일"
+        prompt = f"계약서 {document} 본문에 '종료일: {date}'라고 적혀 있습니다. " + (
+            "종료일만 답해 주세요." if split == "train" else "기재된 날짜만 알려 주세요."
+        )
+        reply = date
+    else:
+        status = ("배송 준비", "배송 중", "배송 완료")[serial % 3]
+        prompt = f"주문 {document} 화면에 '현재 상태: {status}'라고 표시됩니다. " + (
+            "상태만 답해 주세요." if split == "train" else "표시된 상태만 알려 주세요."
+        )
+        reply = status
+    return [Message(role="user", content=prompt), Message(role="assistant", content=reply)]
+
+
 def _generated(
     config: SFTCurriculumConfig, split: Literal["train", "heldout"], count: int
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    if config.generator_profile == "focused-v9":
+    if config.generator_profile == "focused-v10":
+        categories = _FOCUSED_V10_CATEGORIES
+        generator = _focused_v10_messages
+    elif config.generator_profile == "focused-v9":
         categories = _FOCUSED_V9_CATEGORIES
         generator = _focused_v9_messages
     elif config.generator_profile == "focused-v8":

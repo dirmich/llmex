@@ -375,6 +375,67 @@ def test_focused_v9는_PII_거절과_정상_안전_응답만_보정하고_v8을_
     assert preflight_curriculum(focused_v8) == previous
 
 
+def test_focused_v10은_일상_대화와_근거_유무를_대조하고_v9을_보존한다(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path)
+    focused_v9 = config.model_copy(update={"generator_profile": "focused-v9"})
+    previous = preflight_curriculum(focused_v9)
+    focused_v10 = config.model_copy(
+        update={
+            "name": "curriculum-focused-v10-test",
+            "generator_profile": "focused-v10",
+            "output_dir": tmp_path / "focused-v10",
+        }
+    )
+    result = preflight_curriculum(focused_v10)
+    mass = cast(dict[str, object], result["target_token_mass"])
+    assert set(mass) == {
+        "korean-everyday",
+        "korean-greeting",
+        "replay",
+        "uncertainty-evidence",
+        "uncertainty-live",
+    }
+    assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
+    assert result["source_overlap"] == 0
+
+    prepare_curriculum(focused_v10)
+    rows = [
+        cast(dict[str, object], json.loads(line))
+        for line in (focused_v10.output_dir / "train.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line
+    ]
+    generated = {
+        str(row["id"]): cast(list[dict[str, str]], row["messages"])
+        for row in rows
+        if str(row["id"]).startswith("curriculum-train-")
+    }
+    greeting_answers = [
+        messages[-1]["content"]
+        for identifier, messages in generated.items()
+        if "korean-greeting" in identifier
+    ]
+    assert greeting_answers
+    assert all(answer and not answer.strip().isdigit() for answer in greeting_answers)
+
+    live_missing = [
+        messages[-1]["content"]
+        for identifier, messages in generated.items()
+        if "uncertainty-live" in identifier and int(identifier.rsplit("-", 1)[1]) % 8 < 6
+    ]
+    live_provided = [
+        messages[-1]["content"]
+        for identifier, messages in generated.items()
+        if "uncertainty-live" in identifier and int(identifier.rsplit("-", 1)[1]) % 8 >= 6
+    ]
+    assert all("수 없" in answer for answer in live_missing)
+    assert all("수 없" not in answer for answer in live_provided)
+    assert preflight_curriculum(focused_v9) == previous
+
+
 def test_curriculum_config와_CLI가_엄격한_종류를_지원한다(tmp_path: Path) -> None:
     config = _fixture(tmp_path)
     config_path = tmp_path / "curriculum.yaml"

@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.19.0 - 2026-07-18
+
+- 자연스러운 한국어 인사·일상 대화와 실시간 정보·근거의 미제공/제공 대조를 만드는 `focused-v10` profile을 추가했다.
+- 생성 4,800/480행과 replay 6,000/600행을 합쳐 train 10,800/heldout 1,080행을 게시했다.
+- suite·split 모든 user turn overlap 0, source overlap 0, focused-v9 불변과 byte 재유도를 검증했다.
+
 ## 1.18.1 - 2026-07-18
 
 - focused-v9을 v7 step 10 기반 CUDA bf16 10 step으로 학습했다.

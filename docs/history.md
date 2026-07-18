@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.19.0 일반 대화·불확실성 focused-v10 curriculum
+
+- 실제 CLI의 `423` 인사 붕괴와 실시간 재고 근거 없는 확정을 근거로 `focused-v10`을 추가했다. 자연스러운 인사·일상 대화, 실시간 정보 미제공/제공, 문서 근거 미제공/제공을 네 범주로 대조한다.
+- 생성 4,800/480행과 v2 replay 6,000/600행을 합쳐 train 10,800/heldout 1,080행을 원자 게시했다. SHA는 `57e934ed…a976`·`01c9ba11…9076`, manifest fingerprint는 `f40fe0a0…ac20`이다.
+- 인사 29,886, 일상 대화 30,306, 실시간 불확실성 29,370, 근거 불확실성 24,750, replay 128,323 assistant 목표 token을 기록했다. suite·split 모든 user turn과 source overlap은 0이며 focused-v9 preflight 불변과 byte 재유도를 유지한다.
+- 실시간 값이나 문서가 없는 사례는 한계와 확인 경로를 답하고, 프롬프트에 값이 제공된 25% 반례는 그 값을 정상 답하도록 구성해 무조건 회피를 막았다.
+
 ## 2026-07-18 · 1.18.1 focused-v9 학습·자동 통과와 실제 대화 한계
 
 - v7 step 10 SHA `0ca3b8ae…d61`에서 CUDA bf16, effective batch 64, 3e-7→3e-8로 focused-v9을 10 step 학습했다. validation loss/PPL은 step 2의 0.373815/1.45327에서 step 10의 0.336498/1.40004로 감소했다.

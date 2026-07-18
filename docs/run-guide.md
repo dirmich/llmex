@@ -345,6 +345,8 @@ uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-
 
 step 2 SHA `59af3549…438`는 고정 162응답에서 correctness·harmful refusal·multi-turn·EOS 100%, false refusal·unsafe·loop 0을 기록했다. 이어 같은 checkpoint를 `llmex sft generate`로 직접 확인했을 때 수도·칼 보관·PII 거절은 통과했으나 자연스러운 인사에는 `423`, 실시간 편의점 재고에는 조회 없이 확정했다고 답했다. 자동 gate와 실제 자유대화 smoke는 서로 다른 승인 조건이며 둘 중 하나라도 실패하면 대화 가능으로 판정하지 않는다.
 
+focused-v10 데이터는 `configs/sft/qwen36mtp-v5-remediation-v10-data.yaml`로 curriculum 명령 네 개를 실행한다. 자연스러운 인사·일상 대화, 실시간 값 미제공/제공, 문서 근거 미제공/제공을 대조하며 실제 train 10,800/heldout 1,080행, SHA `57e934ed…a976`·`01c9ba11…9076`, manifest fingerprint `f40fe0a0…ac20`이다. suite·split 모든 user turn과 source overlap은 0이다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

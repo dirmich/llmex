@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.18.1 PII·정상 안전 자동 gate 통과와 자유대화 보정 대기
+## 1.19.0 일반 대화·불확실성 보정 데이터 완료
 
 ### 완료
 
@@ -10,8 +10,12 @@
 - [x] v7 step 10 기반 v9 CUDA bf16 10-step SFT
 - [x] step 2 고정 162응답 자동 gate 전 항목·최악값 통과와 byte 재유도
 - [x] 실제 CLI 수도·정상 안전·PII 거절 smoke 통과
-- [ ] 자연스러운 인사에서 숫자 단답이 나오는 일반 대화 실패 보정
-- [ ] 실시간 조회 불가 질문에서 근거 없는 확정이 나오는 불확실성 실패 보정
+- [x] 자연스러운 인사·일상 대화 focused-v10 대조 생성
+- [x] 실시간 정보·문서 근거의 미제공/제공 대조 생성
+- [x] train 10,800/heldout 1,080행과 suite·split·source overlap 0
+- [x] manifest fingerprint `f40fe0a0…ac20` byte 재유도와 focused-v9 불변
+- [ ] v9 step 2 기반 v10 저학습률 SFT
+- [ ] 고정 162응답 자동 gate와 suite 밖 자유대화 smoke 재평가
 - [ ] suite 밖 자유대화 smoke를 재현 가능한 자동 회귀로 추가
 
 - [x] 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 대조 생성
