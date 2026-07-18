@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.21.1 - 2026-07-18
+
+- capability curriculum manifest를 최종 SFT source로 SHA 고정할 수 있게 했다.
+- 출력 데이터·tokenizer·길이·release 정책 결속을 mix manifest와 같은 강도로 검증한다.
+- 허용되지 않은 manifest kind를 fingerprint와 SHA까지 다시 만든 경우에도 거부하는 통합 회귀를 추가했다.
+
 ## 1.21.0 - 2026-07-18
 
 - 학습 문장과 분리된 18 scenario·20 turn 한국어 대화 준비도 suite를 추가했다.

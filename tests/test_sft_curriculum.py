@@ -14,8 +14,9 @@ from llmex.chat.curriculum import (
     status_curriculum,
     validate_curriculum,
 )
+from llmex.chat.runtime import preflight_sft
 from llmex.cli import app
-from llmex.config import SFTCurriculumConfig
+from llmex.config import ModelConfig, OptimizerConfig, SFTConfig, SFTCurriculumConfig
 from llmex.errors import IntegrityError
 from llmex.fingerprint import fingerprint, sha256_file
 from llmex.tokenizer.core import SPECIAL_TOKENS, build_tokenizer
@@ -158,6 +159,64 @@ def test_curriculum은_suite_pin과_출력_변조를_거부한다(tmp_path: Path
         stream.write("{}\n")
     with pytest.raises(IntegrityError, match="현재 입력/config"):
         validate_curriculum(config)
+
+
+def test_runtime은_curriculum_manifest를_SFT_원천에_SHA로_결속한다(tmp_path: Path) -> None:
+    config = _fixture(tmp_path)
+    prepare_curriculum(config)
+    tokenizer_manifest = json.loads(
+        (config.tokenizer_dir / "tokenizer-manifest.json").read_text(encoding="utf-8")
+    )
+    source_manifest = config.output_dir / "manifest.json"
+    sft = SFTConfig(
+        name="curriculum-runtime-test",
+        model=ModelConfig(
+            name="tiny",
+            vocab_size=tokenizer_manifest["vocab_size_actual"],
+            max_seq_len=config.max_seq_len,
+            n_layers=1,
+            d_model=16,
+            n_heads=2,
+            n_kv_heads=1,
+            ffn_hidden_size=32,
+            dropout=0.0,
+        ),
+        tokenizer_dir=config.tokenizer_dir,
+        train_data=config.output_dir / "train.jsonl",
+        heldout_data=config.output_dir / "heldout.jsonl",
+        source_manifest=source_manifest,
+        expected_source_manifest_sha256=sha256_file(source_manifest),
+        run_dir=tmp_path / "sft-run",
+        allowed_licenses=["Apache-2.0", config.curriculum_license],
+        device="cpu",
+        sequence_length=config.max_seq_len,
+        micro_batch_size=1,
+        max_steps=1,
+        validation_interval=1,
+        validation_batches=1,
+        checkpoint_interval=1,
+        optimizer=OptimizerConfig(learning_rate=0.01, min_learning_rate=0.001),
+        max_new_tokens=config.generation_reserve_tokens,
+    )
+    preflight = preflight_sft(sft)
+    assert preflight["release_gate"] == "blocked"
+    assert preflight["redistribution_allowed"] is False
+
+    forged_path = tmp_path / "forged-curriculum-manifest.json"
+    forged = json.loads(source_manifest.read_text(encoding="utf-8"))
+    forged["kind"] = "unknown-curriculum"
+    forged["fingerprint"] = fingerprint(
+        {key: value for key, value in forged.items() if key != "fingerprint"}
+    )
+    forged_path.write_text(json.dumps(forged), encoding="utf-8")
+    forged_sft = sft.model_copy(
+        update={
+            "source_manifest": forged_path,
+            "expected_source_manifest_sha256": sha256_file(forged_path),
+        }
+    )
+    with pytest.raises(IntegrityError, match="source manifest"):
+        preflight_sft(forged_sft)
 
 
 def test_focused_v2는_실패_범주를_분리하고_v1_bytes를_바꾸지_않는다(

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.21.1 curriculum manifest 최종 SFT 결속
+
+- 기존 runtime은 `sft-public-teacher-mix` manifest만 source로 허용해, 그 mix를 replay로 만든 `sft-capability-remediation-curriculum`의 최종 출력 계보를 SFT 설정에 pin할 수 없었다.
+- curriculum manifest도 schema·canonical fingerprint·train/heldout SHA·tokenizer manifest SHA·최대 sequence와 생성 reserve·redistribution/release 정책을 동일하게 검증하도록 확장했다.
+- 실제 결정적 curriculum fixture를 게시하고 그 manifest를 SFT `source_manifest`로 결속한 preflight가 release blocked를 계승하는지 통합 검증했다. kind를 알 수 없는 값으로 바꾸고 fingerprint·manifest SHA까지 다시 계산한 위조도 실패-폐쇄한다.
+
 ## 2026-07-18 · 1.21.0 한국어 대화 준비도 120응답 gate
 
 - 기존 24 scenario 품질 suite가 사실·산술·형식·안전 회귀는 잡았지만, 자동 통과 checkpoint가 자연 인사에 `423`을 답한 실제 누락을 별도 실패 조건으로 고정했다.

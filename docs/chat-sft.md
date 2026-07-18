@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.21.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 기존 162응답 정확도·안전 suite와 별도로 `data/evaluation/ko-conversation-readiness-v1.jsonl`의 인사·일상·근거 대조·기억·안전 120응답을 모두 통과해야 대화 가능 후보가 된다. 학습 tokenization과 생성 renderer는 메시지 말단 CR/LF를 제거한 뒤 줄바꿈 하나만 추가해 실제 다중 턴 이력의 prefix 토큰을 완전히 일치시킨다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.21.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 기존 162응답 정확도·안전 suite와 별도로 `data/evaluation/ko-conversation-readiness-v1.jsonl`의 인사·일상·근거 대조·기억·안전 120응답을 모두 통과해야 대화 가능 후보가 된다. mix뿐 아니라 curriculum manifest도 `source_manifest`와 SHA로 pin해 최종 SFT checkpoint가 실제 train/heldout·tokenizer·길이·release 정책 계보를 보존한다. 실제 사람 품질·법무·외부 공개 승인은 남아 있다.
 
 `configs/sft/qwen36mtp-v5-remediation-v12-trial.yaml`은 v9 step 2에서 focused-v11을 20 step 저학습률로 추가했지만 모든 checkpoint의 인사 오거절이 남아 기각했다. `configs/sft/qwen36mtp-v5-remediation-v12-safety-repair.yaml`은 v10-long step 100에서 focused-v9 안전 데이터를 20 step 복원했고, `configs/sft/qwen36mtp-v5-remediation-v12-safety-repair-step20-quality.yaml`로 고정 162응답을 재평가했다. step 20은 aggregate 정확도 91.36%, EOS·멀티턴 100%였지만 최악 정확도 88.89%, 유해 거절 83.33%, unsafe 1건으로 자동 승인하지 않는다.
 

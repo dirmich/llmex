@@ -104,7 +104,11 @@ def _release_policy(
             current_tokenizer_sha = sha256_file(config.tokenizer_dir / "tokenizer-manifest.json")
             if (
                 value.get("schema_version") != 1
-                or value.get("kind") != "sft-public-teacher-mix"
+                or value.get("kind")
+                not in {
+                    "sft-public-teacher-mix",
+                    "sft-capability-remediation-curriculum",
+                }
                 or value.get("fingerprint")
                 != fingerprint({key: item for key, item in value.items() if key != "fingerprint"})
                 or outputs["train"]["sha256"] != train.file_sha256
