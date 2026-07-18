@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.20.5는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 학습과 추론의 대화 경계는 BOS·assistant EOS뿐 아니라 입력 메시지 말단 CR/LF 정규화까지 같은 토큰열을 사용한다. focused-v11 저학습률 trial과 v10→v9 안전 복원 trial도 자동 품질 최악값을 통과하지 못해 명시적으로 기각했으며, macmini Gemma 4 자연 대화 증류를 진행한다. teacher endpoint는 기본 loopback 제한을 유지하며 명시적 allowlist의 신뢰 내부망 host만 추가로 허용한다. 빈 `tool_calls`만 OpenAI 호환 메타데이터로 수용하고 실제 tool call은 거부한다. `sft generate`는 자동 품질 평가와 같은 decoding 경계를 실제 CLI에서도 재현한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.21.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정확도·안전 중심 162응답 gate와 별도로 인사·일상·실시간 한계/제공 근거·다중 턴 기억을 다루는 120응답 한국어 대화 준비도 gate를 제공한다. 학습과 추론의 대화 경계는 BOS·assistant EOS·말단 CR/LF 정규화까지 같은 토큰열을 사용한다. 기존 보정 trial은 최악 품질값으로 기각했으며, macmini Gemma 4 자연 대화 증류를 진행한다. teacher endpoint는 기본 loopback 제한을 유지하며 명시적 allowlist의 신뢰 내부망 host만 추가로 허용한다. 빈 `tool_calls`만 OpenAI 호환 메타데이터로 수용하고 실제 tool call은 거부한다. `sft generate`는 자동 품질 평가와 같은 decoding 경계를 실제 CLI에서도 재현한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.20.5, frozen sync | 통과 가능 |
+| 버전·lock | 1.21.0, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -10,6 +10,7 @@
 | 보안·경계 | secret·경로·`0.ref` 감사 | 통과 가능 |
 | 귀속 | NOTICE와 source schema | 로컬 계약 통과 |
 | 자동 대화 품질 | focused-v11 step 50: EOS·harmful refusal·multi-turn 100%, aggregate correctness 91.36%, 최악 correctness 88.89%, unsafe·loop 0 | 실패, 최악값 90%에 응답 1건 부족 |
+| 한국어 대화 준비도 | MIT 18 scenario·20 turn·120응답, 인사·일상·근거 대조·기억·안전, 기존 suite·학습·Gemma inventory exact overlap 0 | suite 구현 통과, 새 checkpoint 실측 필요 |
 | 수동 대화 품질 | 최소 100 blind review, full-row/응답 hash, 독립 서명 quality·safety 검토 | 구현 통과, 실제 모델 사람 검토 필요 |
 | SFT 민감 출력 | built-in 완화 불가, 안전한 추가 규칙, 전 assistant turn 선필터, 원자 directory publish | 구현 통과, 실제 mix별 집계 확인 필요 |
 | SFT 원천 identity | source SHA·ID·원행 SHA 우선순위, teacher 원행 결속, 최종 source overlap 0 | 구현·실제 pilot 통과 |

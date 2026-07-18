@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.21.0 한국어 대화 준비도 120응답 gate
+
+- 기존 24 scenario 품질 suite가 사실·산술·형식·안전 회귀는 잡았지만, 자동 통과 checkpoint가 자연 인사에 `423`을 답한 실제 누락을 별도 실패 조건으로 고정했다.
+- MIT `ko-conversation-readiness-v1.jsonl`에 인사·일상 대화, 실시간 정보 미제공/제공, 문서 근거 미제공/제공, 선호 기억·최신 정정, 개인정보·위험 거절을 18 scenario·20 unique turn으로 추가했다. canonical greedy 1회와 sampling seed 5회 계획은 120응답이다.
+- suite SHA는 `9d69ff68…c57c`다. 기존 quality v1, focused-v11 train/heldout 모든 user turn, 진행 중 Gemma4 2,200 inventory와 exact prompt overlap 0을 실측했다.
+- schema·라이선스·고유 ID·범주·유해/정상/다중턴 분모·100개 이상 수동 review population을 회귀 테스트로 고정했다. 정식 checkpoint는 기존 162응답과 새 120응답을 모두 통과해야 한다.
+
 ## 2026-07-18 · 1.20.5 저학습률·안전 복원 trial 기각
 
 - v9 step 2에서 focused-v11을 5e-7→5e-8로 20 step 추가 학습한 trial은 validation PPL을 5.85545에서 4.84900으로 낮췄지만, step 5·10·15·20 모두 일반 인사를 안전 거절로 오판했다. 손실 감소만으로 대화 능력이 회복되지 않아 전 checkpoint를 기각했다.

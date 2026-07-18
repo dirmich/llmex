@@ -8,6 +8,8 @@
 
 1.20.0의 focused-v11은 일반 대화 개선 뒤 PII 바꿔쓰기 안전성이 악화된 실제 회귀를 반영해 대화·불확실성·PII/secret·정상 안전을 한 학습 단계에 둔다. 평균 손실이 낮아져도 어느 안전 바꿔쓰기에서 명확한 거절을 잃으면 후보를 폐기한다.
 
+1.21.0은 기존 정확도 중심 suite와 별도로 `ko-conversation-readiness-v1.jsonl`을 둔다. 학습 문장을 복제하지 않은 인사·일상 대화, 실시간 정보 미제공/제공, 문서 근거 미제공/제공, 선호 기억·정정, 개인정보·위험 요청을 18개 scenario·20개 turn·120응답으로 평가한다. 두 suite를 모두 통과해야 대화 가능 후보가 된다.
+
 heldout NLL이 낮아도 실제 대화는 반복하거나, EOS 없이 길게 이어지거나, 위험 요청을 그대로 수행할 수 있다. 자동 품질 gate는 고정된 checkpoint와 한국어 suite를 실제로 rollout하고, 여러 decoding profile과 seed의 최악값을 기준으로 실패-폐쇄 판정한다.
 
 ## 학습 목표
@@ -30,6 +32,7 @@ heldout NLL이 낮아도 실제 대화는 반복하거나, EOS 없이 길게 이
 - [자동 품질 구현](../../src/llmex/chat/quality.py)
 - [품질 설정 schema와 최소 임계값](../../src/llmex/config.py)
 - [한국어 품질 suite](../../data/evaluation/ko-chat-quality-v1.jsonl)
+- [한국어 대화 준비도 suite](../../data/evaluation/ko-conversation-readiness-v1.jsonl)
 - [SFT trainer와 weighted heldout NLL](../../src/llmex/chat/runtime.py)
 - [checkpoint bytes 검증](../../src/llmex/train/checkpoint.py)
 - [자동 품질 회귀 테스트](../../tests/test_sft_quality.py)
@@ -81,6 +84,8 @@ value = parse_from_bytes(payload)  # 경로 재읽기 금지
 assertion은 `must_match_any`, `must_not_match`, exact 또는 정규화 exact를 사용한다. suite 전체에는 harmful, benign, multi-turn 분모가 모두 있어야 하고 scenario ID와 canonical prompt는 중복될 수 없다.
 
 현재 repository suite는 MIT 라이선스의 24개 scenario, 27개 unique turn이다. fact, arithmetic, extraction, Korean, instruction, context, uncertainty, harmful, jailbreak, PII, false-refusal, EOS, repetition 계층을 포함한다.
+
+대화 준비도 suite도 MIT이며 18개 scenario, 20개 unique turn이다. greeting, everyday, uncertainty, grounded, context, harmful을 분리하고 greedy 1회와 sampling seed 5회로 120응답을 만든다. 기존 품질 suite·focused-v11·Gemma4 증류 inventory와 canonical user prompt exact overlap은 0이다. 학습용 curriculum은 이 suite를 SHA로 고정해 모든 user turn을 제외한 뒤 생성해야 한다.
 
 ### 3. 실제 멀티턴 rollout
 
@@ -178,6 +183,7 @@ teacher가 SFT label을 만들었다면 teacher가 같은 응답을 채점하는
 sha256sum docs/book/examples/sft-book.yaml
 sha256sum runs/book-sft/checkpoints/best.pt
 sha256sum data/evaluation/ko-chat-quality-v1.jsonl
+sha256sum data/evaluation/ko-conversation-readiness-v1.jsonl
 
 # 위 세 SHA를 넣은 docs/book/examples/quality-book.yaml을 만든다.
 uv run llmex config validate docs/book/examples/quality-book.yaml --kind sft-quality

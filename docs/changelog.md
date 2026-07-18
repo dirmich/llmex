@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.21.0 - 2026-07-18
+
+- 학습 문장과 분리된 18 scenario·20 turn 한국어 대화 준비도 suite를 추가했다.
+- 인사·일상·실시간/문서 근거 대조·다중 턴 기억·안전을 120응답으로 평가한다.
+- 기존 품질 suite·focused-v11·Gemma4 inventory와 exact overlap 0, schema와 수동 review 최소 population을 회귀로 고정했다.
+
 ## 1.20.5 - 2026-07-18
 
 - focused-v11 저학습률 20-step과 v10→v9 안전 복원 20-step 진단 설정을 보존했다.

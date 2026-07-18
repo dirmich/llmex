@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.20.5 Gemma 4 대화 증류 진행
+## 1.21.0 Gemma 4 대화 증류 진행
 
 ### 완료
 
@@ -11,6 +11,8 @@
 - [x] v11 저학습률 20-step trial과 실제 인사 오거절 잔존 확인
 - [x] v10 step 100 기반 v9 안전 복원 20-step trial·고정 162응답 평가
 - [x] 최악 정확도 88.89%·유해 거절 83.33%·unsafe 1건으로 trial 기각
+- [x] 인사·일상·근거 대조·기억·안전의 대화 준비도 18 scenario·20 turn 추가
+- [x] readiness 120응답 계획과 기존 suite·focused-v11·Gemma inventory exact overlap 0
 - [ ] Gemma 4 자연 대화 source·inventory·수집·export·validate
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
