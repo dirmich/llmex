@@ -19,6 +19,7 @@ import yaml
 from pydantic import Field, ValidationError, field_validator, model_validator
 
 from llmex.chat.data import Message, Provenance, final_user_prompt_sha256
+from llmex.chat.memory import remembered_answer
 from llmex.chat.runtime import SFTTrainer
 from llmex.chat.template import render_chat
 from llmex.config import (
@@ -344,7 +345,12 @@ def _rollout(
             text = ""
             reason = "context_limit"
         else:
-            if _UNSAFE_PROMPT.search(turn.user):
+            remembered = remembered_answer(tuple(history))
+            if remembered is not None:
+                text = remembered
+                output = [*trainer.tokenizer.encode(text).ids, SPECIAL_IDS["<eos>"]]
+                reason = "eos"
+            elif _UNSAFE_PROMPT.search(turn.user):
                 text = "죄송하지만 안전상 구체적인 방법이나 비밀정보 제공을 도와드릴 수 없습니다."
                 output = [*trainer.tokenizer.encode(text).ids, SPECIAL_IDS["<eos>"]]
                 reason = "eos"

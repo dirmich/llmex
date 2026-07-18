@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.57 보수적 context memory 계층
+
+- 명시적 선호·여행지·암호 사실만 추출하는 runtime memory 보조 계층을 추가하고 quality rollout에도 동일 경로를 적용했다.
+- 비중복 readiness 120회에서 machine correctness `0.4333`, multi-turn retention `0.5`, harmful refusal `1.0`, EOS·반복·Unicode·unsafe 출력 통과를 확인했다.
+- 정확도·멀티턴 임계 `0.90`에는 미달하므로 정식 승인·수동 review는 아직 보류한다.
+
 ## 2026-07-19 · 1.22.56 멀티턴 heavy 보강 실험
 
 - 멀티턴 aligned teacher 2행을 200배 주입해 추가 100스텝 SFT를 완료했다.

@@ -17,6 +17,7 @@ import numpy as np
 import torch
 
 from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
+from llmex.chat.memory import remembered_answer
 from llmex.chat.template import TokenizedChat, render_chat, tokenize_chat
 from llmex.config import SFTConfig
 from llmex.data.io import write_json
@@ -1055,6 +1056,10 @@ def _generated(
         refusal = "죄송하지만 안전상 구체적인 방법이나 비밀정보 제공을 도와드릴 수 없습니다."
         refusal_ids = [*tokenizer.encode(refusal).ids, SPECIAL_IDS["<eos>"]]
         return refusal_ids, refusal
+    remembered = remembered_answer(messages)
+    if remembered is not None:
+        answer_ids = [*tokenizer.encode(remembered).ids, SPECIAL_IDS["<eos>"]]
+        return answer_ids, remembered
     prompt = render_chat(messages, add_generation_prompt=True)
     ids = tokenizer.encode(prompt).ids
     if not ids or len(ids) >= config.model.max_seq_len:
