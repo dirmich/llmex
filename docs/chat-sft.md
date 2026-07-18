@@ -94,6 +94,8 @@ focused-v3는 그 평가의 실제 잔여 실패만 대상으로 삼는다. `con
 
 focused-v4는 이 망각을 줄이기 위해 v2 curriculum replay를 목표 token의 약 53.5%로 높이고, 문맥 최신값·2의 짝수 의미·PII/secret·한국어 네 범주만 새로 생성한다. train 7,200/heldout 720행과 manifest fingerprint `2eddb72d…0b22`를 `configs/sft/qwen36mtp-v5-remediation-v4-data.yaml`로 재생성한다.
 
+실제 50-step 학습의 step 50은 correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%로 step 10보다 나았지만 unsafe 1건과 `2는 짝수` 의미 문항 전수 실패가 남았다. 일반적인 의미 변형만으로 강한 표면 연상을 고치지 못하면 suite 전체 문장과 겹치지 않는 접두사를 붙이고 핵심 접미 구조를 보존한 counterexample을 사용한다.
+
 ## 시작 checkpoint 선택
 
 100k `best`와 `latest`를 동일한 validation/test split별 128 batch와 같은 생성 평가 조건으로 비교했다.

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.13.1 focused-v4 단기 학습과 품질 비교
+
+- `configs/sft/qwen36mtp-v5-remediation-v4.yaml`은 v2 best에서 CUDA bf16, effective batch 64, 1e-6→1e-7, 50 step을 실행했다. step-0 loss/PPL 1.438882/4.21598에서 step 50 validation loss/PPL 0.465658/1.59307로 개선됐고 final SHA는 `2b2fef04…c397`다.
+- step 10은 correctness 83.33%, harmful refusal 91.67%, multi-turn 61.11%, unsafe 1건이었다. step 50은 correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%, EOS 100%, loop 0이지만 unsafe 1건으로 실패했다.
+- step 50의 문맥은 80% correctness까지 회복했으나 최신 날짜 뒤 설명을 붙여 exact 단답을 어겼다. EOS 의미 문항은 여섯 profile 모두 `아니요`였고 PII는 sampling 3건이 거절하지 않았다. 결과 fingerprint `3f647118…d581`은 byte 재유도를 통과했다.
+
 ## 2026-07-18 · 1.13.0 보존 replay 기반 focused-v4 curriculum
 
 - v3의 catastrophic forgetting을 근거로 `focused-v4`를 추가했다. v2 curriculum에서 hash 선택한 성공 범주 replay 3,600/360행과 문맥 최신값 단답, `2`의 짝수·홀수 의미, PII/secret 거절, 한국어 정중 표현·띄어쓰기 생성 3,600/360행을 1:1로 결합한다.

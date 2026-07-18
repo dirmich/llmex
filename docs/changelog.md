@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.13.1 - 2026-07-18
+
+- v2 best 기반 focused-v4 CUDA bf16 50-step SFT와 step 10·50 고정 162응답 평가를 실행했다.
+- step 50의 EOS 100%, correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%, unsafe 1건을 byte 재유도했다.
+- `2는 짝수` 표면 패턴과 PII sampling 실패를 다음 비누출 counterexample 대상으로 확정했다.
+
 ## 1.13.0 - 2026-07-18
 
 - v2 성공 범주 replay와 문맥·EOS 의미·PII/secret·한국어 네 범주를 결합한 `focused-v4` profile을 추가했다.

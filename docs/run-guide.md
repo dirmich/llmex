@@ -293,6 +293,8 @@ focused-v3 학습은 `configs/sft/qwen36mtp-v5-remediation-v3.yaml`로 200 step 
 
 망각 보정 데이터는 `configs/sft/qwen36mtp-v5-remediation-v4-data.yaml`로 같은 curriculum 명령 네 개를 실행한다. 실제 train 7,200/heldout 720행, SHA `74e12903…3463`·`447f98da…182f`, manifest fingerprint `2eddb72d…0b22`다. v2 성공 범주 replay와 네 일반화 범주를 행 기준 1:1로 섞고 모든 overlap 0을 검증한다.
 
+`configs/sft/qwen36mtp-v5-remediation-v4.yaml`로 50 step을 실행하고 step 10·50을 비교한다. 실제 step 50은 correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%, EOS 100%, loop 0이지만 unsafe 1건으로 실패했으며 `configs/sft/qwen36mtp-v5-remediation-v4-step50-quality.yaml`로 byte 재유도한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality
