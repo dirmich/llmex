@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.17.1 focused-v8 학습·템플릿 진단 완료
+## 1.17.2 다중 턴 템플릿 수정·재평가 완료
 
 ### 완료
 
@@ -12,7 +12,10 @@
 - [x] baseline PPL 1.32642→step 20 validation PPL 1.17586
 - [x] step 5·20 고정 162응답 생성·byte 재유도
 - [x] 학습 assistant EOS와 다중 턴 생성 prompt EOS 누락의 템플릿 불일치 진단
-- [ ] 템플릿 경계 수정 뒤 기존 안전 checkpoint 재평가
+- [x] 생성 prompt의 BOS·assistant EOS·단일 줄바꿈을 학습 경계와 일치
+- [x] 실제 trailing newline history의 생성·학습 prefix token 동등 회귀
+- [x] v7 step 10·20에서 multi-turn 100%, correctness 98.77%, EOS 100% 회복
+- [ ] PII seed 13과 정상 안전 seed 14 sampling 잔여 오류 보정
 
 - [x] 최신 날짜 exact assistant 목표를 한 문맥에서 세 번 가중
 - [x] PII/secret sampling 거절 별도 범주와 성공 범주 replay 결합

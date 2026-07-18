@@ -46,6 +46,8 @@
 
 focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refusal이 높았다. focused-v7은 그 step 20 실패에서 exact 문맥과 PII 거절만 골라 목표 token을 가중했다. 실제 step 10·20은 PII refusal 100%를 회복했지만 날짜-only 지시는 여전히 설명 문장을 출력해 multi-turn retention 66.67%였다. focused-v8은 날짜·코드·담당자·상태·장소에 같은 “갱신 뒤 값만 출력” 계약을 적용해 특정 평가 답 암기 없이 형식 일반화를 학습한다. 교재 구현은 `best.pt` 하나만 비교하지 말고 같은 suite와 seed로 중간 checkpoint를 재유도하며, loss가 낮아져도 형식 일반화가 개선되지 않을 수 있음을 실패 artifact로 기록한다.
 
+이 실측의 핵심 원인은 모델만이 아니었다. 학습은 assistant마다 EOS를 넣었지만 과거 생성 prompt는 다중 턴 assistant EOS와 BOS를 빠뜨렸다. `render_chat`과 `tokenize_chat`의 prefix token을 직접 비교하는 테스트를 먼저 두고, 생성 응답의 종단 줄바꿈까지 정규화해야 한다. 수정 뒤 v7 step 10·20은 재학습 없이 multi-turn 100%를 회복했다. 학습 데이터를 추가하기 전에 입력 경계 동등성을 증명하는 이유다.
+
 ### `src/llmex/chat/runtime.py`
 
 - 책임: SFT token cache, 학습·재개·평가·생성을 `SFTTrainer`로 조립한다.

@@ -533,7 +533,7 @@ class SFTTrainer:
                         "SFT 현재 tokenizer sequence 길이가 설정을 초과합니다: "
                         f"{dataset_name}:{example.id}={full_length}>{self.config.sequence_length}"
                     )
-                prompt_length = 1 + len(
+                prompt_length = len(
                     self.tokenizer.encode(
                         render_chat(example.messages[:-1], add_generation_prompt=True)
                     ).ids

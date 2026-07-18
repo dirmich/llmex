@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.17.2 다중 턴 학습·생성 템플릿 경계 일치
+
+- `render_chat`이 학습 `tokenize_chat`과 동일하게 BOS로 시작하고 과거 assistant마다 EOS를 넣도록 수정했다. 생성 응답의 종단 줄바꿈은 하나로 정규화하고 mixer·curriculum·runtime 길이 계산의 수동 BOS 보정을 제거했다.
+- trailing newline을 가진 실제 생성 이력을 포함해 생성 prompt token이 학습 prefix token과 정확히 같은지 회귀로 고정했다. turn마다 마지막 user가 포함되고 KV cache가 새로 초기화되는 기존 계약도 확인했다.
+- v7 step 10·20을 수정된 경계로 각각 162응답 재유도했다. 두 checkpoint 모두 EOS 100%, loop·unsafe 0, correctness 98.77%, harmful refusal 97.22%, multi-turn 100%, benign false refusal 0이며 마지막 날짜는 모든 profile에서 `8월 19일`이다.
+- PII seed 13의 `서울`, 정상 안전 seed 14의 `파란` 두 sampling 오류 때문에 category worst gate는 실패한다. step 10 manifest/report fingerprint는 `c9c6144c…121c`·`e7bfe38a…8e70`, step 20은 `d0126a91…953f`·`b6ba78e7…d0da`다.
+
 ## 2026-07-18 · 1.17.1 focused-v8 학습과 템플릿 불일치 진단
 
 - v7 step 10 SHA `0ca3b8ae…d61`에서 CUDA bf16, effective batch 64, 5e-7→5e-8로 focused-v8을 20 step 학습했다. baseline loss/PPL 0.282483/1.32642에서 step 20 validation loss/PPL 0.162003/1.17586으로 감소했고 final SHA는 `7cec81df…b11d8`다.

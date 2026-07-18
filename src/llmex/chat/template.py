@@ -18,7 +18,13 @@ class TokenizedChat:
 
 
 def render_chat(messages: tuple[Message, ...], *, add_generation_prompt: bool = False) -> str:
-    text = "".join(f"{ROLE_PREFIX[item.role]}{item.content}\n" for item in messages)
+    parts = ["<bos>"]
+    for item in messages:
+        content = item.content.rstrip("\r\n")
+        parts.append(f"{ROLE_PREFIX[item.role]}{content}\n")
+        if item.role == "assistant":
+            parts.append("<eos>")
+    text = "".join(parts)
     if add_generation_prompt:
         text += ROLE_PREFIX["assistant"]
     return text

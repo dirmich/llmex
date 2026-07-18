@@ -1443,7 +1443,7 @@ def _material(config: SFTCurriculumConfig) -> tuple[bytes, bytes, dict[str, obje
         tokenized = tokenize_chat(tokenizer, messages, max_length=10**9)
         if len(tokenized.input_ids) > config.max_seq_len:
             raise IntegrityError("curriculum 행이 max_seq_len을 초과합니다")
-        final_prompt = 1 + len(
+        final_prompt = len(
             tokenizer.encode(render_chat(messages[:-1], add_generation_prompt=True)).ids
         )
         if final_prompt + config.generation_reserve_tokens > config.max_seq_len:

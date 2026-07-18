@@ -222,7 +222,7 @@ def _material(config: SFTMixConfig) -> tuple[bytes, bytes, dict[str, object]]:
     valid: list[_Candidate] = []
     for candidate in sensitive_valid:
         messages = tuple(candidate.row.messages)
-        prompt_tokens = 1 + len(
+        prompt_tokens = len(
             tokenizer.encode(render_chat(messages[:-1], add_generation_prompt=True)).ids
         )
         full_tokens = len(tokenize_chat(tokenizer, messages, max_length=10**9).input_ids)

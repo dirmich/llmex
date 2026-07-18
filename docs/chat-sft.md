@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.17.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v8 20-step SFT는 validation PPL을 개선했지만, 자동 평가에서 학습과 생성의 assistant EOS 경계 불일치가 발견돼 수정 전 수치는 승인 근거에서 제외한다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.17.2는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 생성 prompt는 학습과 같은 BOS·assistant EOS·단일 줄바꿈 경계를 사용한다. 수정 경계의 v7 step 10·20은 multi-turn 100%와 correctness 98.77%를 회복했지만 sampling 두 건이 남았다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 focused-v7은 최신 날짜만 출력하는 assistant turn을 한 문맥에서 세 번 배치하고 PII/secret 거절을 별도 생성한다. `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`의 실제 출력은 train 8,400/heldout 840행, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap은 0이다.
 

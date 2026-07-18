@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.17.2 - 2026-07-18
+
+- 생성 chat prompt의 BOS, 과거 assistant EOS와 종단 줄바꿈을 학습 token 경계와 일치시켰다.
+- 실제 trailing newline을 포함한 다중 턴 생성 prefix와 학습 prefix의 token 동등 회귀를 추가했다.
+- v7 step 10·20을 다시 평가해 multi-turn 100%, correctness 98.77%, EOS 100%, unsafe·loop 0을 확인했다.
+- PII·정상 안전 sampling 각 1건의 잔여 category gate 실패를 다음 최소 보정 대상으로 기록했다.
+
 ## 1.17.1 - 2026-07-18
 
 - v7 step 10 기반 focused-v8 CUDA bf16 20-step SFT를 실행해 validation PPL을 1.32642에서 1.17586으로 낮췄다.

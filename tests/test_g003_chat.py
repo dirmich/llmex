@@ -14,7 +14,7 @@ from typer.testing import CliRunner
 
 from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
 from llmex.chat.runtime import SFTTrainer, evaluate_chat, generate_chat, preflight_sft
-from llmex.chat.template import TokenizedChat, tokenize_chat
+from llmex.chat.template import TokenizedChat, render_chat, tokenize_chat
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
 from llmex.errors import ConfigError, ConflictError, InputError, IntegrityError
@@ -162,6 +162,39 @@ def test_chat_template_masks_everything_except_assistant(tmp_path: Path) -> None
         2,
     ]
     assert encoded.labels == tuple(expected_labels)
+
+
+def test_multi_turn_generation_prompt는_학습과_같은_assistant_eos를_포함한다(
+    tmp_path: Path,
+) -> None:
+    config = _config(tmp_path)
+    from llmex.tokenizer.core import load_tokenizer
+
+    tokenizer = load_tokenizer(config.tokenizer_dir)
+    history = (
+        Message(role="user", content="마감일을 8월 12일로 기억하세요"),
+        Message(role="assistant", content="8월 12일로 기억했습니다\n"),
+        Message(role="user", content="최종 마감일만 답하세요"),
+    )
+    full = (
+        history[0],
+        Message(role="assistant", content="8월 12일로 기억했습니다"),
+        history[2],
+        Message(role="assistant", content="8월 12일"),
+    )
+    encoded = tokenize_chat(tokenizer, full, max_length=256)
+    final_target_start = next(
+        index
+        for index in range(len(encoded.labels) - 1, 0, -1)
+        if encoded.labels[index - 1] == -100 and encoded.labels[index] != -100
+    )
+    prompt_ids = tokenizer.encode(render_chat(history, add_generation_prompt=True)).ids
+
+    rendered = render_chat(history)
+    assert rendered.startswith("<bos><|user|>")
+    assert "기억했습니다\n<eos><|user|>" in rendered
+    assert "기억했습니다\n\n<eos>" not in rendered
+    assert tuple(prompt_ids) == encoded.input_ids[:final_target_start]
 
 
 def test_sft_preflight_baseline은_결정적이고_상태와_파일을_남기지_않는다(
