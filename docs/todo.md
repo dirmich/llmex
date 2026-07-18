@@ -1,8 +1,13 @@
 # LLMEX 개발 TODO
 
-## 1.11.0 focused-v2 보정 데이터 완료
+## 1.11.1 모듈별 제작 교재 완료
 
 ### 완료
+
+- [x] 환경 설정부터 시작하는 19장 모듈별 제작 실습 경로
+- [x] `src/llmex` Python 57개 파일의 공개 계약·구현 순서·실패 사례·표적 테스트 카드
+- [x] 기반·데이터→tokenizer·model→학습·평가→대화·증류→운영·신뢰→CLI의 여섯 챕터 의존 순서
+- [x] 소스 모듈과 교재 카드 일대일 대응 및 챕터 링크 자동 회귀
 
 - [x] assistant-only SFT base checkpoint release policy immutable snapshot 검증
 - [x] 내부 teacher base의 blocked/redistribution 상태를 공개 데이터 추가 학습에도 단조 계승

@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.11.1 57개 모듈별 제작 실습 교재
+
+- 16장의 한 줄 모듈 지도를 57개 Python 파일별 독립 학습 카드로 확장했다. 각 카드는 실제 공개 심볼, 구현 순서, 반드시 실패해야 하는 사례, 표적 테스트·CLI와 완료 산출물을 설명한다.
+- 기반·데이터, tokenizer·model, 학습·추론·평가, 대화·증류, pipeline·trust·release, CLI 조립의 여섯 챕터로 의존 순서를 고정했다. CPU fixture를 먼저 통과하고 CUDA·localhost teacher·장기 SFT를 추가하는 환경 경계와 제출 기록 형식을 함께 제공한다.
+- `tests/test_book.py`는 `src/llmex`의 Python 파일 집합과 교재의 모듈 카드 집합이 정확히 일대일인지, 챕터 링크가 실제 파일인지 검사한다. 새 모듈을 추가하고 교재를 빠뜨리면 회귀가 즉시 실패한다.
+- 현재 저장소와 `../knowledge_base` wiki의 권위 순서를 유지했다. 현재 코드·테스트·실제 artifact가 우선이며 외부 wiki는 과거 운영 snapshot을 보조하는 자료로만 사용한다.
+
 ## 2026-07-18 · 1.11.0 focused-v2 대화 보정 curriculum
 
 - 1차 gate의 실제 응답을 범주별로 분석해 인공 문항 번호가 의미 지시보다 강한 패턴이 된 문제를 제거했다. `generator_profile: focused-v2`는 사실·산술·추출·지시 형식·한국어·문맥·자해·폭발물·jailbreak·PII/secret·정상 안전·불확실성·EOS·반복을 14개 독립 범주로 만든다.

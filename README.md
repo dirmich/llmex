@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.11.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 1차 보정의 실제 실패 응답을 근거로 인공 문항 번호를 제거하고 사실·산술·추출·형식·한국어·문맥·자해·폭발물·jailbreak·PII/secret·정상 안전·불확실성·EOS·반복 14개 범주를 분리한 focused-v2 curriculum train 11,400/heldout 1,140행을 생성했다. suite의 모든 user turn과 exact overlap 0이며 v2 추가 SFT와 재평가는 계속 진행한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 모듈 지도·단계별 제작 워크북·평가 rubric을 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.11.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 1차 보정의 실제 실패 응답을 근거로 인공 문항 번호를 제거하고 사실·산술·추출·형식·한국어·문맥·자해·폭발물·jailbreak·PII/secret·정상 안전·불확실성·EOS·반복 14개 범주를 분리한 focused-v2 curriculum train 11,400/heldout 1,140행을 생성했다. suite의 모든 user turn과 exact overlap 0이며 v2 추가 SFT와 재평가는 별도 실행 이력으로 계속 기록한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 
@@ -33,7 +33,7 @@ Python 3.11 이상과 `uv`가 필요하다. 테스트는 네트워크와 GPU를 
 - `data/`, `artifacts/`, `runs/`: Git에 넣지 않는 host 영속 데이터
 - `docs/environment.md`: 로컬·DGX Spark 환경 계약
 - `docs/history.md`: 구현·검증 이력
-- `docs/book/`: 환경부터 release까지 이어지는 16장 실습 교재와 결정적 smoke 예제
+- `docs/book/`: 환경부터 release까지 이어지는 00~19장 교재, 57개 모듈 카드와 결정적 smoke 예제
 - `docs/chat-sft.md`: JSONL 대화 데이터, SFT 재개, 평가·생성 계약
 - `docs/teacher-distillation.md`: teacher 10k 준비·수집·재개·export·검증 계약
 
