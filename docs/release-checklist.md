@@ -1,4 +1,4 @@
-# 1.14.1 릴리스 체크리스트
+# 1.14.2 릴리스 체크리스트
 
 ## 자동 통과 항목
 
@@ -27,6 +27,7 @@
 - [x] focused-v4 50-step SFT와 step 10·50 고정 162응답 비교·step 50 byte 재유도
 - [x] focused-v5 비누출 접미 counterexample train 7,200/heldout 720행 생성·재검증
 - [x] focused-v5 50-step SFT와 step 30·50 고정 162응답 평가·step 50 byte 재유도
+- [x] 57개 모듈 교재의 챕터별 환경표와 offline mix→SFT→추론→품질 실행 실습
 
 ## 외부 승인 없이는 통과 불가
 
@@ -36,7 +37,7 @@
 - [ ] 공개 배포 결정: 승인된 대상·채널·버전·철회 책임자
 
 네 항목은 승인자, ISO 8601 시각, 근거 artifact를 가진 JSON과 각 품질·`release gate`가 필요하다. 현재 판정은
-**1.14.1 focused-v5 자동 gate 실패, 후속 보정·독립 수동 검토·외부 공개 승인 전 공개 금지**다.
+**1.14.2 focused-v5 자동 gate 실패, 후속 보정·독립 수동 검토·외부 공개 승인 전 공개 금지**다.
 
 release gate의 필수 집합은 법무, 장기 baseline, 수동 품질 평가, 공개 배포 결정 네 개다. 수동 품질 manifest/report는 exact key, canonical fingerprint, report SHA, 최소 표본, 모든 점수와 worst 값, reviewer/submission/adjudication 교차 의미, release version·commit·config target을 검증한다. 네 gate는 한 invocation에서 한 번 snapshot한 Git commit·서명 trust policy·issuer map으로 검증한다. production `.llmex/trust-policy.json`에는 `quality-release`, `quality-reviewer`, `safety-reviewer`, `quality-adjudicator` 역할이 아직 없으며 고정 root private key 없이 policy를 수정하지 않는다.
 

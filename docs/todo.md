@@ -1,8 +1,15 @@
 # LLMEX 개발 TODO
 
-## 1.14.1 focused-v5 학습·안전 평가 완료
+## 1.14.2 교재 offline 대화 E2E 완료
 
 ### 완료
+
+- [x] CPU/CUDA/DGX Spark/local teacher 환경 프로필과 00~20장별 준비표
+- [x] 공개·teacher 4 split, teacher manifest, tokenizer, 동적 mix·SFT·quality 설정 생성기
+- [x] 교재 fixture mix train 8/heldout 4와 prompt/source overlap 0·release block 재검증
+- [x] CPU fp32 12-step SFT, heldout 평가와 실제 한국어 prompt 추론
+- [x] 3 scenario·4 turn·24 response 자동 품질 실패 artifact 생성·재유도
+- [x] 교재 장 링크와 fixture 생성기 도움말 회귀
 
 - [x] 환경 설정부터 시작하는 19장 모듈별 제작 실습 경로
 - [x] `src/llmex` Python 57개 파일의 공개 계약·구현 순서·실패 사례·표적 테스트 카드

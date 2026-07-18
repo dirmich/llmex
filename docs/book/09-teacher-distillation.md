@@ -134,6 +134,8 @@ r_{repeat}=1-\frac{|\operatorname{unique}(G_4)|}{|G_4|}
 
 ## 실제 명령
 
+HTTP teacher 없이 inventory·spool·mix·SFT 경계를 먼저 학습하려면 [20장 offline 대화 E2E](20-offline-chat-e2e.md)를 완료한다. 그 fixture는 teacher 응답을 새로 수집하지 않으며, 내부 전용 teacher manifest와 release block의 전달만 재현한다.
+
 로컬 teacher가 `localhost:8081/v1`에서 `qwen36mtp`를 제공한다고 가정한다.
 
 ```bash

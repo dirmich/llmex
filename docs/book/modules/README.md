@@ -15,6 +15,8 @@ uv run pytest -q tests/test_foundation.py
 
 CPU 트랙은 데이터·토크나이저·작은 모델·fixture 테스트를 수행한다. CUDA 트랙은 CPU 계약을 통과한 뒤에만 `torch.cuda.is_available()`와 bf16 지원을 확인하고 학습 smoke를 추가한다. teacher 트랙은 학습 환경과 별도로 `localhost` model identity와 timeout·응답 크기 제한을 preflight한다. Git에 들어가는 것은 코드·설정·교재뿐이며 `data/`, `artifacts/`, `runs/`의 대용량 산출물은 manifest SHA로 참조한다.
 
+구체적인 장치·디스크·입력 요구사항은 [환경 프로필과 챕터별 준비표](../environment-profiles.md)를 사용한다. 대화 모듈을 모두 조립한 뒤에는 [offline 대화 E2E](../20-offline-chat-e2e.md)로 실제 mix·SFT·추론·품질 artifact를 실행한다.
+
 ## 챕터별 학습 순서
 
 | 순서 | 모듈 실습 | 먼저 읽을 본문 | 종료 조건 |

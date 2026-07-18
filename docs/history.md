@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.14.2 실행 가능한 모듈별 학습 교재
+
+- CPU·CUDA pilot·DGX Spark·localhost teacher 환경을 분리하고 00~20장마다 최소 프로필, 입력, 시작 명령과 종료 증거를 정리했다. 현재 코드와 artifact를 권위로 사용하고 `../knowledge_base` wiki는 과거 운영 맥락의 보조 자료로 유지했다.
+- `build-chat-smoke-fixtures.py`가 공개/teacher train·heldout 12행, 내부 teacher manifest, 433 vocab tokenizer, mix·SFT 설정을 결정적으로 만든다. 실제 mix는 train 8/heldout 4, SHA `7ddcc7f0…91a2`·`68f5d19d…4551`, fingerprint `0b6f1ab6…7d04`, prompt/source overlap 0과 release block 계승을 재검증했다.
+- CPU fp32 12-step SFT를 직접 실행했다. baseline loss/PPL 6.019514/411.3787에서 heldout loss/PPL 4.326650/75.6903으로 감소했고 latest checkpoint SHA는 `4b8a662b…492c`다. 수도 prompt의 응답은 즉시 EOS로 비어 있어 기능 실행과 대화 품질을 명확히 분리했다.
+- checkpoint SHA로 3 scenario·4 turn·24 response 품질 설정을 생성했다. 자동 평가는 예상대로 `gate_passed=false`였고 fingerprint `7eb2cd66…f08d`의 실패 artifact 재유도 검증은 통과했다. 작은 교재 모델의 실패를 production 품질 성공으로 기록하지 않는다.
+
 ## 2026-07-18 · 1.14.1 focused-v5 학습과 안전 gate 회복
 
 - v2 best 기반 CUDA bf16 50-step은 step-0 PPL 1.85902에서 step 50 validation PPL 1.19680으로 개선됐고 final SHA는 `dedd4c9e…fa07`다.

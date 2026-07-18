@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.14.2 - 2026-07-18
+
+- CPU/CUDA/DGX Spark/local teacher의 환경 프로필과 00~20장별 준비·종료 증거표를 추가했다.
+- 공개·teacher fixture, tokenizer와 동적 SHA 설정을 만드는 교재 생성기를 추가했다.
+- 공개+teacher mix→12-step CPU SFT→추론→3시나리오 자동 품질 재검증을 실제 실행하고 결과를 교재에 기록했다.
+- 57개 모듈 카드와 전체 장 링크를 자동 검사하고 생성기 도움말 smoke를 추가했다.
+
 ## 1.14.1 - 2026-07-18
 
 - focused-v5 CUDA bf16 50-step SFT와 step 30·50 고정 162응답 평가를 실행했다.

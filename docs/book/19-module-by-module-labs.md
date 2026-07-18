@@ -12,6 +12,7 @@
 ## 선행 환경
 
 [00장](00-environment-repo-tour.md)의 `uv sync --frozen`과 CPU smoke를 먼저 통과해야 한다. 모델 수치 모듈까지는 CPU로 진행할 수 있다. CUDA, 실제 teacher, 장기 SFT는 같은 계약의 fixture를 CPU에서 검증한 뒤 추가하는 실행 환경이지 별도 구현이 아니다.
+[환경 프로필 부록](environment-profiles.md)의 챕터별 준비표에서 이번 실습의 입력·장치·종료 증거를 먼저 기록한다.
 
 ```bash
 uv sync --frozen

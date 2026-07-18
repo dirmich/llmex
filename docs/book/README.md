@@ -26,6 +26,9 @@
 | 제작 워크북 | [17 단계별 제작 워크북](17-guided-build-workbook.md) | 빈 골격에서 대화 품질·릴리스까지 직접 재구현 |
 | 평가·해설 | [18 학습 평가와 rubric](18-assessment-rubric.md) | 진단·exit ticket·capstone 채점 기준 |
 | 모듈 실습 | [19 모듈별 제작 실습실](19-module-by-module-labs.md) | 57개 Python 파일별 계약·구현 순서·실패 테스트 |
+| 대화 E2E | [20 offline 대화 학습 실습](20-offline-chat-e2e.md) | fixture 생성부터 mix·CPU SFT·추론·자동 품질 재검증 |
+
+장치·입력·시간 경계를 먼저 판단하려면 [환경 프로필과 챕터별 준비표](environment-profiles.md)를 사용한다.
 
 처음에는 00~08장을 CPU smoke 설정으로 끝낸다. 그다음 09~13장의 대화 경로를 오프라인 fixture로 검증하고, 마지막에만 실제 teacher·GPU·장기 학습을 사용한다. 각 장의 체크리스트가 모두 통과하기 전에는 다음 단계의 큰 실행을 시작하지 않는다.
 
