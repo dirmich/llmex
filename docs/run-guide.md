@@ -258,6 +258,8 @@ uv run llmex sft preflight --config configs/sft/ko-qwen-gemma-multilingual-repai
 uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-full.yaml
 ```
 
+실행 결과 step 150 heldout PPL은 1.40665였지만 390응답 정확도 37.69%, 멀티턴 46.67%, 정상 오거절 11.99%, loop 4건으로 실패했다. 한국어·영어·일본어 suite 밖 greedy smoke도 자연스럽지 않아 checkpoint를 기각했다. 이 결과는 `quality-validate`로 byte 재유도했으며 다음 학습의 base나 HF export 대상으로 사용하지 않는다.
+
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
 정식 pilot config를 사용한다.
 

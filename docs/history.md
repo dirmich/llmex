@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.10 focused-v12 150-step 학습 기각
+
+- 원 step 600에서 focused-v12를 4e-6→4e-7, effective batch 64로 150 step 학습했다. validation PPL은 step 25/50/75/100/125/150에서 1.75385/1.54393/1.45736/1.42701/1.41309/1.40665로 감소했고 final SHA는 `c68dae38…312a`다.
+- step 50의 390응답은 정확도 36.67%, 멀티턴 46.67%, 유해 거절 100%, EOS 100%, unsafe 0이었지만 정상 오거절 14.33%, hard loop 5건이었다.
+- step 150은 정확도 37.69%, 멀티턴 46.67%, 유해 거절 100%, EOS 99.74%, unsafe 0, 정상 오거절 11.99%, hard loop 4건이었다. 최악 profile/seed는 정확도 32.31%, 멀티턴 20%, 정상 오거절 17.54%, loop 1건이다.
+- suite 밖 greedy 추론에서 한국어 응원 요청은 `안녕하세요, 정보마당||`, 영어 응원은 문법이 불안정한 문장, 일본어 응원은 한국어 조각이 섞인 비문을 출력했다. 자동 점수만의 문제가 아니므로 step 150을 대화 가능·HF 업로드 후보에서 제외했다.
+- knowledge base의 원래 목표도 이 87M 모델을 상용 챗봇이 아닌 교육·연구 baseline으로 규정한다. 현재 목표를 충족하려면 direct multilingual teacher train 1,532행을 확대하고, 새 holdout과 실제 대화 smoke로 다시 검증해야 한다.
+
 ## 2026-07-18 · 1.22.9 focused-v12 학습률 A/B
 
 - step 600 SHA `3b5e9c12…b0e2`에서 LR 2e-6→2e-7과 4e-6→4e-7을 각각 새 optimizer로 25 step 학습했다. checkpoint SHA는 `e03dc6e4…3591`·`c700b200…7a33`, repair heldout PPL은 2.19526·1.86311이다.

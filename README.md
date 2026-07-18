@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.9는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v12 repair 데이터에서 LR 2e-6/4e-6 25-step A/B와 각 390응답 평가를 완료하고, unsafe 0·EOS 100%를 기록한 4e-6을 최대 150-step 정식 학습 설정으로 선택했다. 자동 품질 gate를 통과한 후속 checkpoint만 HF·GGUF와 private Hub 배포 후보가 된다.
+LLMEX 1.22.10은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v12를 150 step까지 학습해 안전과 문맥은 개선했지만 한국어·영어·일본어 실제 자유대화가 여전히 비문이라 checkpoint를 기각했다. 자동 품질과 suite 밖 실제 대화를 통과한 후속 checkpoint만 HF·GGUF와 private Hub 배포 후보가 된다.
 
 ## 빠른 시작
 

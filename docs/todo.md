@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.9 한국어·다국어 SFT와 private 모델 배포 준비
+## 1.22.10 한국어·다국어 SFT와 private 모델 배포 준비
 
 ### 완료
 
@@ -33,7 +33,9 @@
 - [x] step 600 기반 LR 2e-6/4e-6 25-step A/B preflight
 - [x] LR 2e-6/4e-6 A/B 학습과 각 390응답 byte 재유도
 - [x] unsafe 0·EOS 100% 기준으로 LR 4e-6 선택, 두 A/B checkpoint 배포 차단
-- [ ] 원 step 600 기반 4e-6 최대 150-step SFT·중간 gate·실제 대화 추론
+- [x] 원 step 600 기반 4e-6 150-step SFT와 step 50·150 통합 평가
+- [x] suite 밖 한국어·영어·일본어 자유대화 비문 확인과 checkpoint 기각
+- [ ] 한국어·영어·일본어 direct teacher 대화 데이터 대규모 확장·재학습
 - [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity
 - [ ] 선별 checkpoint의 HF·GGUF 최종 export·llama.cpp parity·private Hub 업로드
 
