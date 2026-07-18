@@ -138,6 +138,18 @@ class CausalLM(nn.Module):
                         scores / generation.repetition_penalty,
                     )
                     scores = torch.where(seen, adjusted, scores)
+                # 반복 4-gram은 대화 모델의 무한 루프를 조기에 차단한다.
+                if result.size(1) >= 4:
+                    for batch_index in range(result.size(0)):
+                        history = result[batch_index].tolist()
+                        prefix = tuple(history[-3:])
+                        banned = {
+                            history[i + 3]
+                            for i in range(len(history) - 3)
+                            if tuple(history[i : i + 3]) == prefix
+                        }
+                        if banned:
+                            scores[batch_index, list(banned)] = float("-inf")
                 if generation.temperature == 0:
                     next_token = scores.argmax(dim=-1, keepdim=True)
                 else:
