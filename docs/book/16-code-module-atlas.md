@@ -1,10 +1,10 @@
-# 16장. 56개 코드 모듈 지도
+# 16장. 57개 코드 모듈 지도
 
-이 장은 `src/llmex`의 Python 파일 56개를 빠짐없이 찾아가는 색인이다. 앞 장에서 개념을 배운 뒤 이 장에서 실제 구현 위치와 경계를 확인한다. 표의 구현 과제는 완성 코드를 복사하라는 뜻이 아니라, 공개 함수의 입력·출력과 실패 조건을 먼저 테스트로 고정한 뒤 같은 계약을 직접 재구성하라는 뜻이다.
+이 장은 `src/llmex`의 Python 파일 57개를 빠짐없이 찾아가는 색인이다. 앞 장에서 개념을 배운 뒤 이 장에서 실제 구현 위치와 경계를 확인한다. 표의 구현 과제는 완성 코드를 복사하라는 뜻이 아니라, 공개 함수의 입력·출력과 실패 조건을 먼저 테스트로 고정한 뒤 같은 계약을 직접 재구성하라는 뜻이다.
 
 ## 학습 목표
 
-- 패키지의 56개 모듈이 어떤 방향으로 의존하는지 설명한다.
+- 패키지의 57개 모듈이 어떤 방향으로 의존하는지 설명한다.
 - 각 모듈의 입력, 출력, 소유 불변식과 대표 검증을 찾는다.
 - 데이터나 checkpoint를 다루는 경계에서 실패-폐쇄 원칙을 적용한다.
 - 큰 `cli.py`를 기능 구현과 혼동하지 않고 얇은 조립 계층으로 읽는다.
@@ -116,11 +116,12 @@ checkpoint를 “가중치 파일”로만 생각하지 않는다. 모델·optim
 | `src/llmex/chat/data.py` | message/provenance/chat row schema와 허가 license loader를 제공한다. | role 순서, final user hash, provenance fallback을 검증한다. | 위조·누락 provenance 거부 |
 | `src/llmex/chat/template.py` | role marker 렌더링과 assistant-only label mask를 만든다. | 사용자/system/PAD는 `-100`, assistant target만 label로 둔다. | mask exact equality |
 | `src/llmex/chat/mixer.py` | public+teacher train/heldout을 누출 없이 선택·게시한다. | heldout 우선, prompt/source overlap 차단, 길이 gate를 적용한다. | preflight/prepare/validate 동일 통계 |
+| `src/llmex/chat/curriculum.py` | 품질 실패 범주의 결정적 합성 데이터와 기존 데이터 replay를 만든다. | suite 모든 user turn 비누출, split/source 분리, target-token 질량과 EOS를 검증한다. | curriculum preflight/prepare/validate byte 동일 |
 | `src/llmex/chat/runtime.py` | SFT cache, 학습·재개·평가·생성을 담당한다. | fresh run, base SHA, 128 MiB token cache, target-token accumulation을 강제한다. | cached/uncached batch 동일·resume 동일 |
 | `src/llmex/chat/quality.py` | 멀티턴 rollout과 EOS·반복·안전·오염 자동 gate를 계산한다. | 평균만이 아니라 profile/scenario worst case를 판정한다. | quality eval/validate 재계산 |
 | `src/llmex/chat/quality_review.py` | blind template, 독립 review, adjudication, 서명 수동 gate를 검증한다. | 자동 gate 선행과 역할 독립성, target SHA를 강제한다. | unsigned/self-review 실패 |
 
-대화 계층은 `data.py → template.py → mixer.py → runtime.py → quality.py → quality_review.py` 순서로 만든다. 자동 품질 통과가 수동 승인을 대체하지 않으며, 수동 승인 파일을 개발자가 스스로 만들어 통과시키면 안 된다.
+대화 계층은 `data.py → template.py → mixer.py → curriculum.py → runtime.py → quality.py → quality_review.py` 순서로 만든다. curriculum은 고정 suite의 문장을 학습 데이터로 복제하지 않고 모든 user turn의 exact hash overlap을 차단해야 한다. 자동 품질 통과가 수동 승인을 대체하지 않으며, 수동 승인 파일을 개발자가 스스로 만들어 통과시키면 안 된다.
 
 ## 8. Teacher 증류 모듈
 
@@ -166,7 +167,7 @@ teacher 호출은 가장 늦게 붙인다. 먼저 `prompts.py` inventory와 `col
 
 ## 검증 체크리스트
 
-- [ ] 이 장의 표에 `find src/llmex -name '*.py'` 결과 56개가 모두 있다.
+- [ ] 이 장의 표에 `find src/llmex -name '*.py'` 결과 57개가 모두 있다.
 - [ ] 각 모듈의 대표 함수나 class를 소스에서 직접 찾았다.
 - [ ] `__init__.py`와 CLI를 도메인 구현보다 먼저 과도하게 채우지 않았다.
 - [ ] 각 데이터 경계에 정상·누락·변조 테스트가 있다.
@@ -177,4 +178,4 @@ teacher 호출은 가장 늦게 붙인다. 먼저 `prompts.py` inventory와 `col
 1. `config.py`를 기능별 여러 파일로 나눌 때 순환 import 없이 유지할 dependency graph를 그려라.
 2. `checkpoint.py`와 `chat/runtime.py`의 재개 계약에서 공통인 상태와 다른 상태를 표로 비교하라.
 3. `quality.py`의 자동 판정과 `quality_review.py`의 사람 판정을 하나로 합치면 생기는 신뢰 문제를 설명하라.
-4. 56개 모듈 중 외부 네트워크에 직접 접근하는 모듈만 찾고, redirect·timeout·응답 크기 제한을 감사하라.
+4. 57개 모듈 중 외부 네트워크에 직접 접근하는 모듈만 찾고, redirect·timeout·응답 크기 제한을 감사하라.

@@ -3,7 +3,7 @@
 | 주장 | 권위 증거 | 갱신 조건 |
 |---|---|---|
 | 패키지 버전 | `pyproject.toml`, `src/llmex/__init__.py`, `uv.lock` | 버전 bump |
-| Python 모듈은 56개다 | `find src/llmex -name '*.py'`와 16장 표 | 파일 추가·삭제 |
+| Python 모듈은 57개다 | `find src/llmex -name '*.py'`와 16장 표 | 파일 추가·삭제 |
 | 100M 모델 고유 parameter는 87,804,672개다 | model inspect와 baseline report | model config 변경 |
 | 100k base pretraining이 완료됐다 | checkpoint audit와 training report | checkpoint 교체 |
 | teacher 10k 수집 상태 | `llmex distill status` artifact | 수집 진행·export |

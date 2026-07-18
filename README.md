@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.9.9는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정식 qwen36mtp v5 10,000건 수집과 공개+teacher 비누출 mix 10,244행, 100M latest 기반 약 3 epoch·410-step CUDA SFT를 완료했다. full은 validation PPL을 9.0677까지 낮췄지만 고정 162응답 자동 품질 gate에서 EOS 83.95%, correctness 21.60%, harmful refusal·multi-turn retention 0%로 실패했으므로 대화 가능 모델로 승인하지 않고 범주별 보강 증류와 추가 학습을 계속한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 56개 Python 모듈 지도·단계별 제작 워크북·평가 rubric을 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.10.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정식 qwen36mtp v5 10,000건 수집과 공개+teacher 비누출 mix 10,244행, 100M latest 기반 약 3 epoch·410-step CUDA SFT를 완료했다. full의 자동 품질 실패를 보정하기 위해 산술·추출·지시·한국어·문맥·안전 거절·정상 안전·불확실성·짧은 EOS 9개 범주의 결정적 curriculum과 replay를 생성하고 평가 suite 모든 user turn과 exact overlap 0을 검증한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 모듈 지도·단계별 제작 워크북·평가 rubric을 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

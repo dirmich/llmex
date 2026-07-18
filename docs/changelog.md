@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.10.0 - 2026-07-18
+
+- 품질 suite를 복제하지 않는 9개 범주의 결정적 대화 능력 보정 curriculum과 hash replay 생성기를 추가했다.
+- suite의 모든 user turn, train/heldout user prompt와 provenance source overlap을 0으로 강제하고 길이·민감 출력·assistant EOS label을 검증한다.
+- 범주별 행 수와 assistant 목표 token 질량을 manifest에 기록하고 lock·staging·fsync·원자 publish·byte 재유도 검증을 제공한다.
+- 정식 보정 데이터 train 5,600/heldout 560행을 생성·검증했으며 내부 teacher 파생 release block을 유지한다.
+
 ## 1.9.9 - 2026-07-18
 
 - assistant-only SFT checkpoint를 후속 SFT의 base로 사용할 때 원 release policy를 immutable checkpoint snapshot에서 검증한다.

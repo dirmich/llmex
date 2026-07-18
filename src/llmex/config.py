@@ -322,6 +322,38 @@ class SFTMixConfig(StrictModel):
         return self
 
 
+class SFTCurriculumConfig(StrictModel):
+    """대화 취약점 보정용 결정적 합성·replay 커리큘럼 설정."""
+
+    schema_version: Literal[1] = 1
+    name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    seed: int = Field(default=42, ge=0)
+    tokenizer_dir: YamlPath
+    replay_train_data: YamlPath
+    replay_heldout_data: YamlPath
+    suite: YamlPath
+    expected_suite_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    output_dir: YamlPath
+    allowed_replay_licenses: list[str] = Field(min_length=1)
+    curriculum_license: str = Field(default="LicenseRef-LLMEX-Internal-Curriculum", min_length=1)
+    train_rows_per_category: int = Field(default=600, ge=8)
+    heldout_rows_per_category: int = Field(default=60, ge=2)
+    replay_train_rows: int = Field(default=1_200, ge=0)
+    replay_heldout_rows: int = Field(default=120, ge=0)
+    max_seq_len: int = Field(default=1_024, gt=2)
+    generation_reserve_tokens: int = Field(default=128, gt=0)
+
+    @model_validator(mode="after")
+    def validate_curriculum(self) -> "SFTCurriculumConfig":
+        if self.generation_reserve_tokens >= self.max_seq_len:
+            raise ValueError("generation_reserve_tokens는 max_seq_len보다 작아야 합니다")
+        if len(self.allowed_replay_licenses) != len(set(self.allowed_replay_licenses)):
+            raise ValueError("allowed_replay_licenses는 중복될 수 없습니다")
+        if self.curriculum_license in self.allowed_replay_licenses:
+            raise ValueError("curriculum_license는 replay 라이선스와 구분되어야 합니다")
+        return self
+
+
 class SFTQualityThresholds(StrictModel):
     """자동 대화 품질 gate의 완화 불가능 기본 임계값."""
 

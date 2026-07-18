@@ -55,7 +55,7 @@ def test_cli_help_and_config_validation() -> None:
 def test_cli_version() -> None:
     result = CliRunner().invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert result.stdout.strip() == "1.9.9"
+    assert result.stdout.strip() == "1.10.0"
 
 
 def test_cli_returns_config_error_code(tmp_path: Path) -> None:

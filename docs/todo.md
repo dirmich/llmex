@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.9.9 파생 SFT release block 계승 완료
+## 1.10.0 대화 능력 보정 데이터 완료
 
 ### 완료
 
@@ -13,7 +13,10 @@
 - [x] 100개 heldout 생성 PPL 9.9594, EOS 60/100, 반복 실패 21/100, safety 100/100
 - [x] 24 scenario·27 turn·162응답 SHA 고정 자동 품질 평가와 byte 재유도 검증
 - [x] EOS 83.95%, correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건 실패 기록
-- [ ] 실패 범주를 exact suite 중복 없이 teacher로 보강하고 추가 SFT
+- [x] 9개 실패 범주를 exact suite 모든 user turn 중복 없이 결정적으로 보강
+- [x] train 5,600/heldout 560행과 범주별 target-token 질량 manifest 생성·재검증
+- [x] 신규 `chat/curriculum.py`를 포함한 교재 코드 지도를 Python 57개 모듈로 동기화
+- [ ] full checkpoint에서 보정 SFT를 실행하고 같은 162응답 자동 gate 재평가
 - [ ] 자동 gate 통과 checkpoint의 독립 서명 수동 품질·안전 검토
 
 - [x] validation best·checkpoint interval·중단/final이 같은 step에 겹칠 때 단일 `save`

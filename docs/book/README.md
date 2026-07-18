@@ -22,7 +22,7 @@
 | 대화 | [09 teacher 증류](09-teacher-distillation.md) → [10 공개+teacher mix](10-public-teacher-mix.md) → [11 assistant-only SFT](11-assistant-only-sft.md) | 누출을 차단한 대화 학습 |
 | 품질·출시 | [12 자동 품질 gate](12-automatic-quality-gate.md) → [13 수동 blind review](13-manual-blind-review.md) → [14 릴리스와 GGUF](14-release-export-gguf.md) | 자동·사람 품질 증거와 공개 경계 |
 | 종합 | [15 capstone과 문제 해결](15-capstone-troubleshooting.md) | 데이터부터 추론까지 독립 재구성 |
-| 코드 지도 | [16 코드 모듈 지도](16-code-module-atlas.md) | `src/llmex` Python 모듈 56개의 책임·입출력·불변식 추적 |
+| 코드 지도 | [16 코드 모듈 지도](16-code-module-atlas.md) | `src/llmex` Python 모듈 57개의 책임·입출력·불변식 추적 |
 | 제작 워크북 | [17 단계별 제작 워크북](17-guided-build-workbook.md) | 빈 골격에서 대화 품질·릴리스까지 직접 재구현 |
 | 평가·해설 | [18 학습 평가와 rubric](18-assessment-rubric.md) | 진단·exit ticket·capstone 채점 기준 |
 

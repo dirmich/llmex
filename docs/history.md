@@ -1,5 +1,19 @@
 # 구현 이력
 
+## 2026-07-18 · 1.10.0 결정적 대화 능력 보정 curriculum
+
+### 평가 비누출 생성·replay 파이프라인
+
+- `SFTCurriculumConfig`와 `sft curriculum-preflight/prepare/status/validate`를 추가했다. 산술·추출·지시 형식·한국어 표현·다중 턴 정정 기억·유해 요청 거절·정상 안전 답변·정보 부족 인정·짧은 EOS의 9개 범주를 seed에서 결정적으로 만들고, 기존 정식 mix를 hash 순서로 replay한다.
+- 품질 suite SHA를 고정하고 final prompt만이 아니라 모든 user turn을 NFKC/NFC·공백 정규화해 train/heldout 및 suite exact overlap 0을 강제한다. provenance source도 split 사이 overlap 0이며 모든 assistant 출력의 민감 정보 규칙, 전체 길이, 생성 reserve와 assistant turn별 EOS label을 검증한다.
+- 행 수뿐 아니라 범주별 assistant 목표 token과 EOS label을 manifest에 기록한다. 긴 기존 응답이 보정 신호를 압도하지 않도록 replay를 train 200/heldout 20행으로 제한해 전체 assistant 목표 token의 약 33%를 보존했다.
+
+### 실제 생성 결과와 검증
+
+- `configs/sft/qwen36mtp-v5-remediation-data.yaml`에서 train 5,600행, heldout 560행을 생성했다. train/heldout SHA-256은 각각 `4fbb331923489cc6086b2777ac28618b69205f7924c45b117806129d4b374695`, `f62bcf1ab3424035aa2d22bdb028c32fb2ecab5fe3847536131ad8e839e3b9d4`이며 manifest fingerprint는 `07d4f1c9f2b137470f11c86e106ececae95b051b7f2e00b76c7fa1db57cf95c3`이다.
+- 생성기는 출력 디렉터리 lock, sibling staging, 파일·디렉터리 fsync와 단일 rename으로 게시한다. 부분 출력·변조·suite SHA 변경·허가되지 않은 replay license·부족한 비누출 replay는 실패-폐쇄한다.
+- 전체 `170 passed`, Ruff lint/73파일 format, Pyright strict 오류 0을 통과했다. 데이터 생성·재유도 검증까지 완료했으며 full checkpoint 기반 보정 SFT와 162응답 재평가는 다음 하위 작업이다.
+
 ## 2026-07-18 · 1.9.9 파생 SFT release block 계승
 
 ### 내부 base에서 공개 추가 학습으로 이어지는 우회 차단

@@ -17,6 +17,7 @@ from llmex.config import (
     ModelConfig,
     PipelineConfig,
     SFTConfig,
+    SFTCurriculumConfig,
     SFTMixConfig,
     SFTQualityConfig,
     StrictModel,
@@ -138,6 +139,7 @@ class ConfigKind(StrEnum):
     EVALUATION = "evaluation"
     PIPELINE = "pipeline"
     SFT = "sft"
+    SFT_CURRICULUM = "sft-curriculum"
     SFT_MIX = "sft-mix"
     SFT_QUALITY = "sft-quality"
     DISTILLATION = "distillation"
@@ -156,6 +158,8 @@ def _model(kind: ConfigKind) -> type[StrictModel]:
         return PipelineConfig
     if kind is ConfigKind.SFT:
         return SFTConfig
+    if kind is ConfigKind.SFT_CURRICULUM:
+        return SFTCurriculumConfig
     if kind is ConfigKind.SFT_MIX:
         return SFTMixConfig
     if kind is ConfigKind.SFT_QUALITY:
@@ -229,6 +233,52 @@ def distill_validate(config_path: Annotated[Path, typer.Option("--config")]) -> 
 
 def _sft_config(path: Path) -> SFTConfig:
     return load_yaml(path, SFTConfig)
+
+
+def _sft_curriculum_call(config_path: Path, action: str) -> None:
+    try:
+        config = load_yaml(config_path, SFTCurriculumConfig)
+        from llmex.chat.curriculum import (
+            preflight_curriculum,
+            prepare_curriculum,
+            status_curriculum,
+            validate_curriculum,
+        )
+
+        operations = {
+            "preflight": preflight_curriculum,
+            "prepare": prepare_curriculum,
+            "status": status_curriculum,
+            "validate": validate_curriculum,
+        }
+        result = operations[action](config)
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+@sft_app.command("curriculum-preflight")
+def sft_curriculum_preflight(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """보정 커리큘럼 입력·비누출·토큰 질량을 출력 생성 없이 검증합니다."""
+    _sft_curriculum_call(config_path, "preflight")
+
+
+@sft_app.command("curriculum-prepare")
+def sft_curriculum_prepare(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """결정적 보정 예제와 hash replay를 원자적으로 생성합니다."""
+    _sft_curriculum_call(config_path, "prepare")
+
+
+@sft_app.command("curriculum-status")
+def sft_curriculum_status(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """보정 커리큘럼 출력의 pending/ready 상태를 확인합니다."""
+    _sft_curriculum_call(config_path, "status")
+
+
+@sft_app.command("curriculum-validate")
+def sft_curriculum_validate(config_path: Annotated[Path, typer.Option("--config")]) -> None:
+    """보정 커리큘럼을 현재 입력에서 재유도해 실패-폐쇄 검증합니다."""
+    _sft_curriculum_call(config_path, "validate")
 
 
 def _sft_mix_call(config_path: Path, action: str) -> None:

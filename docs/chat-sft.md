@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.9.9는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 v5 mix로 100M latest 기반 410-step full을 완료했지만 162응답 자동 품질 gate는 EOS·정확도·안전 거부·멀티턴·반복에서 실패했다. 이는 대화 가능 모델이 아니며 실패 범주 보강 증류, 추가 SFT와 실제 사람 품질·법무·외부 공개 승인이 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.10.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 정식 full의 162응답 실패를 대상으로 보정 데이터 생성까지 완료했으며 추가 SFT와 재평가는 진행 중이다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 ## JSONL 계약
 
@@ -40,6 +40,25 @@ uv run llmex sft validate-mix --help
 실제 공개 6,853행과 v5 30건 pilot export 사전검증에서 identity 보정 전에는 coarse dataset URL 하나가 heldout source로 예약되어 `input_rows=6,881` 중 train이 25행만 남았다. 보정 후에는 동일 입력에서 `selected_train=4,257`, `selected_heldout=475`가 남고 `heldout_source_from_train` 대량 오제외가 사라졌다. 남은 제외는 길이, 민감 출력, prompt 누출과 실제 source+prompt 중복 규칙에 따른다. 이 pilot 수치는 정식 10k mix의 최종 행 수가 아니다.
 
 정식 설정은 `configs/sft/qwen36mtp-v5-mix.yaml`이며 teacher manifest SHA `6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d`를 고정한다. 재유도 검증된 출력은 `data/chat/ko-public-teacher-v5`의 train 8,746/heldout 1,498행이고 mix manifest SHA는 `278dbc6684943d30f7ea5b3590a5619d59bb9ea21aff31bb53057cdc4a4c164c`다. exact canonical prompt 검사는 의미가 같은 바꿔쓰기까지 판정하지 않으므로 semantic paraphrase leakage는 후속 contamination 검사와 수동 감사 대상이다.
+
+## 대화 능력 보정 curriculum
+
+정식 full 자동 품질 평가에서 실패한 능력을 평가 문장 복사 없이 보강한다. `configs/sft/qwen36mtp-v5-remediation-data.yaml`은 품질 suite SHA, 기존 replay train/heldout, tokenizer와 출력 경로를 고정한다.
+
+```bash
+uv run llmex sft curriculum-preflight --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+uv run llmex sft curriculum-prepare --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+uv run llmex sft curriculum-status --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediation-data.yaml
+```
+
+- 산술·추출·지시 형식·한국어·문맥·유해 거절·정상 안전·불확실성·짧은 EOS를 split별 고유 입력으로 생성한다.
+- suite의 마지막 prompt만 비교하지 않고 모든 user turn을 NFKC/NFC와 공백으로 정규화해 exact overlap 0을 강제한다.
+- 기존 정식 mix replay는 seed와 행 SHA의 hash 순서로 선택하며 원 provenance·license를 보존한다.
+- assistant 목표 token과 EOS label을 범주별로 집계해 긴 replay 응답이 행 수보다 큰 손실 비중을 차지하는 문제를 드러낸다.
+- 실제 출력은 train 5,600/heldout 560행이며 train/heldout SHA는 `4fbb3319…4695`, `f62bcf1a…b9d4`다. 내부 teacher replay가 있으므로 release는 계속 blocked다.
+
+`prepare`는 동일 입력이면 기존 출력을 재검증해 재사용하고, 부분 출력·staging 잔여물·suite SHA 변경·byte 변조는 자동 덮어쓰기 대신 실패한다. 학습 설정에는 생성된 `train.jsonl`과 `heldout.jsonl`을 직접 지정하되 base는 full checkpoint로 둔다.
 
 ## 실제 SFT preflight와 step-0 baseline
 

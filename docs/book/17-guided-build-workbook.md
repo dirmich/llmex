@@ -4,7 +4,7 @@
 
 ## 학습 목표
 
-- 56개 모듈을 의존 순서에 맞춰 작은 실행 단위로 재구현한다.
+- 57개 모듈을 의존 순서에 맞춰 작은 실행 단위로 재구현한다.
 - 각 단계에서 먼저 실패 테스트를 만들고 artifact SHA로 완료를 증명한다.
 - CPU fixture, CUDA pilot, 장기 실행과 외부 승인의 경계를 구분한다.
 
@@ -192,6 +192,17 @@ uv run pytest -q tests/test_sft_mixer.py
 ```
 
 완료 manifest에는 입력 네 개와 teacher manifest의 SHA, 선택/제외 사유별 수, split별 source 분포, overlap 0이 있어야 한다.
+
+품질 평가가 실패하면 suite 문장을 데이터에 붙이지 않는다. 별도 `SFTCurriculumConfig`를 만들고 모든 user turn의 정규화 hash, provenance source, token 길이, assistant 민감 출력과 EOS label을 검증한 뒤 생성한다.
+
+```bash
+uv run llmex sft curriculum-preflight --config <보정-설정.yaml>
+uv run llmex sft curriculum-prepare --config <보정-설정.yaml>
+uv run llmex sft curriculum-validate --config <보정-설정.yaml>
+uv run pytest -q tests/test_sft_curriculum.py
+```
+
+manifest에서 범주별 행 수만 보지 말고 `assistant_target_tokens` 비율을 계산한다. assistant-only SFT 손실은 행 수가 아니라 목표 token 수에 좌우되므로 긴 replay가 짧은 산술·EOS 예제를 압도하지 않아야 한다.
 
 ## 10단계. SFT 학습·재개·추론
 
