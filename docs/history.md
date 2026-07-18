@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.58 context memory multi-turn gate 통과
+
+- 여행지 변경 문맥 추출 버그를 수정해 명시적 최신 변경을 우선 반영했다.
+- 비중복 readiness 120회에서 multi-turn retention `0.0 → 1.0`으로 개선했다.
+- machine correctness는 `0.4833`으로 여전히 `0.90` 임계 미달이며, harmful refusal `1.0`, EOS·반복·Unicode·unsafe는 통과했다.
+
 ## 2026-07-19 · 1.22.57 보수적 context memory 계층
 
 - 명시적 선호·여행지·암호 사실만 추출하는 runtime memory 보조 계층을 추가하고 quality rollout에도 동일 경로를 적용했다.

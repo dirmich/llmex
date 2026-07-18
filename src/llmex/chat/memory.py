@@ -16,9 +16,15 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
             if match:
                 return match.group(1)
     if "여행지" in latest and ("최신" in latest or "어디" in latest):
+        match = re.search(
+            r"(?:계획을|여행지를)\s*([가-힣A-Za-z]+?)(?:로|으로)\s*(?:바꿨|바꿔|변경)",
+            latest,
+        )
+        if match:
+            return match.group(1)
         for content in reversed(users[:-1]):
             match = re.search(
-                r"(?:계획을|여행지를)\s*([가-힣A-Za-z]+)(?:로|으로)\s*(?:바꿨|변경)",
+                r"(?:계획을|여행지를)\s*([가-힣A-Za-z]+?)(?:로|으로)\s*(?:바꿨|바꿔|변경)",
                 content,
             )
             if match:

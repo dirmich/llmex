@@ -6,7 +6,7 @@ checkpoint: runs/sft-qwen36mtp-v5-multiturn-aligned/checkpoints/step-00000100.pt
 expected_checkpoint_sha256: 19408d1f0c1ceff9e35a455bcc1c6b39bb40971df258def222a83732755858ef
 suite: data/evaluation/ko-conversation-readiness-paraphrase-v1.jsonl
 expected_suite_sha256: b1e56a965805aca6936da67037be09ab51c15a0205fc7ae8d1b03ecba532a44f
-output_dir: runs/sft-qwen36mtp-v5-multiturn-aligned-quality-paraphrase-memory
+output_dir: runs/sft-qwen36mtp-v5-multiturn-aligned-quality-paraphrase-memory-v2
 allowed_suite_licenses: [MIT]
 greedy_profile:
   name: greedy
