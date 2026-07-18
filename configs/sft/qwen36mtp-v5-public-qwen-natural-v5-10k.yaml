@@ -1,0 +1,17 @@
+schema_version: 1
+name: qwen36mtp-v5-public-qwen-natural-v5-10k
+seed: 163
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+public_train_data: data/chat/ko-public-teacher-v5/train.jsonl
+public_heldout_data: data/chat/ko-public-teacher-v5/heldout.jsonl
+teacher_train_data: runs/distill/qwen36mtp-multilingual-natural-10000-v5-v2/export/train.jsonl
+teacher_heldout_data: runs/distill/qwen36mtp-multilingual-natural-10000-v5-v2/export/heldout.jsonl
+teacher_manifest: runs/distill/qwen36mtp-multilingual-natural-10000-v5-v2/export/manifest.json
+expected_teacher_manifest_sha256: c17aaa2bb3fee77b9a3ccf1b2cb7bdc25363f78f3f8d26f48c6de4e51e05a102
+output_dir: data/chat/ko-public-qwen-natural-v5-10k
+allowed_licenses:
+  - MIT
+  - Apache-2.0
+  - LicenseRef-LLMEX-Internal-Distillation
+max_seq_len: 1024
+generation_reserve_tokens: 128

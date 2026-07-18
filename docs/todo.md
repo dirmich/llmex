@@ -1,5 +1,10 @@
 # LLMEX 개발 TODO
 
+## 1.22.26 공개+Qwen natural-v5 혼합 완료
+
+- [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
+- [ ] 100M latest 기반 SFT와 EOS·반복·안전·수동 품질 게이트.
+
 ## 1.22.25 Qwen natural-v5 수집·검증 완료
 
 - [x] 10,000건 수집 및 실패 재시도 완료(승인 5,096, 거절 4,904, 대기 0).

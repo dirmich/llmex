@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.26 - 2026-07-18
+
+- Qwen natural-v5 teacher와 공개 데이터를 혼합해 train 12,606행·heldout 2,722행을 생성하고 preflight/validate-mix를 통과했다.
+- 혼합 산출물 fingerprint `ad78a6ab0a76a4300855511cacf3969622955c79d88c06b73c8a425232c4fd2c`, train SHA `551a3f20741b882e55a0d6e75e3ef6c9dc4c2dba486892171976cde91965acea`, heldout SHA `8cfd7e9d6f7b62133874042e41732fd091890c3908c00030fac3e0d4c445bf22`.
+- 내부 teacher 라이선스에 따른 redistribution gate는 계속 blocked이며 외부 업로드는 하지 않는다.
+
 ## 1.22.25 - 2026-07-18
 
 - Qwen natural-v5 정식 10,000건 수집·감사·export/validate를 완료했다(승인 5,096, 거절 4,904, 실패 0).

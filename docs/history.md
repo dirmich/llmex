@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.26 공개+Qwen natural-v5 혼합
+
+- `qwen36mtp-v5-public-qwen-natural-v5-10k.yaml`을 추가하고 preflight/prepare/validate-mix를 통과했다.
+- train 12,606행(SHA `551a3f20741b882e55a0d6e75e3ef6c9dc4c2dba486892171976cde91965acea`), heldout 2,722행(SHA `8cfd7e9d6f7b62133874042e41732fd091890c3908c00030fac3e0d4c445bf22`), fingerprint `ad78a6ab0a76a4300855511cacf3969622955c79d88c06b73c8a425232c4fd2c`.
+- 내부 teacher redistribution gate는 blocked 상태를 계승하며 외부 업로드는 하지 않는다. 다음은 100M latest SFT다.
+
 ## 2026-07-18 · 1.22.25 Qwen natural-v5 정식 10k 완료
 
 - 요청 10,000건, 승인 5,096건, 거절 4,904건, 실패/대기 0건으로 수집을 완료했다. 마지막 실패 spool 1건은 재수집했다.
