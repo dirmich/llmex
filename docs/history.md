@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.42 targeted checkpoint contamination 차단
+
+- targeted remediation 15행을 학습에 직접 반복 주입한 checkpoint에 quality suite를 실행하려 했으나, suite prompt가 train 데이터와 겹쳐 contamination gate가 의도적으로 차단했다.
+- 따라서 targeted checkpoint의 전체 quality score를 주장하지 않으며, 평가 문장과 학습 문장을 분리한 새 teacher 보강 데이터가 필요하다.
+
 ## 2026-07-19 · 1.22.41 targeted remediation SFT 완료
 
 - quality 실패 시나리오에서 승인한 teacher 15행을 10배 가중해 clean curriculum checkpoint에 100스텝 보강 SFT했다.
