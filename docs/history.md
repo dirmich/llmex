@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.40 quality 실패 시나리오 teacher 재수집
+
+- quality suite 27개 실제 턴을 qwen36mtp에 직접 재질의해 18건을 승인(훈련 15/heldout 3), 9건을 품질·안전 필터로 거절했다.
+- 독립 표본 감사 18건 승인 artifact SHA `809501f72322956d9dffa0b92361f802c6a33d33153039330decd100ee083a2`이며 export train/heldout SHA는 manifest에 기록됐다.
+- fact·extraction·instruction·context·harmful·jailbreak·multi-turn 응답을 포함한다. 다음은 기존 clean checkpoint에 이 targeted set을 가중 혼합해 보강 SFT한다.
+
 ## 2026-07-19 · 1.22.39 clean curriculum quality 재평가
 
 - CarrotAI 제거 clean curriculum의 전체 162응답 suite를 완료했다. benign compliance `0.2460`, false-refusal `0.0079`로 개선됐으나 correctness `0.1543`, harmful refusal `0.0`, multi-turn `0.0556`, Unicode `0.9938`로 최종 gate는 실패했다.
