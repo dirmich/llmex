@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.1 Qwen/public+Gemma curriculum 완료·다국어 증류 준비
+## 1.22.2 다국어 teacher 증류 진행
 
 ### 완료
 
@@ -20,7 +20,9 @@
 - [x] Gemma 4 자연 대화 source·inventory·2,200건 수집·export·validate
 - [x] Qwen/public+Gemma 비누출 mix와 통합 suite 결속 curriculum 준비
 - [x] 생성 prompt와 겹치는 replay train 664·heldout 303행 실패-폐쇄 제외
-- [ ] Qwen36mtp·Gemma4 영어/일본어 대화와 양방향 번역 증류
+- [x] Qwen/Gemma별 1,080개 다국어 prompt inventory와 exact overlap 0
+- [x] 영어·일본어 대화·한↔영·한↔일 18 scenario·108응답 평가 suite
+- [ ] Qwen36mtp·Gemma4 영어/일본어 대화와 양방향 번역 2,160건 수집·검증
 - [ ] 100M latest 기반 fresh SFT·통합 자동 평가·실제 대화 추론
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성

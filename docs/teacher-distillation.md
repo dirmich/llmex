@@ -24,6 +24,24 @@ uv run llmex distill validate --config configs/distill/gemma4-conversation-2200.
 
 표본에는 자연 대화, 확인할 수 없는 실시간/문서 정보의 한계 고지와 안전 거절이 포함됐다. 일부 답변은 요구보다 장황하거나 답변 예시를 메타적으로 제시하므로, 이 export만으로 대화 가능성을 승인하지 않고 Qwen/public replay와 통합 품질 gate를 함께 사용한다.
 
+## 영어·일본어 대화와 번역 증류
+
+```bash
+uv run llmex data multilingual-prompts
+uv run llmex distill prepare --config configs/distill/qwen36mtp-multilingual-1080.yaml
+uv run llmex distill prepare --config configs/distill/gemma4-multilingual-1080.yaml
+uv run llmex distill preflight --config configs/distill/qwen36mtp-multilingual-1080.yaml
+uv run llmex distill preflight --config configs/distill/gemma4-multilingual-1080.yaml
+```
+
+inventory는 영어 대화, 일본어 대화, 한→영, 영→한, 한→일, 일→한의 6개 task를 teacher별 train 900·heldout 180으로 균형 배치한다. Qwen과 Gemma prompt 문구·source ID는 분리되어 exact overlap이 0이다. Qwen 요청도 client가 `chat_template_kwargs.enable_thinking=false`를 고정하므로 짧은 출력 예산이 내부 추론에 소진되지 않는다.
+
+- Qwen inventory SHA: `2669e3e686de7e9acb270fb0c8dc716b55d8d654c53ad3904817c9e7e3035afc`
+- Gemma inventory SHA: `ad0afe439dcce1c04f42728d41057ef14e5061594da4b311a2fa25f3e97d388c`
+- 다국어 suite SHA: `6dea06376c0c7558551d28d507a001e755890934c2c12c5d64f54329b5cad8eb`
+
+현재 tokenizer는 영어·일본어 모두 unknown token이 0이지만 일본어가 약 1.42 token/문자로 비효율적이다. 기존 100M checkpoint의 embedding shape를 유지하기 위해 tokenizer를 바꾸지 않고 짧은 1024-token 대화·번역만 학습한다. 향후 tokenizer 재학습은 다국어 사전학습부터 별도 세대로 수행해야 한다.
+
 ## 실행 전 확인
 
 저장소 루트에서 잠긴 환경과 설정을 확인한다.

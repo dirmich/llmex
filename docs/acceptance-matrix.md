@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.22.1, frozen sync | 통과 가능 |
+| 버전·lock | 1.22.2, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |

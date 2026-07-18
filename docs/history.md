@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.2 영어·일본어 대화/번역 증류 기반
+
+- `llmex data multilingual-prompts`로 Qwen36mtp와 Gemma4에 서로 겹치지 않는 영어 대화·일본어 대화·한↔영·한↔일 6개 task inventory를 결정적으로 생성한다. teacher별 train 900·heldout 180, 1,080행이며 전체 exact prompt overlap은 0이다.
+- 현재 16k tokenizer 실측은 unknown 0이지만 일본어가 1.42 token/문자로 한국어 0.57보다 비효율적이다. 100M base embedding을 유지해야 하므로 tokenizer는 교체하지 않고 1024 길이 안의 짧은 대화·번역으로 범위를 제한한다.
+- 두 teacher는 실제 호출에서 영어·일본어 대화와 번역을 수행했다. Qwen은 `enable_thinking=false`로 답변 token budget을 보존한다. 독립 다국어 suite 18 scenario·108응답은 언어 유지와 번역의 이름·숫자·단위·의미 보존을 검증하며 SHA는 `6dea0637…d8eb`다.
+
 ## 2026-07-18 · 1.22.1 Qwen/public+Gemma 비누출 curriculum
 
 - 기존 Qwen/public mix와 Gemma export 1,656행을 다시 heldout 우선 격리해 train 9,906·heldout 1,984행을 만들었다. 입력 11,900행 중 heldout prompt 중복 10행을 제외했고 mix manifest SHA는 `6d1f5936…2018`이다.

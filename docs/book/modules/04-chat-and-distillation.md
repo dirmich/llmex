@@ -48,6 +48,14 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 
 이 실측의 핵심 원인은 모델만이 아니었다. 학습은 assistant마다 EOS를 넣었지만 과거 생성 prompt는 다중 턴 assistant EOS와 BOS를 빠뜨렸다. `render_chat`과 `tokenize_chat`의 prefix token을 직접 비교하는 테스트를 먼저 두고, 생성 응답의 종단 줄바꿈까지 정규화해야 한다. 수정 뒤 v7 step 10·20은 재학습 없이 multi-turn 100%를 회복했다. 학습 데이터를 추가하기 전에 입력 경계 동등성을 증명하는 이유다.
 
+### `src/llmex/chat/multilingual.py`
+
+- 책임: Qwen·Gemma에 서로 겹치지 않는 영어·일본어 대화와 한↔영·한↔일 teacher prompt inventory를 결정적으로 만든다.
+- 구현 순서: 6개 task template → teacher별 문구 분리 → train/heldout 고유 ID·provenance → canonical JSONL·manifest → 재사용 검증 순서다.
+- 실패 사례: teacher 간 prompt 중복, split/source ID 충돌, task 불균형, 기존 출력과 현재 설정의 불일치를 거부한다.
+- 검증: `uv run pytest -q tests/test_multilingual.py`와 `uv run llmex data multilingual-prompts`를 실행한다.
+- 완료 산출물: teacher별 1,080개 prompt JSONL, SHA가 고정된 manifest와 독립 108응답 평가 suite다.
+
 ### `src/llmex/chat/runtime.py`
 
 - 책임: SFT token cache, 학습·재개·평가·생성을 `SFTTrainer`로 조립한다.

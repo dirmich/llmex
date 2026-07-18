@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.2 - 2026-07-18
+
+- Qwen·Gemma별 영어·일본어 대화와 한↔영·한↔일 1,080개 prompt inventory를 만드는 결정적 CLI를 추가했다.
+- teacher 간 prompt overlap 0, train/heldout 분리, manifest 재사용과 strict ChatRow provenance를 테스트로 고정했다.
+- 18 scenario·108응답 다국어 대화/번역 품질 suite와 두 teacher 수집 설정을 추가했다.
+
 ## 1.22.1 - 2026-07-18
 
 - Qwen/public+Gemma 세 원천을 heldout 우선으로 격리한 train 9,906·heldout 1,984행 mix 설정을 추가했다.

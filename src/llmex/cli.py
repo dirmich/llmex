@@ -1178,3 +1178,25 @@ def data_sample_e2e(
     except LlmexError as error:
         _emit_error(error)
     typer.echo(json.dumps(report, ensure_ascii=False, sort_keys=True))
+
+
+@data_app.command("multilingual-prompts")
+def data_multilingual_prompts(
+    output: Annotated[Path, typer.Option("--output")] = Path(
+        "data/chat/multilingual-teacher-prompts-v1"
+    ),
+    train_rows_per_task: Annotated[int, typer.Option("--train-rows-per-task")] = 150,
+    heldout_rows_per_task: Annotated[int, typer.Option("--heldout-rows-per-task")] = 30,
+) -> None:
+    """Qwen·Gemma용 영어·일본어 대화/번역 prompt inventory를 생성합니다."""
+    try:
+        from llmex.chat.multilingual import prepare_multilingual_prompts
+
+        result = prepare_multilingual_prompts(
+            output,
+            train_rows_per_task=train_rows_per_task,
+            heldout_rows_per_task=heldout_rows_per_task,
+        )
+    except LlmexError as error:
+        _emit_error(error)
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
