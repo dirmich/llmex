@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.62 blind review template 생성
+
+- 최신 자동 gate 통과 artifact에 결속된 독립 blind review template 100행을 생성했다.
+- template manifest에 자동 report SHA `f5acec238be7adf588b45d0fdc48527f77016c71c80f0519cdcdc4ec60951f80`를 고정했다.
+- 실제 reviewer 서명·adjudication은 별도 trust policy가 필요한 최종 수동 단계로 남아 있다.
+
 ## 2026-07-19 · 1.22.61 readiness 자동 gate 통과
 
 - 기존 평가 디렉터리 재사용을 피하도록 최신 출력 디렉터리에서 readiness를 재실행했다.
