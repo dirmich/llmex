@@ -521,7 +521,7 @@ def test_loopback_request는_환경_proxy를_완전히_무시한다(
         proxy_thread.join()
 
 
-def test_teacher_message_role과_예상하지_않은_필드를_거부한다(
+def test_teacher의_빈_tool_calls만_허용하고_나머지_확장과_role을_거부한다(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("TEST_TEACHER_KEY", "test-value")
@@ -529,6 +529,11 @@ def test_teacher_message_role과_예상하지_않은_필드를_거부한다(
         config = _config(tmp_path, endpoint, target=4)
         _TeacherHandler.retry_once = False
         _TeacherHandler.message_extra = {"tool_calls": []}
+        assert completion(config, "질문")[1]
+        _TeacherHandler.message_extra = {"tool_calls": [{"id": "call-1"}]}
+        with pytest.raises(IntegrityError, match="non_empty_tool_calls"):
+            completion(config, "질문")
+        _TeacherHandler.message_extra = {"unknown": None}
         with pytest.raises(IntegrityError, match="unexpected_message_fields"):
             completion(config, "질문")
         _TeacherHandler.message_extra = {}

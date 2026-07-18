@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.20.3 - 2026-07-18
+
+- OpenAI 호환 teacher message의 `tool_calls: []`를 안전한 빈 메타데이터로 허용했다.
+- 비어 있지 않은 tool call과 알 수 없는 message 확장 필드는 계속 실패-폐쇄한다.
+- macmini Gemma 4 응답 schema를 실제 호출로 확인하고 strict client 회귀를 추가했다.
+
 ## 1.20.2 - 2026-07-18
 
 - teacher endpoint는 기본 loopback 제한을 유지하면서 `allowed_endpoint_hosts`에 명시한 신뢰 내부망 host만 opt-in할 수 있게 했다.

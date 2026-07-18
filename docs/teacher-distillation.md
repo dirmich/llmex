@@ -149,6 +149,7 @@ uv run llmex sft validate-mix --help
 ## 네트워크·비밀정보 안전 경계
 
 - endpoint는 기본적으로 loopback `http` 절대 URL과 `/v1` 경로만 허용한다. 신뢰하는 내부망 teacher는 `allowed_endpoint_hosts`에 정규화된 hostname을 명시한 경우에만 사용할 수 있다. userinfo, query, fragment, 미등록 외부 host와 HTTPS endpoint는 거부한다.
+- OpenAI 호환 응답의 `tool_calls`는 빈 배열만 허용한다. 실제 tool call이나 알 수 없는 message 확장 필드는 label 본문으로 해석하지 않고 거부한다.
 - 환경의 HTTP/HTTPS/all proxy를 사용하지 않으며 redirect를 추적하지 않는다. Authorization header가 proxy나 redirect 목적지로 전달되지 않는다.
 - API key는 `api_key_env`가 지정된 경우에만 환경변수에서 읽고 artifact·오류 문구에 값을 기록하지 않는다.
 - teacher가 credential 또는 `Bearer credential`을 echo하면 constant-time 검사로 `secret_leak` 처리하고 응답 본문과 raw/정규화 hash를 spool에 남기지 않는다.

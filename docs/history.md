@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-18 · 1.20.3 OpenAI 호환 빈 tool_calls 수용
+
+- macmini Gemma 4의 실제 completion message는 `role`, `content`, 빈 `reasoning_content`와 함께 `tool_calls: []`를 반환했다. 기존 strict client는 이 표준 빈 필드를 예상하지 않은 확장으로 거부해 모든 수집이 실패하는 상태였다.
+- 빈 `tool_calls`만 무해한 메타데이터로 허용하고, 한 건이라도 실제 tool call이 있거나 알 수 없는 message 필드가 있으면 계속 거부하도록 수정했다. teacher가 도구 실행 결과를 일반 assistant label로 섞는 경로는 열지 않았다.
+
 ## 2026-07-18 · 1.20.2 신뢰 내부망 teacher endpoint allowlist
 
 - 기존 distill 설정은 loopback HTTP `/v1`만 허용해 사용자가 제공한 `http://macmini:11434/v1` Gemma 4 teacher를 구성할 수 없었다. 기본 loopback 제한은 유지하고 `allowed_endpoint_hosts`에 정확히 명시한 정규화 hostname만 opt-in하도록 확장했다.

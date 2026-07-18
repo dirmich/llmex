@@ -165,8 +165,11 @@ def completion(config: DistillationConfig, prompt: str) -> tuple[bytes, str, byt
             raise TypeError
         message = cast(Mapping[str, object], message_value)
         content = message.get("content")
-        if set(message) - {"role", "content", "reasoning_content"}:
+        if set(message) - {"role", "content", "reasoning_content", "tool_calls"}:
             raise IntegrityError("unexpected_message_fields")
+        tool_calls = message.get("tool_calls")
+        if tool_calls is not None and tool_calls != []:
+            raise IntegrityError("non_empty_tool_calls")
         if message.get("role") != "assistant":
             raise IntegrityError("message_role_not_assistant")
         if choice.get("finish_reason") != "stop":
