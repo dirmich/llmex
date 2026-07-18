@@ -46,7 +46,7 @@ uv run python -c 'import torch; print({"cuda": torch.cuda.is_available(), "bf16"
 ### Local teacher 프로필
 
 - 용도: 09장 teacher 10k response distillation
-- 필수: loopback OpenAI-compatible `/v1`, model identity, timeout·응답 byte 제한
+- 필수: loopback 또는 명시적 `allowed_endpoint_hosts`의 OpenAI-compatible `/v1`, model identity, timeout·응답 byte 제한
 - 확인:
 
 ```bash

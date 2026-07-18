@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.20.2 신뢰 내부망 teacher endpoint allowlist
+
+- 기존 distill 설정은 loopback HTTP `/v1`만 허용해 사용자가 제공한 `http://macmini:11434/v1` Gemma 4 teacher를 구성할 수 없었다. 기본 loopback 제한은 유지하고 `allowed_endpoint_hosts`에 정확히 명시한 정규화 hostname만 opt-in하도록 확장했다.
+- userinfo·query·fragment·HTTPS·미등록 host 거부, hostname 공백·대문자·구분자·중복 거부를 유지하거나 추가했다. 허용 host를 다른 값으로 바꾸면 같은 endpoint가 즉시 검증 실패하는 회귀를 고정했다.
+- macmini의 실제 `/v1/models`에서 `gemma4-26b-a4b-uncensored-hauhaucs-balanced`, `google/gemma-4-12b` 등을 확인했다. balanced 모델은 자연 대화·실시간 한계 답변은 우수하지만 PII 가상 번호를 생성하므로 대화 범주에만 쓰고 qwen36 안전 label과 분리한다.
+
 ## 2026-07-18 · 1.20.1 focused-v11 학습과 최적 checkpoint 판정
 
 - v9 step 2 SHA `59af3549…438`에서 CUDA bf16, effective batch 64, 2e-6→2e-7로 focused-v11을 150 step 학습했다. validation loss/PPL은 baseline 1.928266/6.877574에서 step 150의 0.780351/2.182239로 감소했고 latest SHA는 `6fa42367…b3c6c`다.

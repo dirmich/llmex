@@ -1,8 +1,12 @@
 # LLMEX 개발 TODO
 
-## 1.20.1 focused-v11 학습·평가 완료
+## 1.20.2 Gemma 4 대화 증류 진행
 
 ### 완료
+
+- [x] 기본 loopback 유지와 명시적 신뢰 내부망 teacher hostname allowlist
+- [x] macmini Gemma 4 model inventory와 대화·PII 동작 실측
+- [ ] Gemma 4 자연 대화 source·inventory·수집·export·validate
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
 - [x] train 10,800/heldout 1,080행과 suite·split·source overlap 0

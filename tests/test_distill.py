@@ -198,6 +198,27 @@ def test_endpoint에서_비밀과_비_http_url을_거부한다(endpoint: str) ->
         )
 
 
+def test_명시적으로_허용한_내부망_teacher_host만_사용한다() -> None:
+    config = DistillationConfig.model_validate(
+        {
+            "name": "trusted-lan",
+            "endpoint": "http://macmini:11434/v1",
+            "allowed_endpoint_hosts": ["macmini"],
+            "model": "gemma4",
+            "run_dir": "run",
+            "source_chat_files": ["source.jsonl"],
+            "corpus": "corpus.zst",
+            "source_collected_at": "2026-07-18",
+        }
+    )
+    assert config.endpoint == "http://macmini:11434/v1"
+
+    value = config.model_dump(mode="json")
+    value["allowed_endpoint_hosts"] = ["other-host"]
+    with pytest.raises(ValidationError, match="allowed_endpoint_hosts"):
+        DistillationConfig.model_validate(value)
+
+
 def test_prepare는_정확한_고유_inventory와_split을_만든다(tmp_path: Path) -> None:
     config = _config(tmp_path, "http://localhost:8081/v1")
     result = prepare(config)

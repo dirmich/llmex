@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.20.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v11을 150 step 학습하고 step 25·50을 고정 162응답으로 비교했다. step 50은 EOS·유해 요청 거절·멀티턴 유지 100%를 달성했지만 profile/seed 최악 정확도 88.89%로 90% 기준에 한 응답 부족해 승인을 차단했다. `sft generate`는 자동 품질 평가와 같은 decoding 경계를 실제 CLI에서도 재현한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.20.2는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v11을 150 step 학습하고 step 25·50을 고정 162응답으로 비교했다. step 50은 EOS·유해 요청 거절·멀티턴 유지 100%를 달성했지만 profile/seed 최악 정확도 88.89%로 90% 기준에 한 응답 부족해 승인을 차단했다. teacher endpoint는 기본 loopback 제한을 유지하며 명시적 allowlist의 신뢰 내부망 host만 추가로 허용한다. `sft generate`는 자동 품질 평가와 같은 decoding 경계를 실제 CLI에서도 재현한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

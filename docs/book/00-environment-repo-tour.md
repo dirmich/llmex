@@ -92,7 +92,7 @@ curl --fail --silent --show-error http://localhost:8081/v1/models
 uv run llmex distill preflight --config configs/distill/qwen36mtp-10k.yaml
 ```
 
-endpoint는 loopback으로 제한하고, 응답 model identity가 설정과 같아야 한다. preflight 전에는 본 수집을 시작하지 않으며 API key나 원문 데이터 내용을 shell history에 직접 쓰지 않는다.
+endpoint는 기본 loopback 또는 명시적 `allowed_endpoint_hosts`로 제한하고, 응답 model identity가 설정과 같아야 한다. preflight 전에는 본 수집을 시작하지 않으며 API key나 원문 데이터 내용을 shell history에 직접 쓰지 않는다.
 
 DGX Spark에서는 `.env.example`을 복사해 호환 NGC 이미지 digest를 넣고 `docker compose run --rm dev make check`를 먼저 수행한다. secret이 들어간 `.env`는 Git에 넣지 않는다.
 

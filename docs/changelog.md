@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.20.2 - 2026-07-18
+
+- teacher endpoint는 기본 loopback 제한을 유지하면서 `allowed_endpoint_hosts`에 명시한 신뢰 내부망 host만 opt-in할 수 있게 했다.
+- hostname 정규화·중복·미등록 host를 거부하고 `macmini` 허용/불허 회귀를 추가했다.
+- Gemma 4 teacher를 qwen36과 분리된 endpoint에서 사용할 수 있도록 증류 문서와 교재 환경 경계를 갱신했다.
+
 ## 1.20.1 - 2026-07-18
 
 - focused-v11을 v9 step 2 기반 CUDA bf16, effective batch 64로 150 step 학습했다.

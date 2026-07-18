@@ -215,7 +215,7 @@ uv run pyright
 
 ## 체크리스트
 
-- [ ] teacher endpoint는 loopback HTTP `/v1`인가?
+- [ ] teacher endpoint는 loopback HTTP `/v1`이거나 `allowed_endpoint_hosts`에 명시한 신뢰 내부망 host인가?
 - [ ] model 이름을 `/v1/models`로 확인했는가?
 - [ ] source provenance와 upstream split을 보존하는가?
 - [ ] inventory가 config fingerprint와 hash로 고정되는가?

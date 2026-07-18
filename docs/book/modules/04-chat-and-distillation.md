@@ -102,7 +102,7 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 
 - 책임: OpenAI-compatible localhost endpoint의 model preflight와 completion 요청을 제한적으로 수행한다.
 - 구현 순서: no-redirect opener → model identity → canonical request body → 응답 byte 상한 → secret echo 검사 순서다.
-- 실패 사례: 비-loopback endpoint, redirect, timeout, 과대 응답, 다른 model과 secret 반사를 거부한다.
+- 실패 사례: 미등록 비-loopback endpoint, redirect, timeout, 과대 응답, 다른 model과 secret 반사를 거부한다.
 - 검증: fixture HTTP server 기반 `tests/test_distill.py`; 실제 연결은 `uv run llmex distill preflight --config <설정>`으로 확인한다.
 - 완료 산출물: raw request/response bytes와 model identity가 검증된 단일 호출 결과다.
 

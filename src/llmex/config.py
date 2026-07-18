@@ -467,6 +467,7 @@ class DistillationConfig(StrictModel):
     name: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
     seed: int = Field(default=42, ge=0)
     endpoint: str = Field(min_length=1)
+    allowed_endpoint_hosts: list[str] = Field(default_factory=list)
     model: str = Field(min_length=1)
     api_key_env: str | None = Field(default=None, pattern=r"^[A-Z_][A-Z0-9_]*$")
     run_dir: YamlPath
@@ -510,9 +511,7 @@ class DistillationConfig(StrictModel):
     def validate_endpoint(cls, value: str) -> str:
         parsed = urlsplit(value)
         if parsed.scheme != "http" or not parsed.hostname:
-            raise ValueError("pilot endpoint는 loopback http 절대 URL이어야 합니다")
-        if parsed.hostname not in {"localhost", "127.0.0.1", "::1"}:
-            raise ValueError("pilot endpoint는 loopback host만 허용됩니다")
+            raise ValueError("pilot endpoint는 http 절대 URL이어야 합니다")
         if parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError("endpoint에 userinfo/query/fragment를 사용할 수 없습니다")
         normalized_path = parsed.path.rstrip("/")
@@ -520,8 +519,26 @@ class DistillationConfig(StrictModel):
             raise ValueError("endpoint 경로는 /v1로 끝나야 합니다")
         return value.rstrip("/")
 
+    @field_validator("allowed_endpoint_hosts")
+    @classmethod
+    def validate_allowed_endpoint_hosts(cls, values: list[str]) -> list[str]:
+        normalized = [value.strip().lower() for value in values]
+        if any(
+            not value or value != original or "/" in value or ":" in value or "@" in value
+            for value, original in zip(normalized, values, strict=True)
+        ):
+            raise ValueError("허용 endpoint host는 정규화된 hostname만 사용할 수 있습니다")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("허용 endpoint host는 중복될 수 없습니다")
+        return normalized
+
     @model_validator(mode="after")
     def validate_distillation(self) -> "DistillationConfig":
+        hostname = urlsplit(self.endpoint).hostname
+        if hostname not in {"localhost", "127.0.0.1", "::1"} and hostname not in set(
+            self.allowed_endpoint_hosts
+        ):
+            raise ValueError("비-loopback endpoint host는 allowed_endpoint_hosts에 명시해야 합니다")
         if self.max_response_chars < self.min_response_chars:
             raise ValueError("max_response_chars는 min_response_chars 이상이어야 합니다")
         names = [concept.name for concept in self.unsafe_concepts]

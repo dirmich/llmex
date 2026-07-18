@@ -62,7 +62,7 @@
 
 - **책임:** 모든 YAML 설정의 strict schema와 loader를 소유한다.
 - **먼저 구현할 계약:** 기반 `StrictModel`, `YamlPath`, `load_yaml`; 데이터의 `PathConfig`, `DumpConfig`, `CleaningConfig`, `DownloadConfig`, `DataConfig`; 모델·학습·평가의 `ModelConfig`, `TokenizerConfig`, `OptimizerConfig`, `TrainingConfig`, `EvaluationConfig`; 대화·증류·파이프라인의 `SFTConfig`, `SensitiveOutputRegex`, `SFTMixConfig`, `SFTCurriculumConfig`, `SFTQualityThresholds`, `SFTQualityProfile`, `SFTQualityConfig`, `UnsafeConceptConfig`, `DistillationConfig`, `BudgetConfig`, `PipelineStageConfig`, `PipelineConfig`다.
-- **단계별 구현:** ① `extra="forbid"`, `strict=True` 기반을 만든다. ② 문자열 YAML 경로만 `Path`로 바꾸는 before validator를 둔다. ③ 각 필드 범위와 literal을 선언한다. ④ `ModelConfig`의 head 나눗셈·짝수 head dimension, 학습 길이·warmup, pinned dump URL, loopback `/v1` teacher endpoint 같은 교차 필드 validator를 추가한다. ⑤ `load_yaml`에서 I/O·YAML·Pydantic 오류를 한국어 `ConfigError`로 정규화한다.
+- **단계별 구현:** ① `extra="forbid"`, `strict=True` 기반을 만든다. ② 문자열 YAML 경로만 `Path`로 바꾸는 before validator를 둔다. ③ 각 필드 범위와 literal을 선언한다. ④ `ModelConfig`의 head 나눗셈·짝수 head dimension, 학습 길이·warmup, pinned dump URL, 기본 loopback과 명시적 내부망 allowlist의 `/v1` teacher endpoint 같은 교차 필드 validator를 추가한다. ⑤ `load_yaml`에서 I/O·YAML·Pydantic 오류를 한국어 `ConfigError`로 정규화한다.
 - **반드시 실패해야 할 사례:** 알 수 없는 key, 문자열 `"1"`을 정수로 묵시 변환, `latest` dump URL, `d_model % n_heads != 0`, model 문맥보다 긴 sequence, localhost가 아닌 증류 endpoint, 자동 품질 임계값을 안전 하한보다 낮추는 설정이다.
 - **관련 테스트와 명령:** `uv run pytest -q tests/test_config.py tests/test_foundation.py -k config`; `uv run llmex config validate configs/model/smoke.yaml --kind model`.
 - **완료 산출물:** 이후 모듈이 별도 방어 없이 타입과 범위를 신뢰할 수 있는 resolved config 객체다.
