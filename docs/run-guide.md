@@ -518,15 +518,7 @@ llama.cpp에서는 자동 chat 변환을 끄고 학습과 같은 BOS·role marke
 
 1.22.6 구현 검증에서는 focused-v9 step 2 checkpoint를 HF로 변환한 뒤 61-token 다중 턴 입력에서 원본 LLMEX와 Transformers의 최대 logit 절대 오차 `9.5367431640625e-05`, 모든 위치 argmax 일치를 확인했다. 같은 export의 F16 GGUF SHA는 `efb2671a9fa7de0f653ba08f72d9664be3f1858ca7b997e51869d0b903452070`이며 llama.cpp `b9550-f0156d140`에서 원본과 같은 `[[안녕하세요` token sequence와 EOS를 생성했다. 이는 converter 검증이고 현재 학습 중인 최종 모델의 품질 승인이 아니다.
 
-Hugging Face 업로드는 [공식 upload 가이드](https://huggingface.co/docs/huggingface_hub/en/guides/upload)와 [repository 가이드](https://huggingface.co/docs/huggingface_hub/guides/repository)에 따라 private 저장소만 만든다. `hf auth login` 뒤 실제 계정 이름과 private repo ID를 사용한다.
-
-```bash
-hf auth whoami
-hf repos create <계정>/llmex-ko-en-ja-87m-private --private
-hf upload <계정>/llmex-ko-en-ja-87m-private "$HF_DIR" .
-```
-
-업로드 뒤 Hub UI에서 visibility가 `Private`인지 확인하고 `export-manifest.json`의 SHA와 내려받은 파일 SHA를 다시 비교한다. 외부 법무·수동 품질·공개 배포 승인 전에는 public 전환, 공개 PR, 공개 링크 공유를 하지 않는다.
+이번 실행의 종료점은 로컬 HF 디렉터리, GGUF 파일, llama.cpp 실제 추론 검증이다. Hugging Face에는 공개·비공개 모두 업로드하지 않으며 `hf repos create`와 `hf upload`를 실행하지 않는다.
 
 ## 14. 실행 전후 점검
 

@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.22.17, frozen sync | 통과 가능 |
+| 버전·lock | 1.22.18, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -14,7 +14,7 @@
 | 수동 대화 품질 | 최소 100 blind review, full-row/응답 hash, 독립 서명 quality·safety 검토 | 구현 통과, 실제 모델 사람 검토 필요 |
 | SFT 민감 출력 | built-in 완화 불가, 안전한 추가 규칙, 전 assistant turn 선필터, 원자 directory publish | 구현 통과, 실제 mix별 집계 확인 필요 |
 | SFT 원천 identity | source SHA·ID·원행 SHA 우선순위, teacher 원행 결속, 최종 source overlap 0 | 구현·실제 pilot 통과 |
-| teacher 응답 계약 | typed target language/mode/문장/숫자/entity/term 계약, 수집·spool 재검증 동일 적용 | 구현·과거 spool 역감사 통과, Qwen 다국어 v2·Gemma 한국어 v3 수집 중 |
+| teacher 응답 계약 | typed target language/mode/문장/숫자/entity/term 계약, 응답 전체 compact text의 지도·map/혼잡도 lexeme 공존 전량 격리, 수집·spool 재검증 동일 적용 | 구현·과거 spool 역감사 통과, Qwen 다국어 v2 실패 1건 해소·Gemma 한국어 v3 재개 필요 |
 | SFT curriculum manifest | kind·fingerprint·train/heldout SHA·tokenizer·길이·release 정책 SHA 결속 | 구현·통합 회귀 통과 |
 | SFT fresh run | 미존재 run 디렉터리 원자 선점, 기존 경로 보존, strict resume만 연속 기록 | 구현·회귀 통과 |
 | SFT token cache | 전체 길이·값 2-pass 결속, 연속 int32/offset storage, 완화 불가 128 MiB 상한 | 구현·실제 pilot preflight 통과 |

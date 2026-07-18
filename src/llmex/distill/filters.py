@@ -198,15 +198,20 @@ def _missing_group(value: str, groups: Sequence[Sequence[str]]) -> bool:
     return any(not any(_contains_surface(value, term) for term in group) for group in groups)
 
 
-def _sentence_count(value: str) -> int:
-    stripped = value.strip().strip("\"“”'\u2018\u2019「」『』")
+def _split_sentences(value: str) -> list[str]:
     protected = re.sub(
-        r"\b(?:a\.m\.|p\.m\.|e\.g\.|i\.e\.)",
+        r"\b(?:a\.m\.|p\.m\.|e\.g\.|i\.e\.|ver\.|inc\.)",
         lambda match: match.group().replace(".", "\u2024"),
-        stripped,
+        value,
         flags=re.IGNORECASE,
     )
-    parts = re.split(r"[.!?。\uFF01\uFF1F]+", protected)
+    protected = re.sub(r"(?<=\w)\.(?=\w)", "\u2024", protected)
+    return re.split(r"[.!?。\uFF01\uFF1F]+", protected)
+
+
+def _sentence_count(value: str) -> int:
+    stripped = value.strip().strip("\"“”'\u2018\u2019「」『』")
+    parts = _split_sentences(stripped)
     return sum(bool(part.strip().strip('"”\u2019」』')) for part in parts) or 1
 
 
@@ -222,30 +227,64 @@ _DIRECT_MESSAGE_META = re.compile(
     r"(?:문구|내용|말).{0,15}(?:그대로\s*)?(?:사용|보내|쓰)(?:하)?(?:면|해|세요))"
 )
 _UNCERTAINTY_BOUNDARY = re.compile(
-    r"(?:확인할\s*수(?:는)?\s*없|확인(?:하기는?|이)?\s*(?:어렵|불가)|"
+    r"(?:확인할\s*수(?:는)?\s*없|"
+    r"확인(?:하기(?:는|가)?|하는\s*것(?:은|이)?|이)?\s*(?:어렵|불가)|"
     r"알\s*수(?:는)?\s*없|(?:측정|파악)할\s*수(?:는)?\s*없|"
     r"접근할\s*수(?:는)?\s*없|"
-    r"실시간.{0,12}(?:확인|파악).{0,8}(?:못|어렵|불가))"
+    r"실시간.{0,12}(?:확인|파악).{0,8}(?:못|어렵|불가)|"
+    r"보장.{0,12}없|정확하지\s*않을\s*수(?:도)?\s*있)"
 )
 _UNCERTAINTY_ACTION = re.compile(
     r"(?:주최|운영|공식|예약|전화|문의|웹사이트|홈페이지|공지|SNS|현장)"
 )
-_UNSUPPORTED_REALTIME = re.compile(
-    r"(?:(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,45}(?:"
-    r"실시간.{0,15}(?:혼잡도|혼잡|붐빔).{0,25}(?:"
-    r"기능|활용(?:하세요|해|할\s*수)|확인할\s*수\s*있|"
-    r"제공(?:합니다|됩니다|한다|해요)|표시(?:합니다|됩니다)|보여(?:줍니다|준다))|"
-    r"(?:제공하는|제공되는).{0,15}(?:혼잡도|혼잡|붐빔)|"
-    r"(?:혼잡도|혼잡|붐빔).{0,20}(?:정보.{0,8}(?:"
-    r"참고(?:하세요|해|할\s*수|할\s*수도)|활용(?:하세요|해|할\s*수))|"
-    r"제공(?:합니다|됩니다)|표시(?:합니다|됩니다)|확인할\s*수\s*있))|"
-    r"실시간.{0,15}(?:혼잡도|혼잡|붐빔).{0,35}"
-    r"(?:네이버|카카오|구글|google|지도|맵|지도\s*앱|지도\s*서비스).{0,25}(?:"
-    r"활용(?:하세요|해|할\s*수)|확인할\s*수\s*있|제공(?:합니다|됩니다)|"
-    r"표시(?:합니다|됩니다)|보여(?:줍니다|준다)))",
-    re.IGNORECASE,
+_MAP_PROVIDER_LEXEMES = (
+    "지도",
+    "맵",
+    "내비게이션",
+    "네비게이션",
+    "네이버",
+    "카카오",
+    "구글",
+    "google",
+    "map",
+    "navigation",
 )
-
+_CONGESTION_LEXEMES = (
+    "혼잡도",
+    "혼잡",
+    "붐",
+    "북적",
+    "사람이많",
+    "사람많",
+    "crowd",
+    "busy",
+)
+_DEFAULT_IGNORABLE_OR_FILLER = re.compile(
+    "[\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u200b-\u200f"
+    "\u202a-\u202e\u2060-\u206f\u3164\ufe00-\ufe0f\ufeff\uffa0\U000e0100-\U000e01ef]"
+)
+_PROVIDER_CONFUSABLES = str.maketrans(
+    {
+        "\u0430": "a",
+        "\u0435": "e",
+        "\u043e": "o",
+        "\u0440": "p",
+        "\u0441": "c",
+        "\u0445": "x",
+        "\u0456": "i",
+        "\u04cf": "l",
+        "\u03bf": "o",
+        "\u0261": "g",
+        "\u0251": "a",
+        "\u03b1": "a",
+        "\u03c1": "p",
+        "0": "o",
+        "I": "l",
+    }
+)
+_BIDI_FORMATTING_CLASSES = {"LRE", "RLE", "LRO", "RLO", "PDF", "LRI", "RLI", "FSI", "PDI"}
+_MARKUP_OR_ENTITY_SURFACES = frozenset("<>&[]`*_~#|\\")
+_MARKDOWN_BLOCK_SURFACE = re.compile(r"^\s*(?:[-+]\s|\d+[.)]\s)", re.MULTILINE)
 _NUMBER_SURFACES: dict[str, dict[str, str]] = {
     "en": {
         "two": "2",
@@ -326,8 +365,64 @@ def _allowed_numbers(contract: ResponseQualityContract) -> set[str]:
     return allowed
 
 
+def _claim_compact_view(value: str) -> str:
+    normalized = "".join(char for char in value if unicodedata.category(char) != "Cf")
+    normalized = _DEFAULT_IGNORABLE_OR_FILLER.sub("", normalized)
+    normalized = re.sub(r"[\W_]+", "", normalized)
+    normalized = _compose_compatibility_jamo(normalized)
+    normalized = unicodedata.normalize("NFC", unicodedata.normalize("NFKC", normalized))
+    return normalized.translate(_PROVIDER_CONFUSABLES).casefold()
+
+
+def _claim_hangul_view(value: str) -> str:
+    """markup 문법과 무관하게 한글 표면형을 보수적으로 이어 붙인다."""
+
+    hangul = "".join(
+        char
+        for char in value
+        if 0x1100 <= ord(char) <= 0x11FF
+        or 0x3130 <= ord(char) <= 0x318F
+        or 0xA960 <= ord(char) <= 0xA97F
+        or 0xAC00 <= ord(char) <= 0xD7A3
+        or 0xD7B0 <= ord(char) <= 0xD7FF
+    )
+    return unicodedata.normalize("NFC", _compose_compatibility_jamo(hangul)).casefold()
+
+
+def _contains_ordered_surface(value: str, surface: str) -> bool:
+    """markup이 끼어든 ASCII provider를 strict subsequence로 격리한다."""
+
+    index = 0
+    for char in value:
+        if char == surface[index]:
+            index += 1
+            if index == len(surface):
+                return True
+    return False
+
+
 def _unsupported_realtime_claim(value: str) -> bool:
-    return _UNSUPPORTED_REALTIME.search(value) is not None
+    if any(unicodedata.bidirectional(char) in _BIDI_FORMATTING_CLASSES for char in value):
+        return True
+    if any(char in _MARKUP_OR_ENTITY_SURFACES for char in value) or _MARKDOWN_BLOCK_SURFACE.search(
+        value
+    ):
+        return True
+    normalized = unicodedata.normalize("NFKC", value)
+    normalized = "".join(char for char in normalized if unicodedata.category(char) != "Cf")
+    normalized = _DEFAULT_IGNORABLE_OR_FILLER.sub("", normalized)
+    compact_views = [_claim_compact_view(normalized), _claim_hangul_view(normalized)]
+    has_provider = any(
+        term in compact for compact in compact_views for term in _MAP_PROVIDER_LEXEMES
+    )
+    raw_compact = _claim_compact_view(normalized)
+    has_provider = has_provider or any(
+        _contains_ordered_surface(raw_compact, term) for term in ("google", "map")
+    )
+    has_congestion = any(
+        term in compact for compact in compact_views for term in _CONGESTION_LEXEMES
+    )
+    return has_provider and has_congestion
 
 
 def _quality_failure(response: str, contract: ResponseQualityContract) -> str | None:

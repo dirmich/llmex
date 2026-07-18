@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.22.17 한국어·다국어 SFT와 private 모델 배포 준비
+## 1.22.18 한국어·다국어 SFT와 로컬 모델 실행 준비
 
 ### 완료
 
@@ -49,7 +49,7 @@
 - [ ] 새 teacher 데이터 비누출 혼합·재학습·통합 품질 평가
 - [ ] 390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint 선별
 - [x] SHA 고정 HF Llama export·GGUF 변환 CLI와 기존 checkpoint Transformers/llama.cpp parity
-- [ ] 선별 checkpoint의 HF·GGUF 최종 export·llama.cpp parity·private Hub 업로드
+- [ ] 선별 checkpoint의 로컬 HF·GGUF 최종 export와 llama.cpp parity(Hugging Face 업로드 금지)
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
 - [x] train 10,800/heldout 1,080행과 suite·split·source overlap 0

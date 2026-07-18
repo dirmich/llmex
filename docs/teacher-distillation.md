@@ -1,8 +1,8 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.22.17의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. 새 자연대화 수집은 exact hash와 의미 조합 범위뿐 아니라 source 결속 목표 언어·응답 계약도 검증한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
+LLMEX 1.22.18의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어·영어·일본어 응답과 번역을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. 새 자연대화 수집은 exact hash와 의미 조합 범위뿐 아니라 source 결속 목표 언어·응답 계약도 검증한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
 
-1.22.15 조기 감사에서는 Gemma가 실시간 혼잡도를 직접 알 수 없다고 말한 뒤에도 지도 서비스의 혼잡도 정보를 참고하거나 제공 정보를 보라고 답하는 우회를 확인했다. 이 응답은 `quality:unsupported_realtime_claim`으로 거절한다. 해당 Gemma 한국어 v2 run은 보존·미export하고, 부정형 비의존 안내는 허용하는 1.22.16 gate로 v3를 fresh 수집한다. Qwen 다국어 v2는 영향 없이 계속 수집한다.
+1.22.15 조기 감사에서는 Gemma가 실시간 혼잡도를 직접 알 수 없다고 말한 뒤에도 지도 서비스의 혼잡도 정보를 참고하거나 제공 정보를 보라고 답하는 우회를 확인했다. 형태소 기반 긍정·부정 판정과 provider 경계 열거는 활용형, 인용, wrapper, 조사, target bait에서 양방향 오류가 반복됐다. 1.22.18은 uncertainty 라벨을 plain text로 제한해 HTML·Markdown·entity·bidi 표면을 전량 실패-폐쇄하고, 평문은 NFKC·Cf·한글 filler를 정규화한 compact·한글 전용 projection에서 지도·내비게이션·map 계열과 혼잡·붐빔·사람이 많음 계열이 함께 있으면 극성·문장 경계와 무관 `quality:unsupported_realtime_claim`으로 격리한다. `지도자`, `로드맵`, markup이 들어간 안전 응답까지 의도적으로 격리하는 데이터 손실 정책이며, 지도 언급 없이 공식 홈페이지·주최 측에 확인하라는 plain text 응답은 계속 허용한다. 해당 Gemma 한국어 v2 run은 보존·미export하고 강화 gate로 v3를 fresh 재개한다. Qwen 다국어 v2는 2,000건 중 accepted 662/rejected 1,337/failed 1이며 실패 1건을 해소하기 전 표본 감사와 export를 허용하지 않는다.
 
 ## 1.22.14 metadata-v1 응답 품질 gate
 
@@ -53,7 +53,7 @@ uv run llmex distill export --config <natural-config.yaml>
 uv run llmex distill validate --config <natural-config.yaml>
 ```
 
-세 export가 완료되면 통합 suite와 의미·exact 비누출 mix를 만들고 100M latest에서 SFT한다. 60 scenario·390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint만 HF·GGUF parity와 private Hub 업로드로 넘긴다.
+세 export가 완료되면 통합 suite와 의미·exact 비누출 mix를 만들고 100M latest에서 SFT한다. 60 scenario·390응답과 suite 밖 자연대화 smoke를 모두 통과한 checkpoint만 로컬 HF·GGUF와 llama.cpp parity로 넘기며 Hugging Face 업로드는 하지 않는다.
 
 ## 1.22.11 대규모 자연대화 수집
 

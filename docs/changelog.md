@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.18 - 2026-07-18
+
+- 형태소·provider 경계 열거를 폐기하고 응답 전체 compact text의 지도·map/혼잡도 lexeme 공존을 전량 격리한다.
+- uncertainty 라벨을 plain text로 제한해 HTML·Markdown·entity·bidi 표면을 전량 실패-폐쇄하고, NFKC·Cf·한글 filler·provider confusable과 자연스러운 혼잡 활용형을 보수적으로 판정한다.
+- Qwen 다국어 v2의 2,000건 처리 결과와 실패 1건 해소 전 감사·export 차단 상태를 문서화했다.
+
 ## 1.22.17 - 2026-07-18
 
 - 지도 혼잡도 문장 전체를 마스킹하지 않고 직접 긍정된 참고·제공·확인 술어를 판정해 긍정 뒤 부정이 붙은 혼합 극성 우회를 차단했다.

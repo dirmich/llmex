@@ -320,6 +320,359 @@ def test_qwen_번역_합성_품질_회귀(
             False,
         ),
         (
+            "마크다운 링크 주소에 지도 제공자",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "혼잡도 현황은 [여기](https://maps.google.com)에서 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "마크다운 링크 주소에 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "[네이버](https://example.com/혼잡도)를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 태그로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "<b>지</b><i>도</i> 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 태그로 분리한 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱에서 혼<b>잡</b>도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 엔티티로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지&#46020; 앱에서 혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "한글 채움 문자로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지\u3164도 앱에서 혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "키릴 문자로 위장한 구글",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "g\u043e\u043egle 지도에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 자동 링크 주소에 지도 제공자",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "혼잡도 현황은 <https://maps.google.com>에서 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 링크 속성에 지도 제공자",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '<a href="https://maps.google.com">혼잡도 현황</a>을 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 링크 속성에 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '<a href="https://example.com/혼잡도">네이버</a>를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "중첩 HTML 엔티티로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지&amp;amp;#46020; 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "인용 부등호 속성 태그로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '지<span data-x="&gt;x">도</span> 앱에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "부등호 HTML 주석으로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지<!-- > x -->도 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "분할 Markdown 링크 label의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "[지](https://x.invalid/a)[도](https://y.invalid/b) 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "음악 기호 Cf로 분리한 한글 자모 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "ᄌ\U0001d173ᅵ도 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "그리스 문자로 위장한 구글",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "g\u03bf\u03bfgle 지도에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "script g로 위장한 구글",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "\u0261oogle 지도에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "분할 Markdown 참조 링크 label의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "[지][x][도][y] 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.\n"
+            "[x]: https://x.invalid/a\n[y]: https://y.invalid/b",
+            False,
+        ),
+        (
+            "Latin alpha로 위장한 map",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "m\u0251p에서 혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "그리스 rho로 위장한 map",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "ma\u03c1에서 혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "숫자 영으로 위장한 구글",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "g00gle 지도에서 혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "script 내용으로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지<script>x</script>도 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "style 내용으로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지<style>x</style>도 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "Cf 태그 이름으로 분리한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지<\u200bb></\u200bb>도 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "Cf로 분리한 Markdown 링크",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "[지]\u200b(https://x.invalid)[도](https://y.invalid) 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "구두점으로 분리한 한글 자모 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "ᄌ-ᅵ도 앱에서 혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "이미지 대체 텍스트로 완성한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '지<img src="x" alt="도"> 앱에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "이미지 대체 텍스트로 완성한 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '지도 앱에서 혼<img src="x" alt="잡도">를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "입력값으로 완성한 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '지<input value="도"> 앱에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "escape된 Markdown label의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            r"[지\]](https://x.invalid)[도](https://y.invalid) 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "escape된 Markdown 참조 label의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            r"[지\]][x][도][y] 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.\n"
+            "[x]: https://x.invalid/a\n[y]: https://y.invalid/b",
+            False,
+        ),
+        (
+            "중첩 Markdown label의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "[[지]](https://x.invalid)[[도]](https://y.invalid) 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "escape된 Markdown label의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            r"[g\]](https://x.invalid)[oogle](https://y.invalid)에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "escape된 Markdown 참조 label의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            r"[g\]][x][oogle][y]에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.\n"
+            "[x]: https://x.invalid/a\n[y]: https://y.invalid/b",
+            False,
+        ),
+        (
+            "중첩 Markdown label의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "[[goo]](https://x.invalid)[[gle]](https://y.invalid)에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "escape된 Markdown label의 map",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            r"[m\]](https://x.invalid)[ap](https://y.invalid)에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "접근성 이름으로 완성한 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            'g<span aria-label="oo"></span>gle에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "오른쪽 방향 재정의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "\u202eelgoog\u202c에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "오른쪽 방향 재정의 map",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "\u202epam\u202c에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "오른쪽 방향 재정의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "\u202e도지\u202c 앱에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "16진 HTML 엔티티 방향 재정의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "&#x202E;elgoog&#x202C;에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "10진 HTML 엔티티 방향 재정의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "&#8238;elgoog&#8236;에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "중첩 HTML 엔티티 방향 재정의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "&amp;#x202E;elgoog&amp;#x202C;에서 혼잡도를 보세요. "
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML bdo 방향 재정의 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '<bdo dir="rtl">elgoog</bdo>에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML bdo 방향 재정의 지도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '<bdo dir="rtl">도지</bdo> 앱에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML dir 속성 방향 재정의",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '<span dir="rtl">elgoog</span>에서 혼잡도를 보세요. '
+            "직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML style 방향 재정의",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            '<span style="unicode-bidi: bidi-override; direction: rtl">elgoog</span>에서 '
+            "혼잡도를 보세요. 직접 확인할 수는 없으니 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "자연스러운 붐비다 활용형",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. Google에서 얼마나 붐비는지 확인하세요. "
+            "정확한 정보는 공식 홈페이지나 주최 측에 문의하세요.",
+            False,
+        ),
+        (
+            "자연스러운 사람이 많다 활용형",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. Google에서 사람이 많은지 확인하세요. "
+            "정확한 정보는 공식 홈페이지나 주최 측에 문의하세요.",
+            False,
+        ),
+        (
+            "내비게이션 혼잡도 안내",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 내비게이션 앱에서 실시간 혼잡도를 "
+            "확인하세요. 정확한 정보는 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "대문자 I로 위장한 google",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. googIe에서 실시간 혼잡도를 "
+            "확인하세요. 정확한 정보는 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
             "지도 서비스 혼잡도 참고 우회",
             ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
             "현재 실시간 혼잡도를 정확히 알 수는 없지만, 모임 장소의 공식 페이지나 "
@@ -338,7 +691,7 @@ def test_qwen_번역_합성_품질_회귀(
             ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
             "현재 실시간 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보는 참고하지 "
             "말고 공식 페이지나 주최 측에 문의하세요.",
-            True,
+            False,
         ),
         (
             "지도 혼잡도 긍정 뒤 비의존 혼합 우회",
@@ -352,7 +705,511 @@ def test_qwen_번역_합성_품질_회귀(
             ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
             "지도 서비스에서 실시간 혼잡도를 확인할 수 없습니다. 정확한 정보는 공식 페이지나 "
             "주최 측에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 참고하면 활용형 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보를 참고하면 좋습니다. "
+            "공식 페이지에도 문의하세요.",
+            False,
+        ),
+        (
+            "지도 실시간 혼잡도 가능 명사형 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "제가 직접 확인할 수는 없습니다. 지도 서비스에서 실시간 혼잡도 확인이 가능합니다. "
+            "정확한 정보는 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 비의존 뒤 공식 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보에 의존하지 말고 "
+            "공식 홈페이지에서 확인하세요. "
+            "필요하면 주최 측에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 참조 활용형 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보를 참조하세요. "
+            "공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 살펴보기 활용형 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱의 혼잡도 현황을 살펴보세요. "
+            "공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 참고하면 안 됨",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보를 참고하면 안 됩니다. "
+            "공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 참고해서는 안 됨",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보를 참고해서는 안 됩니다. "
+            "공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 실시간 혼잡도 확인 어려움",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 서비스의 실시간 혼잡도 확인이 어렵습니다. 공식 페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 비의존 뒤 행사 웹사이트 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보에 의존하지 말고 "
+            "행사 웹사이트에서 확인하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 비참고 뒤 현장 안내판 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스의 혼잡도 정보를 참고하지 말고 "
+            "현장 안내판에서 확인하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 공식적 제공 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 직접 확인할 수 없습니다. 지도에서 혼잡도를 공식적으로 제공합니다. "
+            "행사 웹사이트에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 이용 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱의 혼잡도 정보를 이용해 보세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 체크 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱의 혼잡도를 체크하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 파악 가능 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 직접 확인할 수 없습니다. 지도 앱에서 혼잡도를 파악할 수 있습니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 찾기 가능 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 직접 확인할 수 없습니다. 지도 앱에서 혼잡도를 찾을 수 있습니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 알기 가능 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 직접 확인할 수 없습니다. 지도 앱에서 혼잡도를 알 수 있습니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 참고하지 마세요",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱의 혼잡도 정보는 참고하지 마세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 참고하시면 안 됨",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱의 혼잡도 정보를 참고하시면 안 됩니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 확인하기가 어려움",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱의 실시간 혼잡도는 확인하기가 어렵습니다. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 확인하는 것은 어려움",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱의 실시간 혼잡도를 확인하는 것은 어렵습니다. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 말고 공식 홈페이지 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 혼잡도 말고 공식 홈페이지에서 확인하세요.",
+            False,
+        ),
+        (
+            "공식 홈페이지를 통한 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 지도 혼잡도는 확인할 수 없습니다. 공식 홈페이지를 통해 확인하세요.",
+            False,
+        ),
+        (
+            "지도 아닌 공식 홈페이지 혼잡도 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 서비스가 아니라 공식 홈페이지에서 혼잡도를 "
+            "확인하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 제공 여부 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱의 혼잡도 기능 제공 여부는 공식 홈페이지에서 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "지도 혼잡도 제공하는지 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱에서 혼잡도 정보를 제공하는지 공식 홈페이지에서 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "공식 대상 선행 제공 여부 확인",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "공식 홈페이지에서 지도 앱의 혼잡도 제공 여부를 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "지도 혼잡도 가능 여부 문의",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱에서 혼잡도를 확인할 수 있는지는 공식 홈페이지에 문의하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "지도 혼잡도 가능 안내 비의존",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱에서 혼잡도를 볼 수 있다는 안내를 믿지 말고 공식 홈페이지에 문의하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "지도 혼잡도 알림 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱이 혼잡도를 알려줍니다. "
+            "공식 홈페이지에도 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 출력 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱에 혼잡도 정보가 나옵니다. "
+            "공식 홈페이지에도 문의하세요.",
+            False,
+        ),
+        (
+            "공식 대상 미끼 뒤 지도 활용",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 혼잡도는 확인할 수 없습니다. 지도 앱의 혼잡도 정보를 공식 홈페이지 대신 "
+            "활용하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 부정 가능성",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱의 혼잡도 정보는 정확하지 않을 수 있습니다. 공식 홈페이지에 문의하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "지도 혼잡도 가능 보장 없음",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱에서 혼잡도를 확인할 수 있다는 보장은 없습니다. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 혼잡도 인용 안내 비신뢰",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱의 혼잡도를 “확인하세요”라는 안내는 믿지 마세요. "
+            "공식 홈페이지에 문의하세요. 현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "지도 혼잡도 확인 불가 안내",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도 앱에서는 혼잡도를 확인할 수 없다고 안내합니다. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "별개 문장 지도 위치와 현장 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도에서 행사 위치를 찾아보세요. 혼잡도는 현장에서 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "같은 문장 지도 위치와 현장 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도에서 행사 위치를 찾고 혼잡도는 현장에서 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "줄바꿈 지도 혼잡도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도 앱에서\n실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "공백 없는 별개 문장 지도 위치와 현장 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도에서 행사 위치를 찾아보세요.혼잡도는 현장에서 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "쉼표로 분리한 지도 위치와 현장 혼잡도",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도에서 행사 위치를 찾아보세요, 혼잡도는 현장에서 확인하세요. "
+            "현재 정보만으로는 확인할 수 없습니다.",
+            False,
+        ),
+        (
+            "공식 대상 말고 지도 확인 미끼",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 공식 홈페이지 말고 지도 앱 혼잡도를 확인하세요.",
+            False,
+        ),
+        (
+            "공식 대상 무관 지도 확인 미끼",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 공식 홈페이지와 무관하게 지도 앱 혼잡도를 "
+            "확인하세요.",
+            False,
+        ),
+        (
+            "지도 없는 공식 확인 경로",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 혼잡도를 확인할 수 없습니다. 공식 홈페이지나 주최 측에 문의하세요.",
             True,
+        ),
+        (
+            "지도자 부분문자열 비provider",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "지도자라는 단어와 혼잡도는 관련이 없습니다. 현재 정보만으로는 확인할 수 없습니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "카카오톡 부분문자열 비provider",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "카카오톡이라는 이름과 혼잡도는 관련이 없습니다. 현재 정보만으로는 확인할 수 없습니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "버전 소수점 지도 혼잡도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도 앱 v1.2에서 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "복합 조사 지도 혼잡도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도에서는 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "붙여 쓴 지도앱 콜론 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도앱: 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "인용 카카오 조사 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. “카카오”의 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "마크다운 네이버 조사 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. **네이버**의 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "구글맵 복합 조사 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 구글맵에서의 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 복합 조사 확장 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도에선 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도 괄호 앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도(앱)에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "GoogleMaps 붙여쓰기 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. GoogleMaps에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "Markdown 링크 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. [지도앱](https://example.com)에서 "
+            "실시간 혼잡도를 "
+            "확인하세요. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "인라인 코드 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. `지도앱`에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "축약 조사 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도앱으론 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "제로폭 지도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지\u200b도 앱에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "a.m. 점 보호 지도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도 앱은 9 a.m. 이후 혼잡도를 보여줍니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "일본어 인용 카카오맵 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 「카카오맵」에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "지도라고 해도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도라고 해도 혼잡도를 보여줍니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "구두점 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도앱→실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "HTML 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. <code>지도앱</code>에서 실시간 혼잡도를 "
+            "확인하세요. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "emoji 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도앱🗺️에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "추가 축약 조사 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도앱에겐 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "copula 지도 앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도라는 앱에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "접두 합성 지도앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 모바일지도앱에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "ver 약어 지도 앱 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도 앱 ver. 2에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "Google Maps Inc 약어 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. Google Maps Inc. 앱에서 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "google-able 부분문자열 보수 격리",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "google-able이라는 표현과 혼잡도는 무관합니다. 현재 정보만으로는 확인할 수 없습니다. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "공백 없는 점 지도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. 지도.한국에서 실시간 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "로드맵 부분문자열 비provider",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "행사 혼잡도 개선 로드맵은 아직 확정되지 않았습니다. 현재 정보만으로는 확인할 수 "
+            "없습니다. 공식 홈페이지에 문의하세요.",
+            False,
+        ),
+        (
+            "도메인 점 지도 혼잡도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 정보만으로는 확인할 수 없습니다. maps.google.com에서 혼잡도를 확인하세요. "
+            "공식 홈페이지에 문의하세요.",
+            False,
         ),
         (
             "확인 불가 경계 누락",
@@ -380,6 +1237,51 @@ def test_gemma_writing과_uncertainty_품질_회귀(
     reason = filter_logical_response(_request(prompt, contract), response, _config(tmp_path))
 
     assert (reason is None) is accepted, f"{case}: reason={reason!r}"
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "현재 정보만으로는 확인할 수 없습니다. `지도앱`에서 실시간 혼잡도를 확인하세요. "
+        "공식 홈페이지에 문의하세요.",
+        "현재 정보만으로는 확인할 수 없습니다. 지\u200b도 앱에서 실시간 혼잡도를 확인하세요. "
+        "공식 홈페이지에 문의하세요.",
+        "현재 정보만으로는 확인할 수 없습니다. 지도 앱은 9 a.m. 이후 혼잡도를 보여줍니다. "
+        "공식 홈페이지에 문의하세요.",
+    ],
+)
+def test_지도_혼잡도_격리는_고정된_사유를_반환한다(tmp_path: Path, response: str) -> None:
+    contract = ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3)
+
+    reason = filter_logical_response(
+        _request("실시간 혼잡도를 알려 주세요.", contract),
+        response,
+        _config(tmp_path),
+    )
+
+    assert reason == "quality:unsupported_realtime_claim"
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "`현재 정보만으로는 확인할 수 없습니다.` 정확한 내용은 공식 홈페이지에 문의하세요.",
+        "**현재 정보만으로는 확인할 수 없습니다.** 정확한 내용은 공식 홈페이지에 문의하세요.",
+        "- 현재 정보만으로는 확인할 수 없습니다. 정확한 내용은 공식 홈페이지에 문의하세요.",
+    ],
+)
+def test_uncertainty_markup은_어휘와_무관하게_고정_사유로_격리한다(
+    tmp_path: Path, response: str
+) -> None:
+    contract = ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3)
+
+    reason = filter_logical_response(
+        _request("현재 상태를 알려 주세요.", contract),
+        response,
+        _config(tmp_path),
+    )
+
+    assert reason == "quality:unsupported_realtime_claim"
 
 
 def test_chat_response_quality_metadata가_inventory까지_보존된다(tmp_path: Path) -> None:

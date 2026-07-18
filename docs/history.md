@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.18 지도 혼잡도 응답 보수 격리
+
+- 독립 재검토가 `지도 서비스의 혼잡도 정보를 참고하면 좋습니다`, `실시간 혼잡도 확인이 가능합니다`처럼 고정 종결형 열거를 피한 긍정 활용이 허용되는 우회를 확인했다.
+- 형태소 기반 긍정·부정 판정을 세 차례 적대 검토한 결과 활용형, 인용·의문 범위, 공식 target 선후행, target bait, 줄바꿈과 미등록 종결형에서 fail-open과 오거절이 반복됐다. 수용률보다 학습 라벨 안전성을 우선해 이 방식을 폐기했다.
+- uncertainty 학습 라벨은 plain text만 허용한다. HTML·Markdown·entity 표면(`<`, `>`, `&`, `[`, `]`)이나 Unicode bidi formatting이 하나라도 있으면 해석을 시도하지 않고 실패-폐쇄한다. 평문은 NFKC·Cf·한글 filler를 정규화하고 compact·한글 전용 projection과 `google`/`map` strict subsequence로 판정한다. 내비게이션, `붐비다`·`사람이 많다` 같은 자연 활용형과 선택 confusable도 보수적으로 격리한다. `지도자`, `로드맵`, markup을 포함한 안전 응답까지 거절할 수 있는 데이터 손실을 명시적으로 수용한다.
+- strict 격리, 자연 활용형, 줄바꿈·wrapper·emoji·조사·약어·target bait, Markdown·HTML·entity·bidi, filler·Cf, confusable과 고정 reason까지 172개 품질 회귀로 고정했다. provider·혼잡 어휘가 없는 markup도 같은 reason으로 격리됨을 독립 검증한다. Qwen 다국어 v2는 2,000건 처리를 끝냈지만 accepted 662/rejected 1,337/failed 1이므로 반복 실패 1건을 해소하기 전 표본 감사·export를 실패-폐쇄한다.
+- 최종 `make release-check`는 382 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다. 독립 code reviewer는 `APPROVE`, architect는 `CLEAR`로 판정했다. 최종 모델은 로컬 HF·GGUF와 llama.cpp까지만 검증하고 Hugging Face 업로드는 실행하지 않는다.
+
 ## 2026-07-18 · 1.22.17 지도 혼잡도 혼합 극성 판정
 
 - 독립 재검토가 `지도 서비스의 혼잡도 정보를 참고할 수도 있지만 의존하지 말고 공식 페이지에 문의하세요`에서 뒤 부정 범위가 앞 긍정 권고까지 삭제하는 우회를 확인했다.
