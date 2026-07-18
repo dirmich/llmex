@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.32 장기 세션 heldout 게이트 통과
+
+- 장기 실행 세션으로 최종 heldout 평가를 완료했다. assistant NLL `1.3757281474303453`, PPL `3.957957650615951`이다.
+- EOS·반복·safety 게이트가 모두 `통과`로 기록됐고 평가 fingerprint는 `fcea7925c5e857609b49e7d023675858017fc1af2f239346007c59f744f225df`다.
+- 샘플을 수동 점검한 결과 일부 일본어/한국어 혼합, 사실 왜곡, 영어 문장 붕괴가 남아 있어 수동 품질 게이트는 아직 미통과다. 다음 단계는 다국어 정합성·사실성 보강 학습과 수동 재검토다.
+- 내부 teacher redistribution gate는 blocked이며 Hugging Face 업로드는 하지 않는다.
+
 ## 2026-07-19 · 1.22.31 heldout EOS 경계 정규화
 
 - heldout 평가도 실제 chat runtime과 동일하게 누락 EOS를 응답 경계에 정규화한 뒤 EOS gate를 판정하도록 수정했다.
