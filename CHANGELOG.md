@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.3 - 2026-07-18
+
+- Qwen36mtp와 Gemma4 다국어 teacher 수집을 각각 1,080요청으로 완료하고 영어·일본어 대화와 한↔영·한↔일 응답을 export했다.
+- Qwen은 1,070건을 채택해 중복 제거 후 train 799·heldout 270행, Gemma는 1,080건을 채택해 중복 제거 후 train 733·heldout 236행을 만들었다.
+- 양쪽 export의 prompt·upstream source overlap 0, manifest·출력 SHA 재유도와 내부 전용 release 차단을 검증했다.
+
 ## 1.22.2 - 2026-07-18
 
 - Qwen·Gemma별 영어·일본어 대화와 한↔영·한↔일 1,080개 prompt inventory를 만드는 결정적 CLI를 추가했다.

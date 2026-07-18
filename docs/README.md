@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.2. Qwen/public+Gemma 한국어 curriculum을 검증했고, 두 teacher에 각각 train 900·heldout 180의 영어·일본어 대화·한↔영·한↔일 prompt inventory를 생성했다. teacher 간 exact prompt overlap은 0이며 다국어 품질 suite는 18 scenario·108응답이다. Qwen36mtp와 Gemma4에서 총 2,160개 label을 수집 중이며 완료 후 100M latest 기반 SFT에 함께 넣는다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.22.3. Qwen/public+Gemma 한국어 curriculum을 검증했고, Qwen36mtp와 Gemma4에서 총 2,160개 다국어 요청 수집을 완료했다. 중복 제거 export는 Qwen train 799·heldout 270행, Gemma train 733·heldout 236행이며 양쪽 모두 prompt·source overlap 0이다. 다국어 품질 suite는 18 scenario·108응답이다. 다음 단계는 세 manifest를 단일 입력으로 결속해 100M latest 기반 SFT를 수행하는 것이다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.

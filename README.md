@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.2는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. Qwen/public+Gemma 한국어 curriculum train 12,842·heldout 2,041행에 더해, Qwen36mtp와 Gemma4에 서로 겹치지 않는 영어·일본어 대화·한↔영·한↔일 prompt를 각각 1,080개 제공한다. 다국어 18 scenario·108응답 평가 suite로 언어 유지와 번역의 이름·숫자·의미 보존을 별도 검증한다. 내부 teacher 출력·가중치·corpus는 외부 공개하지 않는다.
+LLMEX 1.22.3은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. Qwen/public+Gemma 한국어 curriculum train 12,842·heldout 2,041행에 더해, Qwen36mtp 다국어 train 799·heldout 270행과 Gemma4 다국어 train 733·heldout 236행을 검증했다. 다국어 18 scenario·108응답 평가 suite로 영어·일본어 언어 유지와 한↔영·한↔일 번역의 이름·숫자·의미 보존을 별도 검증한다. 내부 teacher 출력·가중치·corpus는 외부 공개하지 않는다.
 
 ## 빠른 시작
 

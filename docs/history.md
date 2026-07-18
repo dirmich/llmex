@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.3 Qwen36mtp·Gemma4 다국어 증류 완료
+
+- Qwen36mtp와 Gemma4가 각각 1,080개 요청을 약 15분 30초에 처리했다. Qwen은 prompt copy 10건을 제외한 1,070건, Gemma는 1,080건 전량을 채택했으며 미완료 요청은 없다.
+- canonical 응답 중복을 Qwen 1건, Gemma 111건 제거했다. Qwen export는 train 799·heldout 270행이고 SHA는 `935c9c03…0fef8`, `d750f23f…0db4`, manifest SHA는 `12b4a893…c459`다. Gemma export는 train 733·heldout 236행이고 SHA는 `c1382df7…9669`, `117e55f1…33d2`, manifest SHA는 `c52fa324…c7e`다.
+- 두 export 모두 prompt overlap 0, upstream source overlap 0, 현재 spool에서의 byte 재유도 검증을 통과했다. 영어·일본어 대화 및 네 번역 방향의 실표본을 확인했으며, 고유명사 음역과 문맥상 `notebook` 번역 차이는 최종 다국어 suite와 실제 대화 평가에서 후보 checkpoint를 선별하는 품질 위험으로 남겼다.
+
 ## 2026-07-18 · 1.22.2 영어·일본어 대화/번역 증류 기반
 
 - `llmex data multilingual-prompts`로 Qwen36mtp와 Gemma4에 서로 겹치지 않는 영어 대화·일본어 대화·한↔영·한↔일 6개 task inventory를 결정적으로 생성한다. teacher별 train 900·heldout 180, 1,080행이며 전체 exact prompt overlap은 0이다.
