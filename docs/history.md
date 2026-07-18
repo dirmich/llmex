@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.51 멀티턴 teacher 재수집
+
+- readiness의 multi-turn 2개를 전체 문맥 보존 prompt로 teacher(qwen36mtp)에 재질의했다.
+- 2/2 accepted, sample audit 2건을 직접 확인하고 export했다. teacher 응답은 `커피`, `전주`로 문맥 회상을 정확히 보존했다.
+- distill artifact는 `runs/distill/qwen36mtp-multiturn-readiness/export/train.jsonl`에 생성됐으며, 다음 단계에서 public train에 반복 가중해 추가 SFT한다.
+
 ## 2026-07-19 · 1.22.50 멀티턴 teacher 문맥 보존
 
 - distill inventory가 다중 turn chat row의 마지막 user만 보내던 문제를 수정했다.
