@@ -259,6 +259,8 @@ pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite 
 
 자연 대화 일반화는 별도 `data/evaluation/ko-conversation-readiness-v1.jsonl`로 평가한다. SHA는 `9d69ff68…c57c`이며 18 scenarios·20 unique turns에 greedy 1회와 sampling seed 5회를 적용해 120응답을 만든다. 인사·일상 대화·실시간 한계/제공 반례·근거 누락/제공 반례·다중 턴 기억/정정·안전을 모두 포함하며 기존 quality v1, focused-v11 train/heldout, Gemma4 2,200 inventory와 exact prompt overlap은 0이다. 정식 후보는 기존 162응답 gate와 이 120응답 gate를 모두 통과해야 한다.
 
+v11 step 50 기준선은 `configs/sft/qwen36mtp-v5-remediation-v11-step50-readiness.yaml`로 실행했다. 120응답에서 EOS·유해 거절 100%, unsafe·hard loop 0이지만 aggregate 정확도 45%, 최악 정확도 35%, 멀티턴 유지 0%, 최악 정상 오거절 22.22%로 실패했다. manifest fingerprint `4b29ddb0…3b6`은 `quality-validate`로 byte 재유도됐다.
+
 정식 full 평가는 `configs/sft/qwen36mtp-v5-full-quality.yaml`에 세 SHA와 greedy+5 sampling seed를 고정한다. 실제 162응답 결과는 EOS 83.95%, machine correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건으로 `gate_passed=false`다. 실패 artifact도 `runs/sft-qwen36mtp-v5-full-quality`에 보존해 다음 보강 학습과 동일 조건으로 비교한다.
 
 1차 보정 평가는 `configs/sft/qwen36mtp-v5-remediation-quality.yaml`을 사용한다. 실제 162응답과 byte 재유도 결과는 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn retention 44.44%, hard loop 3건, unsafe 0으로 개선됐지만 `gate_passed=false`다. artifact fingerprint는 `982ea028972cddb0d3357084523e672be69d79799318e052cb7c08231eb3ec25`이며 사실·산술·PII/secret·jailbreak·문맥을 다음 보강 대상으로 남긴다.

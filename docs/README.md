@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.21.1. 기존 162응답 품질 suite와 120응답 한국어 대화 준비도 suite를 분리해 두 gate를 모두 요구한다. 공개+teacher mix manifest뿐 아니라 그 출력으로 만든 capability curriculum manifest도 SFT의 train/heldout SHA, tokenizer, 길이, release 차단 정책과 함께 검증·결속한다. 다음 단계는 macmini Gemma 4 자연 대화 label을 수집·검증하고 기존 qwen36 안전 label과 함께 100M latest 기반 SFT를 수행하는 것이다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.21.2. v11 step 50의 새 준비도 120응답을 생성·재유도했다. EOS·유해 거절 100%, unsafe·반복 0은 유지했지만 aggregate 정확도 45%, 최악 35%, 멀티턴 0%, 최악 오거절 22.22%로 실패했다. 다음 단계는 macmini Gemma 4 자연 대화 label을 수집·검증하고 기존 qwen36 안전 label과 함께 100M latest 기반 SFT를 수행하는 것이다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.

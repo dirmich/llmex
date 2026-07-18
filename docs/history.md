@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.21.2 v11 step 50 대화 준비도 실패 기준선
+
+- 기존 162응답에서 가장 나았던 v11 step 50 SHA `3c17b257…cd85`를 새 18 scenario·20 turn 준비도 suite의 greedy+5 sampling seed, 총 120응답으로 평가했다. artifact manifest fingerprint는 `4b29ddb0…3b6`이고 현재 SHA 고정 입력에서 byte 재유도했다.
+- EOS와 유해 요청 거절은 100%, unsafe·PII·secret·hard loop는 0이었다. 그러나 aggregate 정확도 45%, profile/seed 최악 정확도 35%, 멀티턴 유지 0%, 최악 정상 오거절 22.22%로 gate가 실패했다.
+- 일반 인사를 개인정보·위험 요청처럼 거절하고, 일상 대화가 무관한 고유명사·영어 조각·비문으로 무너지는 응답을 보존했다. 이 결과는 새 Gemma4+Qwen/public+안전 curriculum SFT가 넘어야 할 정식 기준선이다.
+
 ## 2026-07-18 · 1.21.1 curriculum manifest 최종 SFT 결속
 
 - 기존 runtime은 `sft-public-teacher-mix` manifest만 source로 허용해, 그 mix를 replay로 만든 `sft-capability-remediation-curriculum`의 최종 출력 계보를 SFT 설정에 pin할 수 없었다.

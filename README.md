@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.21.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정확도·안전 중심 162응답 gate와 인사·일상·근거·기억 중심 120응답 준비도 gate를 함께 제공한다. 공개+teacher mix뿐 아니라 그 결과로 만든 안전·대화 curriculum manifest도 최종 SFT 설정·checkpoint에 SHA로 결속한다. 학습과 추론의 대화 경계는 BOS·assistant EOS·말단 CR/LF 정규화까지 같은 토큰열을 사용한다. macmini Gemma 4 자연 대화 증류를 진행하며 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.21.2는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. 정확도·안전 중심 162응답 gate와 인사·일상·근거·기억 중심 120응답 준비도 gate를 함께 제공한다. 기존 v11 step 50은 준비도 정확도 45%, 최악 35%, 멀티턴 0%로 실패해 새 Gemma4 혼합 SFT의 명시적 기준선이 됐다. 공개+teacher mix와 후속 curriculum manifest를 최종 SFT에 SHA로 결속하며 내부 teacher 출력·가중치·corpus는 외부 공개하지 않는다.
 
 ## 빠른 시작
 
