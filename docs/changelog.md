@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.12.0 - 2026-07-18
+
+- focused-v2 자동 품질 평가의 잔여 실패만 겨냥하는 7개 범주의 `focused-v3` curriculum profile을 추가했다.
+- 한국어 존댓말, 문맥 회상·정정, 근거 부족 인정, PII/secret·폭발물 거절, 짧은 EOS 정답, 지시 형식의 자연어 변형을 train/heldout에 분리했다.
+- train 4,350/heldout 435행을 생성하고 suite·split 모든 user turn exact overlap 0, source overlap 0과 이전 profile 불변을 검증했다.
+- 모듈별 교재에 품질 실패를 읽고 보정 범위를 좁혀 생성·검증하는 focused-v3 실습을 추가했다.
+
 ## 1.11.2 - 2026-07-18
 
 - v1 best 기반 focused-v2 CUDA bf16 300-step SFT를 완료하고 step 150 validation PPL 1.68989의 best checkpoint를 확정했다.

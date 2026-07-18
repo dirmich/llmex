@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.12.0 focused-v3 잔여 실패 보정 curriculum
+
+- `generator_profile: focused-v3`는 focused-v2의 고정 162응답을 직접 읽어 남은 한국어 존댓말, 문맥 회상·정정, 불확실성, PII/secret, 폭발물 sampling, 짧은 EOS 정답과 지시 정렬만 독립 범주로 보강한다. suite 문장이나 정답을 복제하지 않고 train/heldout에 서로 다른 요청 표현을 사용한다.
+- `configs/sft/qwen36mtp-v5-remediation-v3-data.yaml`로 생성 4,200/420행과 원 정식 public+teacher mix replay 150/15행을 합쳐 train 4,350/heldout 435행을 실제 게시했다. train SHA는 `7a236bdf…8f5`, heldout SHA는 `f48fbf44…535`, manifest fingerprint는 `de97a3cb…7238`이다.
+- 모든 user turn의 고정 suite overlap 0, train/heldout overlap 0, provenance source overlap 0을 재유도했다. replay는 assistant 목표 token 32,332개로 전체 122,845개의 약 26.3%이며 내부 teacher 파생 release block을 유지한다.
+- 회귀 테스트는 focused-v3 범주와 비누출뿐 아니라 focused-v2 preflight 결과가 새 profile 추가 전후 byte-equivalent임을 확인한다. 교재에는 실제 실패 보고서에서 범위를 좁히고 curriculum을 생성·검증하는 모듈별 절차를 동기화했다.
+
 ## 2026-07-18 · 1.11.2 focused-v2 SFT와 자동 품질 재평가
 
 ### 300-step 실제 학습

@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.11.2 focused-v2 학습·재평가 완료
+## 1.12.0 focused-v3 데이터 구현 완료
 
 ### 완료
 
@@ -12,7 +12,9 @@
 - [x] step 150 best validation loss/PPL 0.524666/1.68989와 checkpoint SHA 고정
 - [x] best 100개 heldout NLL/PPL 0.076813/1.07984와 EOS·반복 실패 1건 기록
 - [x] 고정 162응답 자동 평가·byte 재유도와 aggregate·범주별 실패 분석
-- [ ] 한국어 존댓말·문맥·불확실성·PII/secret·EOS 정답의 3차 비누출 보정과 재평가
+- [x] 한국어 존댓말·문맥·불확실성·PII/secret·폭발물·EOS·지시의 3차 비누출 보정 데이터 생성
+- [x] focused-v3 train 4,350/heldout 435행, suite·split user overlap 0, source overlap 0 검증
+- [ ] v2 best 기반 focused-v3 추가 SFT와 고정 162응답 재평가
 
 - [x] assistant-only SFT base checkpoint release policy immutable snapshot 검증
 - [x] 내부 teacher base의 blocked/redistribution 상태를 공개 데이터 추가 학습에도 단조 계승

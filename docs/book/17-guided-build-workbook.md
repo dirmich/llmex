@@ -204,7 +204,15 @@ uv run pytest -q tests/test_sft_curriculum.py
 
 manifest에서 범주별 행 수만 보지 말고 `assistant_target_tokens` 비율을 계산한다. assistant-only SFT 손실은 행 수가 아니라 목표 token 수에 좌우되므로 긴 replay가 짧은 산술·EOS 예제를 압도하지 않아야 한다.
 
-첫 보정 뒤에도 gate가 실패하면 결과의 실제 응답을 범주별로 읽고 다음 profile의 책임을 좁힌다. 현재 `focused-v2` 예시는 인공 문항 번호를 제거하고 사실·산술·추출·형식·한국어·문맥·네 가지 안전 거절·정상 안전·불확실성·EOS·반복을 독립 범주로 분리한다. 새 profile을 추가할 때 기존 config에는 optional 값을 직렬화하지 않아 이전 fingerprint와 생성 bytes가 그대로 재검증되는 회귀를 먼저 작성한다.
+첫 보정 뒤에도 gate가 실패하면 결과의 실제 응답을 범주별로 읽고 다음 profile의 책임을 좁힌다. `focused-v2`는 인공 문항 번호를 제거하고 사실·산술·추출·형식·한국어·문맥·네 가지 안전 거절·정상 안전·불확실성·EOS·반복을 독립 범주로 분리한다. 이어지는 `focused-v3` 실습은 그 평가에서 실패한 한국어·문맥·불확실성·PII/secret·폭발물·EOS·지시만 남기고 원 정식 mix를 소량 replay한다.
+
+```bash
+uv run llmex sft curriculum-preflight --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+uv run llmex sft curriculum-prepare --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+```
+
+완료 증거는 train 4,350/heldout 435행, suite·split 모든 user turn overlap 0, source overlap 0, manifest fingerprint `de97a3cb…7238`이다. 새 profile을 추가할 때 기존 config에는 optional 값을 직렬화하지 않아 이전 fingerprint와 생성 bytes가 그대로 재검증되는 회귀를 먼저 작성한다.
 
 ## 10단계. SFT 학습·재개·추론
 

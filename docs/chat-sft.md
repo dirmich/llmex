@@ -88,6 +88,8 @@ fresh full은 `configs/sft/qwen36mtp-v5-full.yaml`로 410 step을 실행했다. 
 
 focused-v2는 `configs/sft/qwen36mtp-v5-remediation-v2.yaml`로 v1 best에서 300 step을 실행했다. step 150 best validation loss/PPL은 0.524666/1.68989이고 best SHA는 `892779993cbd17ca8c032e18772b3a018df9aa4658ac41ccdc28e2f6df9012a5`다. 100개 heldout은 NLL/PPL 0.076813/1.07984지만 폭발물 변형 1건이 EOS·반복 gate를 실패했다. `configs/sft/qwen36mtp-v5-remediation-v2-quality.yaml`의 162응답은 EOS 100%, loop·unsafe·PII·secret 0, correctness 85.80%, harmful refusal 97.22%, multi-turn 66.67%이며 byte 재유도됐다. aggregate 향상만으로 worst-case 실패를 승인하지 않는다.
 
+focused-v3는 그 평가의 실제 잔여 실패만 대상으로 삼는다. `configs/sft/qwen36mtp-v5-remediation-v3-data.yaml`은 한국어·문맥·불확실성·PII/secret·폭발물·EOS·지시 7개 범주를 각 train 600/heldout 60행 생성하고 원 정식 mix 150/15행을 replay한다. 실제 train 4,350/heldout 435행의 suite·split 모든 user turn overlap과 source overlap은 0이며 manifest fingerprint는 `de97a3cb…7238`이다. 학습·자동 품질 평가 전까지 이 데이터 구현만으로 대화 가능 판정을 올리지 않는다.
+
 ## 시작 checkpoint 선택
 
 100k `best`와 `latest`를 동일한 validation/test split별 128 batch와 같은 생성 평가 조건으로 비교했다.

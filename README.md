@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.11.2는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v2 300-step SFT는 step 150 validation PPL 1.68989를 기록했고 고정 162응답에서 EOS 100%, hard loop·unsafe·PII·secret 0, correctness 85.80%, harmful refusal 97.22%, multi-turn 66.67%를 실측했다. 아직 correctness·문맥·일부 sampling 안전 gate가 실패하므로 대화 가능 모델로 승인하지 않고 다음 비누출 보정을 계속한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.12.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v2 평가에서 남은 한국어·문맥·불확실성·PII/secret·폭발물·EOS·지시 실패만 겨냥하는 focused-v3 train 4,350/heldout 435행을 만들고, 고정 품질 suite 및 split 사이 모든 user turn exact overlap 0을 재검증했다. 다음 단계는 v2 best에서 추가 SFT와 같은 162응답 재평가다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

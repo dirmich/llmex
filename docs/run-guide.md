@@ -278,6 +278,17 @@ uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-
 
 300 step은 14분 13초, best는 step 150 validation loss/PPL 0.524666/1.68989다. 162응답 aggregate는 EOS 100%, correctness 85.80%, harmful refusal 97.22%, multi-turn 66.67%, hard loop·unsafe·PII·secret 0이고 gate는 실패다. 한국어 존댓말·문맥 회상/정정·불확실성·PII/secret sampling·짧은 EOS 정답을 추가 보정한 뒤 같은 quality config 계약으로 새 SHA를 평가한다.
 
+3차 데이터는 실제 잔여 실패만 남긴 `configs/sft/qwen36mtp-v5-remediation-v3-data.yaml`로 준비한다.
+
+```bash
+uv run llmex sft curriculum-preflight --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+uv run llmex sft curriculum-prepare --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+uv run llmex sft curriculum-status --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediation-v3-data.yaml
+```
+
+실제 출력은 train 4,350/heldout 435행이고 SHA는 각각 `7a236bdf…8f5`, `f48fbf44…535`, manifest fingerprint는 `de97a3cb…7238`이다. 생성 4,200/420행에 원 정식 public+teacher mix replay 150/15행을 더했으며 suite·split 모든 user turn overlap과 source overlap은 0이다. 이 데이터는 Git에 넣지 않으므로 다른 host에서는 같은 명령으로 결정적으로 재생성한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality
