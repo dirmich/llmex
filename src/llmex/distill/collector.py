@@ -37,7 +37,10 @@ def _now() -> str:
 
 
 def _config_fingerprint(config: DistillationConfig) -> str:
-    return fingerprint(config.model_dump(mode="json"))
+    value = config.model_dump(mode="json")
+    if not config.allowed_endpoint_hosts:
+        value.pop("allowed_endpoint_hosts")
+    return fingerprint(value)
 
 
 def _run_lock(run_dir: Path):

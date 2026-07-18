@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.21.3 - 2026-07-18
+
+- 빈 내부망 teacher allowlist가 필드 도입 전 loopback 증류 설정 fingerprint를 보존하도록 호환성을 복구했다. 비어 있지 않은 내부망 host 목록은 계속 fingerprint에 결속한다.
+- 현재 CLI에서 정식 Qwen v5 10k의 completed 10,000, accepted 9,712, pending 0과 export train 8,213·heldout 1,488, prompt·source overlap 0을 재검증했다.
+- 호환 회귀 테스트와 실행 결과·SHA를 한국어 문서에 추가했다.
+
 ## 1.9.0 - 2026-07-18
 
 - [《LLMEX 수학 기반 이론과 Python 실습》](docs/book/README.md)을 추가했다. README와 00~15장까지 17개 Markdown이 환경·재현성·데이터·tokenizer·Transformer·사전학습·평가·증류·SFT·자동/수동 품질·release capstone을 실제 구현 계약과 연결한다.

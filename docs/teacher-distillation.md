@@ -1,6 +1,6 @@
 # teacher 증류 데이터 실행 가이드
 
-LLMEX 1.10.0의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. full 자동 품질 평가의 1차 보정은 기존 suite 문장을 복제하지 않는 결정적 curriculum으로 분리했으며, teacher 추가 수집이 필요할 때도 같은 비누출 원칙을 적용한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
+LLMEX 1.21.3의 teacher 증류 경로는 로컬 OpenAI 호환 서버에서 한국어 응답을 수집해 assistant-only SFT 입력을 만든다. 정식 `runs/distill/qwen36mtp-10k-v5`는 현재 CLI에서 10,000건을 모두 처리해 accepted 9,712/rejected 288로 완료했고 export·재유도 validate를 통과했다. full 자동 품질 평가의 1차 보정은 기존 suite 문장을 복제하지 않는 결정적 curriculum으로 분리했으며, teacher 추가 수집이 필요할 때도 같은 비누출 원칙을 적용한다. teacher 출력과 이를 포함한 가중치는 계속 내부 전용이며, 해당 checkpoint를 base로 추가 학습해도 release block은 해제되지 않는다.
 
 teacher 출력은 `LicenseRef-LLMEX-Internal-Distillation` 내부 전용이다. export manifest는 `redistribution_allowed=false`, `release_gate=blocked`를 강제한다. 수집 성공이나 휴리스틱 필터 통과는 최종 안전성·법무·공개 승인이 아니다.
 
@@ -84,7 +84,13 @@ uv run llmex distill status --config configs/distill/qwen36mtp-10k.yaml
 - inventory fingerprint: `46248ba32985f7102a4d401dfa019c43884011c7fb080014d6888e8e20593e7b`
 - config fingerprint: `4a3eea14ca4a5bf43eea8c0302043a13da8ea848f4c757b6375637363417bb9d`
 - 최종 status: completed 10,000, accepted 9,712, rejected 288, pending 0
+- export train/heldout: 8,213 / 1,488
+- export train SHA-256: `35f6b6d1b5fa24e46f4cc3e211f6dd49d138038f0965805d253551ce3c1090de`
+- export heldout SHA-256: `1767b07d5ff5c2aaf68a346527fdbf89c2cbfd97f820a9afd88d7a66fc2e34cf`
+- export manifest SHA-256: `6d724261ab9137f04d8efd141bd34d7e38c1f7158b326d3825f187d0f11aae5d`
 - pilot 실효 RPS 단순 환산 예상 시간: 약 11.3시간. 실제 시간은 teacher 부하, 응답 길이와 retry에 따라 달라질 수 있다.
+
+1.20.2에서 내부망 teacher allowlist를 추가할 때 빈 `allowed_endpoint_hosts`까지 fingerprint 입력에 넣으면, 그 필드가 없던 과거 loopback run의 fingerprint가 달라진다. 1.21.3은 빈 allowlist를 legacy 표현으로 정규화해 기존 `localhost:8081` Qwen run을 현재 CLI로 그대로 검증하고, `macmini`처럼 비어 있지 않은 allowlist는 계속 fingerprint에 결속한다.
 
 upstream heldout 630건은 distill heldout에 그대로 보존한다. 나머지는 seed 기반 결정적 분할을 사용하며 train과 heldout의 prompt 및 upstream source가 겹치면 중단한다.
 

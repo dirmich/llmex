@@ -219,6 +219,27 @@ def test_명시적으로_허용한_내부망_teacher_host만_사용한다() -> N
         DistillationConfig.model_validate(value)
 
 
+def test_빈_내부망_allowlist는_기존_loopback_fingerprint를_보존한다(
+    tmp_path: Path,
+) -> None:
+    config = _config(tmp_path, "http://localhost:8081/v1")
+    legacy_value = config.model_dump(mode="json")
+    legacy_value.pop("allowed_endpoint_hosts")
+    assert prepare(config)["config_fingerprint"] == fingerprint(legacy_value)
+
+    lan_config = config.model_copy(
+        update={
+            "name": "distill-lan-fingerprint-test",
+            "endpoint": "http://macmini:11434/v1",
+            "allowed_endpoint_hosts": ["macmini"],
+            "run_dir": tmp_path / "lan-run",
+        }
+    )
+    assert prepare(lan_config)["config_fingerprint"] == fingerprint(
+        lan_config.model_dump(mode="json")
+    )
+
+
 def test_prepare는_정확한_고유_inventory와_split을_만든다(tmp_path: Path) -> None:
     config = _config(tmp_path, "http://localhost:8081/v1")
     result = prepare(config)

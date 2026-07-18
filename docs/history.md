@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.21.3 정식 Qwen 10k 증류 호환 복구
+
+- 내부망 teacher allowlist 도입 전 생성한 loopback run은 빈 `allowed_endpoint_hosts` 필드 때문에 현재 설정 fingerprint와 달라졌다. 빈 allowlist만 legacy 표현으로 정규화하고, 실제 내부망 host 목록은 계속 fingerprint에 포함하도록 수정했다.
+- 현재 CLI에서 정식 Qwen v5 10k를 다시 검증해 completed 10,000, accepted 9,712, rejected 288, pending 0을 확인했다. export는 train 8,213·heldout 1,488행이며 prompt·upstream source overlap은 0이다.
+- export train SHA는 `35f6b6d1…90de`, heldout SHA는 `1767b07d…4cf`, manifest SHA는 `6d724261…ae5d`다. 기존 loopback 호환과 내부망 allowlist 결속을 회귀 테스트로 고정했다.
+
 ## 2026-07-18 · 1.21.2 v11 step 50 대화 준비도 실패 기준선
 
 - 기존 162응답에서 가장 나았던 v11 step 50 SHA `3c17b257…cd85`를 새 18 scenario·20 turn 준비도 suite의 greedy+5 sampling seed, 총 120응답으로 평가했다. artifact manifest fingerprint는 `4b29ddb0…3b6`이고 현재 SHA 고정 입력에서 byte 재유도했다.
