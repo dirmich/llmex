@@ -1,12 +1,12 @@
 schema_version: 2
-name: gemma4-conversation-natural-3000-v2
+name: gemma4-conversation-natural-3000-v3
 seed: 239
 endpoint: http://macmini:11434/v1
 allowed_endpoint_hosts:
   - macmini
 model: gemma4-26b-a4b-uncensored-hauhaucs-balanced
 api_key_env: null
-run_dir: runs/distill/gemma4-conversation-natural-3000-v2
+run_dir: runs/distill/gemma4-conversation-natural-3000-v3
 source_chat_files:
   - data/chat/korean-conversation-teacher-prompts-natural-v2/prompts.jsonl
 corpus: data/processed/corpus-v1.jsonl.zst

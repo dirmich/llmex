@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.15 지도 혼잡도 우회 응답 차단
+
+- metadata-v1 v2 실수집을 시작해 Qwen 149/2,000, Gemma 한국어 91/3,000 시점의 accepted 응답을 조기 감사했다. Qwen 20건은 목표 언어·번역 의미가 정상 범위였지만 Gemma uncertainty가 실시간 접근 불가를 밝힌 뒤 지도 서비스의 혼잡도 정보를 참고하라고 우회했다.
+- Gemma collector를 즉시 중단하고 `지도 서비스의 혼잡도 정보를 참고`, `지도 서비스에서 제공하는 혼잡도 정보` 실제 응답을 회귀로 추가했다. 현재 filter와 stale spool 재검증은 이 표현을 `quality:unsupported_realtime_claim`으로 거절한다.
+- Qwen 수집은 별도 localhost teacher에서 계속 진행한다. 결함이 섞인 Gemma v2 spool은 보존·격리했고, 강화된 gate fingerprint `e17040f9…a50d`와 동일한 3,000행 inventory fingerprint `36310381…6259`를 가진 v3 run을 새로 prepare·preflight했다.
+- `make release-check`는 249 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다.
+
 ## 2026-07-18 · 1.22.14 source 결속 teacher 응답 품질 gate
 
 - natural 첫 수집은 Qwen 261/2,000(13.05%, 1.152 req/s)과 Gemma 한국어 251/3,000(8.37%, 0.613 req/s)에서 독립 표본 감사를 실패해 중단했다. 두 run 모두 기존 필터에서는 전량 accepted였지만 export·validate·학습 혼합은 실행하지 않았다.

@@ -320,6 +320,20 @@ def test_qwen_번역_합성_품질_회귀(
             False,
         ),
         (
+            "지도 서비스 혼잡도 참고 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "현재 실시간 혼잡도를 정확히 알 수는 없지만, 모임 장소의 공식 페이지나 "
+            "주최 측에 직접 문의하세요. 지도 서비스의 혼잡도 정보를 참고할 수도 있습니다.",
+            False,
+        ),
+        (
+            "지도 서비스 제공 혼잡도 우회",
+            ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
+            "실시간 혼잡도를 직접 확인할 수는 없지만, 모임 주최 측에 문의하거나 해당 장소의 "
+            "지도 서비스에서 제공하는 혼잡도 정보를 참고해 보세요.",
+            False,
+        ),
+        (
             "확인 불가 경계 누락",
             ResponseQualityContract(mode="uncertainty", target_language="ko", max_sentences=3),
             "아마 오늘 오후 9시까지 영업합니다.",

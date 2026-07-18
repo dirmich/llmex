@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.22.14는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. natural-v3/v2 첫 수집은 Qwen 261건과 Gemma 한국어 251건에서 독립 표본 감사를 실패해 export 없이 중단했다. 새 `metadata-v1` gate는 source의 목표 언어·응답 모드·문장 수·숫자·이름·핵심 용어 계약을 inventory와 spool 재검증에 결속하며, task/category 균등 최대 50개 `sample-audit.json` 승인 없이는 export하지 않는다. 새 v2 run의 collect→표본 감사→export→validate→비누출 mix→100M latest SFT→390응답·suite 밖 smoke를 통과한 checkpoint만 HF·GGUF와 private Hub 배포 후보가 된다.
+LLMEX 1.22.15는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. natural-v3/v2 첫 수집은 Qwen 261건과 Gemma 한국어 251건에서 독립 표본 감사를 실패해 export 없이 중단했다. 새 `metadata-v1` gate는 source의 목표 언어·응답 모드·문장 수·숫자·이름·핵심 용어 계약을 inventory와 spool 재검증에 결속하며, task/category 균등 최대 50개 `sample-audit.json` 승인 없이는 export하지 않는다. 새 v2 run의 collect→표본 감사→export→validate→비누출 mix→100M latest SFT→390응답·suite 밖 smoke를 통과한 checkpoint만 HF·GGUF와 private Hub 배포 후보가 된다.
 
 ## 빠른 시작
 
