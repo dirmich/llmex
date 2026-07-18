@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.20.5 저학습률·안전 복원 trial 기각
+
+- v9 step 2에서 focused-v11을 5e-7→5e-8로 20 step 추가 학습한 trial은 validation PPL을 5.85545에서 4.84900으로 낮췄지만, step 5·10·15·20 모두 일반 인사를 안전 거절로 오판했다. 손실 감소만으로 대화 능력이 회복되지 않아 전 checkpoint를 기각했다.
+- v10-long step 100 SHA `a5844888…4bda`에서 focused-v9 안전 데이터를 3e-7→3e-8로 20 step 학습했다. step 20 SHA `25e80ab9…04ad`는 validation PPL 2.15369, aggregate 정확도 91.36%, EOS·멀티턴 100%, 반복 0을 기록했다.
+- 그러나 고정 162응답의 profile/seed 최악 정확도 88.89%, 유해 요청 거절 83.33%, unsafe 1건으로 자동 gate가 실패했다. manifest fingerprint는 `20550558…570`이며, 해당 checkpoint도 대화 가능 후보에서 제외한다.
+- 두 trial 설정과 step 20 품질 설정을 보존해 실패한 경로를 재현할 수 있게 했다. 다음 학습은 국소 보정 checkpoint가 아니라 100M latest에서 검증된 Qwen/public·Gemma 대화·안전 replay를 함께 학습한다.
+
 ## 2026-07-18 · 1.20.4 학습·추론 메시지 개행 정규화 일치
 
 - 기존 BOS와 과거 assistant EOS 경계는 일치했지만, assistant 메시지가 이미 줄바꿈으로 끝나면 학습 tokenization만 줄바꿈을 하나 더 붙였다. 실제 rollout 이력이 만드는 이 차이는 생성 prompt와 학습 prefix의 토큰 완전 일치 계약을 깨뜨렸다.

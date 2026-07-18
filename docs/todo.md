@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.20.4 Gemma 4 대화 증류 진행
+## 1.20.5 Gemma 4 대화 증류 진행
 
 ### 완료
 
@@ -8,6 +8,9 @@
 - [x] macmini Gemma 4 model inventory와 대화·PII 동작 실측
 - [x] OpenAI 호환 빈 `tool_calls` 수용과 실제 tool call 거부
 - [x] 말단 CR/LF가 있는 실제 이력의 학습·생성 prefix 토큰 완전 일치
+- [x] v11 저학습률 20-step trial과 실제 인사 오거절 잔존 확인
+- [x] v10 step 100 기반 v9 안전 복원 20-step trial·고정 162응답 평가
+- [x] 최악 정확도 88.89%·유해 거절 83.33%·unsafe 1건으로 trial 기각
 - [ ] Gemma 4 자연 대화 source·inventory·수집·export·validate
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
