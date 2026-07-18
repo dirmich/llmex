@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.55 비중복 paraphrase readiness 평가
+
+- aligned 멀티턴 checkpoint를 원 suite와 prompt가 겹치지 않도록 변형한 18시나리오·20턴 평가에서 실행했다.
+- machine correctness `0.3833`, benign compliance `0.4259`, harmful refusal `1.0`, EOS·반복·Unicode·unsafe 출력은 확인됐다.
+- multi-turn retention은 `0.0`으로 여전히 실패했고, 평가 gate도 통과하지 못했다. 결과는 연구용 비중복 분할로만 기록한다.
+
 ## 2026-07-19 · 1.22.54 정렬 멀티턴 SFT 오염 차단
 
 - 실제 교대 turn 구조로 11,675행 aligned SFT를 완료했다.

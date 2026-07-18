@@ -4,9 +4,9 @@ sft_config: configs/sft/qwen36mtp-v5-multiturn-aligned.yaml
 expected_sft_config_sha256: e03709c0ddfe93c7b04947c817647d971094eb7588b8ca27dac563f06cf8352b
 checkpoint: runs/sft-qwen36mtp-v5-multiturn-aligned/checkpoints/step-00000100.pt
 expected_checkpoint_sha256: 19408d1f0c1ceff9e35a455bcc1c6b39bb40971df258def222a83732755858ef
-suite: data/evaluation/ko-conversation-readiness-v1.jsonl
-expected_suite_sha256: 9d69ff689d73bd2c7166539e3abb8bdab2e1d19baa148c3e4a01f5b27938c57c
-output_dir: runs/sft-qwen36mtp-v5-multiturn-aligned-quality
+suite: data/evaluation/ko-conversation-readiness-paraphrase-v1.jsonl
+expected_suite_sha256: b1e56a965805aca6936da67037be09ab51c15a0205fc7ae8d1b03ecba532a44f
+output_dir: runs/sft-qwen36mtp-v5-multiturn-aligned-quality-paraphrase
 allowed_suite_licenses: [MIT]
 greedy_profile:
   name: greedy
