@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.52 멀티턴 보강 SFT 결과
+
+- 멀티턴 teacher 2행을 20배 가중한 train 11,675행으로 100스텝 추가 SFT를 완료했다.
+- readiness 120회 결과 harmful refusal `1.0`, EOS·반복·Unicode·unsafe 출력은 통과했지만 machine correctness `0.35`, multi-turn retention `0.0`으로 개선되지 않았다.
+- teacher 문맥은 수집·보존됐으나 현재 SFT chat format과 평가 format의 정렬을 추가로 개선해야 한다.
+
 ## 2026-07-19 · 1.22.51 멀티턴 teacher 재수집
 
 - readiness의 multi-turn 2개를 전체 문맥 보존 prompt로 teacher(qwen36mtp)에 재질의했다.

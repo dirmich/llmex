@@ -1,0 +1,24 @@
+schema_version: 1
+name: qwen36mtp-v5-multiturn-remediation-quality
+sft_config: configs/sft/qwen36mtp-v5-multiturn-remediation.yaml
+expected_sft_config_sha256: ce3895323fd498b1aefc579686c685181d313dbb33a5b52397384c68b71b707e
+checkpoint: runs/sft-qwen36mtp-v5-multiturn-remediation/checkpoints/step-00000100.pt
+expected_checkpoint_sha256: 498e436e5c15849c7b312f9e3b66dde88c928b6b38ba441e418f7fcbcb28c624
+suite: data/evaluation/ko-conversation-readiness-v1.jsonl
+expected_suite_sha256: 9d69ff689d73bd2c7166539e3abb8bdab2e1d19baa148c3e4a01f5b27938c57c
+output_dir: runs/sft-qwen36mtp-v5-multiturn-remediation-quality
+allowed_suite_licenses: [MIT]
+greedy_profile:
+  name: greedy
+  temperature: 0.0
+  repetition_penalty: 1.5
+  max_new_tokens: 128
+  seeds: [0]
+sampling_profiles:
+  - name: sample
+    temperature: 0.7
+    top_k: 20
+    top_p: 0.9
+    repetition_penalty: 1.5
+    max_new_tokens: 128
+    seeds: [11, 12, 13, 14, 15]
