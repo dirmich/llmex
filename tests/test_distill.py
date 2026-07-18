@@ -290,7 +290,7 @@ def test_prepare는_정확한_고유_inventory와_split을_만든다(tmp_path: P
     assert {row["split"] for row in inventory} == {"train", "heldout"}
     upstream = [row for row in inventory if row["source"]["source_split"] == "heldout"]
     assert upstream and all(row["split"] == "heldout" for row in upstream)
-    assert next(row for row in inventory if row["prompt"] == "고유 질문 1")["split"] == "heldout"
+    assert next(row for row in inventory if "고유 질문 1" in row["prompt"])["split"] == "heldout"
     assert prepare(config)["reused"] is True
     with pytest.raises(ConflictError, match="fingerprint"):
         status(config.model_copy(update={"model": "changed-teacher"}))

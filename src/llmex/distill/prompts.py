@@ -77,6 +77,17 @@ def _chat_candidates(config: DistillationConfig) -> Iterator[LogicalRequest]:
                     users = [message.content for message in row.messages if message.role == "user"]
                     if not users:
                         raise IntegrityError(f"user turn이 없는 instruction 행: {path}:{number}")
+                    # LogicalRequest의 기존 prompt 계약을 유지하면서 이전 turn을 teacher에 전달한다.
+                    # 마지막 user만 보내면 multi-turn 기억·정정 학습 신호가 소실되므로,
+                    # system/user/assistant 순서를 명시적인 문맥 문자열로 고정한다.
+                    if len(row.messages) > 1:
+                        context = "\n".join(
+                            f"{message.role}: {normalize_text(message.content)}"
+                            for message in row.messages
+                        )
+                        prompt = f"대화 문맥을 유지하고 마지막 요청에 답하세요.\n{context}"
+                    else:
+                        prompt = users[-1]
                     metadata = dict(row.provenance.source_metadata or {})
                     if "upstream_split" in metadata:
                         raise IntegrityError(
@@ -94,7 +105,7 @@ def _chat_candidates(config: DistillationConfig) -> Iterator[LogicalRequest]:
                         response_quality=_source_response_quality(metadata, users[-1])
                         or row.provenance.response_quality,
                     )
-                    yield _request(users[-1], source, config.heldout_basis_points)
+                    yield _request(prompt, source, config.heldout_basis_points)
         except (json.JSONDecodeError, ValidationError) as exc:
             raise IntegrityError(
                 f"instruction JSONL schema가 손상되었습니다: {path}: {exc}"

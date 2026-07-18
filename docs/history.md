@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.50 멀티턴 teacher 문맥 보존
+
+- distill inventory가 다중 turn chat row의 마지막 user만 보내던 문제를 수정했다.
+- 이제 `system/user/assistant` 순서를 정규화한 문맥 문자열을 teacher prompt에 포함해 기존 LogicalRequest·spool schema와 호환되게 전체 문맥을 전달한다.
+- distill 회귀 테스트 `36 passed`, Ruff 통과. 다음 단계에서 이 경로로 멀티턴 teacher를 재수집하고 추가 SFT한다.
+
 ## 2026-07-19 · 1.22.49 추가 SFT 평가
 
 - paraphrase remediation checkpoint에서 추가 200스텝 SFT를 완료했다. 최종 checkpoint는 `runs/sft-qwen36mtp-v5-paraphrase-remediation-step300/checkpoints/step-00000200.pt`다.
