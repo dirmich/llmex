@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.36 curriculum quality 재평가
+
+- public+teacher 80%와 remediation 20%를 섞은 100스텝 curriculum checkpoint의 전체 quality suite를 완료했다.
+- machine correctness `0.1173`, harmful refusal `0.0`, benign compliance `0.1667`, multi-turn retention `0.0`, empty rate `0.0494`로 gate가 실패했다. EOS·반복·Unicode만 통과했다.
+- 짧은 추가 SFT와 단순 비율 혼합으로는 대화 품질을 회복하지 못했으므로 해당 checkpoint를 승인하지 않는다. 다음은 teacher 품질 재필터·다중턴 보강을 포함한 fresh SFT다.
+
 ## 2026-07-19 · 1.22.35 균형 curriculum SFT 완료
 
 - public+teacher train 12,606행에 remediation 3,151행(약 20%)을 섞어 15,757행 curriculum을 만들고, 원 410스텝 checkpoint에서 1e-6 학습률로 100스텝 추가 SFT했다.
