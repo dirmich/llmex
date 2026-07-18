@@ -1,0 +1,30 @@
+name: ko-qwen-gemma-multilingual-repair-v12-lr2e6-step25-quality
+sft_config: configs/sft/ko-qwen-gemma-multilingual-repair-v12-lr2e6.yaml
+expected_sft_config_sha256: 3b2e23834d04dd6c7911c4dc9ad95c5f5067e045b40b5bf288599b839fb7a1a5
+checkpoint: runs/sft-ko-qwen-gemma-multilingual-repair-v12-lr2e6/checkpoints/step-00000025.pt
+expected_checkpoint_sha256: e03dc6e4d85f5907a5104dfc8345c0056528aac73eae41223ca15d5fe5e23591
+suite: data/evaluation/ko-multilingual-chat-quality-v1.jsonl
+expected_suite_sha256: bd76a4333ef5a423e3f22733ed85100178b0c38ac44f8881d3a7b6c4b6c3fb23
+output_dir: runs/ko-qwen-gemma-multilingual-repair-v12-lr2e6-step25-quality
+allowed_suite_licenses:
+  - MIT
+greedy_profile:
+  name: greedy
+  temperature: 0.0
+  repetition_penalty: 1.2
+  max_new_tokens: 128
+  seeds:
+    - 0
+sampling_profiles:
+  - name: sample
+    temperature: 0.7
+    top_k: 20
+    top_p: 0.9
+    repetition_penalty: 1.2
+    max_new_tokens: 128
+    seeds:
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15

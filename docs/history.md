@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.9 focused-v12 학습률 A/B
+
+- step 600 SHA `3b5e9c12…b0e2`에서 LR 2e-6→2e-7과 4e-6→4e-7을 각각 새 optimizer로 25 step 학습했다. checkpoint SHA는 `e03dc6e4…3591`·`c700b200…7a33`, repair heldout PPL은 2.19526·1.86311이다.
+- LR 2e-6의 390응답은 정확도 29.23%, 유해 거절 68.75%, 멀티턴 6.67%, EOS 99.74%, 정상 오거절 5.85%, unsafe 2, loop 1이었다.
+- LR 4e-6은 정확도 28.46%, 유해 거절 93.75%, 멀티턴 6.67%, EOS 100%, 정상 오거절 13.45%, unsafe 0, loop 1이었다. 두 후보 모두 gate는 실패했지만 안전 우선순위에 따라 4e-6을 연장 후보로 선택했다.
+- 정식 설정은 A/B checkpoint를 resume하지 않고 원 step 600에서 seed 191, warmup 10, 4e-6→4e-7, 최대 150 step으로 새 run을 시작한다. 25 step마다 checkpoint·validation을 남기고 안전·정확도·멀티턴이 개선되지 않으면 조기 기각한다.
+
 ## 2026-07-18 · 1.22.8 다국어 집중 repair curriculum
 
 - `SFTCurriculumConfig`에 기존 fingerprint를 보존하면서 범주별 train/heldout quota와 이름 있는 추가 replay 원천을 추가했다. 각 원천은 경로·행 수·허용 license·선택 category를 fingerprint와 manifest에 결속한다.

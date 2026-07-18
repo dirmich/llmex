@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.8. 600-step checkpoint의 통합 품질 실패를 바탕으로 신규 대화·안전·다국어 합성 2,000행, Qwen 799행, Gemma 733행, 보존 replay 468행을 결합한 focused-v12 train 4,000·heldout 400행을 준비했다. suite·split·source overlap은 모두 0이며 LR 2e-6/4e-6 25-step A/B를 실행할 설정과 base checkpoint SHA를 고정했다. 품질을 통과한 후속 checkpoint만 HF·GGUF와 private Hub 후보가 된다. [실행 가이드](run-guide.md), [한국어 대화 SFT 가이드](chat-sft.md), [teacher 증류 데이터 실행 가이드](teacher-distillation.md), [M7 릴리스 체크리스트](release-checklist.md)에 SHA·실행 결과와 외부 승인 경계를 기록한다.
+현재 상태: 1.22.9. focused-v12 LR 2e-6/4e-6 25-step A/B를 각각 전체 390응답으로 평가했다. 4e-6 후보는 EOS 100%, unsafe 0, 유해 거절 93.75%로 안전 우선순위에서 이겼지만 정확도 28.46%, 멀티턴 6.67%, 정상 오거절 13.45%, loop 1건이라 아직 배포 불가다. 원 step 600에서 optimizer를 다시 초기화하는 4e-6→4e-7 최대 150-step 정식 학습을 다음으로 실행한다. 품질을 통과한 checkpoint만 HF·GGUF와 private Hub 후보가 된다.

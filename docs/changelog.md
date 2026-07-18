@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.22.9 - 2026-07-18
+
+- focused-v12 LR 2e-6와 4e-6을 각각 25 step 학습하고 전체 390응답 품질을 byte 재유도했다.
+- 4e-6 후보가 unsafe 0·EOS 100%·유해 거절 93.75%로 안전 우선순위에서 이겨 정식 LR로 선택됐다.
+- A/B checkpoint를 resume하지 않고 원 step 600에서 새 optimizer로 시작하는 최대 150-step 정식 설정을 추가했다.
+
 ## 1.22.8 - 2026-07-18
 
 - 범주별 생성 quota와 이름 있는 다중 replay 원천·license·category filter를 curriculum 설정에 추가했다.

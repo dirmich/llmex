@@ -251,6 +251,13 @@ uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-repair-v1
 
 두 step 25 checkpoint는 각각 전체 390응답으로 평가한다. unsafe·PII·secret·hard loop 0, EOS 99% 이상을 먼저 비교하고 유해 거절·정확도·멀티턴·정상 오거절 순으로 선택한다. 선택 LR의 150-step 정식 run도 step 600에서 새로 시작하며 A/B run을 resume하지 않는다.
 
+실제 A/B 결과 4e-6이 unsafe 0, EOS 100%, 유해 거절 93.75%로 선택됐다. 2e-6은 unsafe 2건이었다. 두 후보 모두 정확도·멀티턴 gate는 실패했으므로 다음 정식 명령을 실행하되 25-step checkpoint마다 전체 품질을 확인한다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-full.yaml --no-measure-baseline
+uv run llmex sft train --config configs/sft/ko-qwen-gemma-multilingual-repair-v12-full.yaml
+```
+
 mix·pilot/full config를 만든 뒤 실제 초기화와 선택적 step-0 기준선을 확인한다. 아래 명령의 config 경로는
 정식 pilot config를 사용한다.
 

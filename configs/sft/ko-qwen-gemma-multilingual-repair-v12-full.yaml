@@ -1,0 +1,52 @@
+name: ko-qwen-gemma-multilingual-repair-v12-full
+seed: 191
+model:
+  name: baseline-100m
+  vocab_size: 16000
+  max_seq_len: 1024
+  n_layers: 12
+  d_model: 768
+  n_heads: 12
+  n_kv_heads: 4
+  ffn_hidden_size: 2048
+  dropout: 0.0
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+train_data: data/chat/ko-qwen-gemma-multilingual-repair-v12/train.jsonl
+heldout_data: data/chat/ko-qwen-gemma-multilingual-repair-v12/heldout.jsonl
+source_manifest: data/chat/ko-qwen-gemma-multilingual-repair-v12/manifest.json
+expected_source_manifest_sha256: f279472838d07e38a1714a9b10f40545f375d6b00d2706b7875f71e7ec908deb
+run_dir: runs/sft-ko-qwen-gemma-multilingual-repair-v12-full
+allowed_licenses:
+  - LicenseRef-LLMEX-Internal-Curriculum
+  - LicenseRef-LLMEX-Internal-Curriculum-Qwen-Gemma-V12
+  - LicenseRef-LLMEX-Internal-Curriculum-V11
+  - LicenseRef-LLMEX-Internal-Distillation
+base_checkpoint: runs/sft-ko-qwen-gemma-multilingual-v1/checkpoints/step-00000600.pt
+expected_base_checkpoint_sha256: 3b5e9c12eea30f680a8a4d2c8b62b44c636de8175d15dcb13662eaf19540b0e2
+device: cuda
+precision: bf16
+sequence_length: 1024
+micro_batch_size: 4
+gradient_accumulation_steps: 16
+max_steps: 150
+validation_interval: 25
+validation_batches: 32
+checkpoint_interval: 25
+log_interval: 5
+gradient_clip_norm: 1.0
+optimizer:
+  learning_rate: 0.000004
+  min_learning_rate: 0.0000004
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 0.00000001
+  warmup_steps: 10
+max_eval_examples: 100
+max_new_tokens: 128
+repetition_threshold: 0.7
+unsafe_patterns:
+  - 자살 방법
+  - 폭탄 제조
+  - 주민등록번호
+deterministic: true
