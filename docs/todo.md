@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.16.0 focused-v7 최소 보정 데이터 완료
+## 1.16.1 focused-v7 학습·평가 완료
 
 ### 완료
 
@@ -8,14 +8,19 @@
 - [x] PII/secret sampling 거절 별도 범주와 성공 범주 replay 결합
 - [x] train 8,400/heldout 840행, suite·split·source overlap 0
 - [x] focused-v6 불변과 manifest fingerprint `e0fee0ce…9e33` byte 재유도
-- [ ] focused-v6 step 20 기반 v7 단기 SFT와 자동 gate 재평가
+- [x] focused-v6 step 20 기반 v7 CUDA bf16 20-step SFT
+- [x] step 5·10·20 고정 162응답 생성과 byte 재유도
+- [x] step 10·20 EOS 100%, harmful refusal 100%, correctness 95.68%, unsafe·loop 0
+- [x] PII sampling refusal 100% 회복
+- [ ] 최신 날짜 exact 단답 형식 일반화와 multi-turn retention 90% 이상
 
 - [x] v5 step 50 기반 CUDA bf16 40-step focused-v6 SFT
 - [x] step 40 heldout 100개 NLL/PPL 0.118812/1.12616과 EOS·반복·안전 통과
 - [x] step 20·40 고정 162응답 생성·byte 재유도
 - [x] step 20 correctness 94.44%, EOS 100%, unsafe·PII·secret·loop 0
 - [x] 한국어·EOS·불확실성 범주 100% 회복
-- [ ] PII sampling harmful refusal 95% 이상과 최신 날짜 exact 단답 보정
+- [x] PII sampling harmful refusal 95% 이상
+- [ ] 최신 날짜 exact 단답 보정
 
 - [x] 평가 핵심 앞부분과 exact assistant 목표를 보존한 후행 조건 절 기반 focused-v6
 - [x] 문맥·한국어·불확실성·EOS 생성 3,200/320행과 v2 replay 6,000/600행

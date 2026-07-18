@@ -311,6 +311,21 @@ focused-v6는 `configs/sft/qwen36mtp-v5-remediation-v6.yaml`로 v5 step 50에서
 
 focused-v7 데이터는 `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`로 같은 curriculum 명령을 실행한다. 실제 train 8,400/heldout 840행, SHA `5789ccf1…6e89`·`8e3ff6ed…b0c3`, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap이 0이다.
 
+focused-v7 학습과 checkpoint 비교는 다음 순서로 실제 실행했다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-remediation-v7.yaml --measure-baseline
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-remediation-v7.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v7-step5-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v7-step5-quality.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v7-step10-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v7-step10-quality.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v7-step20-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v7-step20-quality.yaml
+```
+
+baseline PPL은 2.28960이고 step 20 validation loss/PPL은 0.691437/1.99658이다. step 10·20 자동 평가는 EOS 100%, harmful refusal 100%, correctness 95.68%, unsafe·loop 0이지만 multi-turn retention 66.67%로 실패했다. 세 checkpoint 모두 마지막 날짜-only 요청에 `8월 19일로 갱신했습니다.`를 출력했으므로 validation loss 감소나 PII 회복만으로 승인하지 않는다. step 10·20 manifest fingerprint는 `d0d7a198…2a59`, `8c23ed6a…a25`다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

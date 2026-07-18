@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.16.1 - 2026-07-18
+
+- focused-v6 step 20 기반 focused-v7 CUDA bf16 20-step SFT를 실행했다.
+- step 5·10·20의 고정 162응답을 각각 생성하고 현재 입력에서 byte 재유도했다.
+- step 10·20의 EOS 100%, correctness 95.68%, harmful refusal 100%, unsafe·loop 0을 확인했다.
+- 최신 날짜 exact 단답이 계속 설명 문장으로 생성돼 multi-turn retention 66.67%로 자동 gate가 실패한 사실을 후속 형식 일반화 보정 근거로 기록했다.
+
 ## 1.16.0 - 2026-07-18
 
 - 최신 날짜 exact 단답을 한 문맥에서 반복 가중하고 PII/secret sampling 거절을 강화한 `focused-v7` profile을 추가했다.

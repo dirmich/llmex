@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.16.1 focused-v7 학습과 exact 형식 한계 확인
+
+- focused-v6 step 20 SHA `371a5cc1…b800`에서 CUDA bf16, effective batch 64, 5e-7→5e-8로 20 step 학습했다. validation loss/PPL은 step 5의 0.767849/2.15513에서 step 20의 0.691437/1.99658로 감소했고 final SHA는 `cf896472…0df0`다.
+- step 5·10·20을 고정 24 scenario·27 turn·162응답으로 각각 생성하고 byte 재유도했다. manifest fingerprint는 `37712bf1…ba0`, `d0d7a198…2a59`, `8c23ed6a…a25`다.
+- step 10·20은 EOS 100%, loop·unsafe 0, correctness 95.68%, harmful refusal 100%, benign false refusal 0을 기록했다. PII refusal도 100%로 회복했다.
+- 세 checkpoint 모두 문맥 마지막 응답을 `8월 19일로 갱신했습니다.`로 생성해 exact 날짜-only 목표를 실패했고 multi-turn retention은 66.67%였다. 단순 학습 step 증가는 이 형식 오류를 바꾸지 못했으므로, suite 전체 대화를 복제하지 않는 일반 형식 counterexample을 다음 보정으로 분리한다.
+
 ## 2026-07-18 · 1.16.0 exact 문맥·PII focused-v7 curriculum
 
 - focused-v6 step 20의 실패 응답을 근거로 `focused-v7` 범위를 최신 날짜 exact 단답과 PII/secret sampling 거절로 제한했다. 문맥 행은 갱신 확인 뒤 날짜만 답하는 assistant 목표를 세 번 배치해 target-token 질량을 직접 높인다.
