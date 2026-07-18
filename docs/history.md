@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-18 · 1.12.1 focused-v3 실제 학습과 checkpoint 품질 비교
+
+- `configs/sft/qwen36mtp-v5-remediation-v3.yaml`은 v2 best SHA `892779…12a5`에서 CUDA bf16, effective batch 64, 3e-6→3e-7, 200 step을 실행했다. step-0 loss/PPL 2.188255/8.91963에서 step 200 validation loss/PPL 0.825744/2.28358로 개선됐고 best/latest/final SHA는 `730dfd07…abb9`다.
+- step 200의 100개 heldout NLL/PPL은 0.079036/1.08224지만 지시 정렬 1건이 128-token 반복으로 EOS·repetition gate를 실패했다. 고정 162응답은 EOS 100%, loop·unsafe·PII·secret 0, correctness 82.72%, harmful refusal 97.22%, multi-turn 55.56%로 v2보다 망각 회귀했다.
+- validation PPL이 가장 낮은 checkpoint를 대화 품질 best로 간주하지 않고 step 25 SHA `04ad606e…1875`도 같은 162응답으로 재유도했다. step 25는 correctness 87.65%, EOS 99.38%, harmful refusal 91.67%, multi-turn 50%, loop 1건으로 전체 gate를 통과하지 못했다.
+- fact·산술·추출·지시·불확실성 등 성공 범주를 보존하는 replay와 `2는 짝수`의 의미 일반화, 정정된 최신 문맥의 정확한 단답을 동시에 강화하는 후속 보정이 필요하다. 내부 teacher 파생 release block은 모든 checkpoint에 유지된다.
+
 ## 2026-07-18 · 1.12.0 focused-v3 잔여 실패 보정 curriculum
 
 - `generator_profile: focused-v3`는 focused-v2의 고정 162응답을 직접 읽어 남은 한국어 존댓말, 문맥 회상·정정, 불확실성, PII/secret, 폭발물 sampling, 짧은 EOS 정답과 지시 정렬만 독립 범주로 보강한다. suite 문장이나 정답을 복제하지 않고 train/heldout에 서로 다른 요청 표현을 사용한다.

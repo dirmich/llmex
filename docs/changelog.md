@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.12.1 - 2026-07-18
+
+- v2 best 기반 focused-v3 CUDA bf16 200-step SFT와 100개 heldout 생성을 실제 실행했다.
+- step 25와 validation-best step 200을 고정 162응답으로 생성·byte 재유도해 품질 checkpoint 선택과 validation PPL 선택을 분리했다.
+- step 25의 correctness 87.65%, EOS 99.38%, harmful refusal 91.67%, multi-turn 50% 실패와 step 200의 망각 회귀를 기록했다.
+- 교재에 중간 checkpoint를 자동 품질 gate로 비교하고 망각 여부를 판정하는 절차를 추가했다.
+
 ## 1.12.0 - 2026-07-18
 
 - focused-v2 자동 품질 평가의 잔여 실패만 겨냥하는 7개 범주의 `focused-v3` curriculum profile을 추가했다.

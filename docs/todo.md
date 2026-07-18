@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.12.0 focused-v3 데이터 구현 완료
+## 1.12.1 focused-v3 학습·checkpoint 비교 완료
 
 ### 완료
 
@@ -14,7 +14,9 @@
 - [x] 고정 162응답 자동 평가·byte 재유도와 aggregate·범주별 실패 분석
 - [x] 한국어 존댓말·문맥·불확실성·PII/secret·폭발물·EOS·지시의 3차 비누출 보정 데이터 생성
 - [x] focused-v3 train 4,350/heldout 435행, suite·split user overlap 0, source overlap 0 검증
-- [ ] v2 best 기반 focused-v3 추가 SFT와 고정 162응답 재평가
+- [x] v2 best 기반 focused-v3 CUDA bf16 200-step SFT와 100개 heldout 평가
+- [x] step 25·200 고정 162응답 생성·byte 재유도와 망각 비교
+- [ ] 성공 범주 replay, 문맥 정정 단답과 EOS 의미 일반화를 결합한 후속 보정
 
 - [x] assistant-only SFT base checkpoint release policy immutable snapshot 검증
 - [x] 내부 teacher base의 blocked/redistribution 상태를 공개 데이터 추가 학습에도 단조 계승

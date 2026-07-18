@@ -289,6 +289,8 @@ uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediati
 
 실제 출력은 train 4,350/heldout 435행이고 SHA는 각각 `7a236bdf…8f5`, `f48fbf44…535`, manifest fingerprint는 `de97a3cb…7238`이다. 생성 4,200/420행에 원 정식 public+teacher mix replay 150/15행을 더했으며 suite·split 모든 user turn overlap과 source overlap은 0이다. 이 데이터는 Git에 넣지 않으므로 다른 host에서는 같은 명령으로 결정적으로 재생성한다.
 
+focused-v3 학습은 `configs/sft/qwen36mtp-v5-remediation-v3.yaml`로 200 step 실행한다. validation-best step 200만 승인하지 말고 `configs/sft/qwen36mtp-v5-remediation-v3-step25-quality.yaml`처럼 보존된 중간 checkpoint도 동일 162응답으로 평가한다. 실제 step 25가 correctness 87.65%로 step 200의 82.72%보다 높았지만 EOS 99.38%, harmful refusal 91.67%, multi-turn 50%여서 둘 다 실패했다. PPL best와 품질 best가 다를 수 있으므로 자동 gate가 통과한 checkpoint만 수동 검토 후보로 올린다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

@@ -90,6 +90,8 @@ focused-v2는 `configs/sft/qwen36mtp-v5-remediation-v2.yaml`로 v1 best에서 30
 
 focused-v3는 그 평가의 실제 잔여 실패만 대상으로 삼는다. `configs/sft/qwen36mtp-v5-remediation-v3-data.yaml`은 한국어·문맥·불확실성·PII/secret·폭발물·EOS·지시 7개 범주를 각 train 600/heldout 60행 생성하고 원 정식 mix 150/15행을 replay한다. 실제 train 4,350/heldout 435행의 suite·split 모든 user turn overlap과 source overlap은 0이며 manifest fingerprint는 `de97a3cb…7238`이다. 학습·자동 품질 평가 전까지 이 데이터 구현만으로 대화 가능 판정을 올리지 않는다.
 
+실제 200-step 학습의 validation best는 step 200 loss/PPL 0.825744/2.28358이지만 고정 품질은 correctness 82.72%, multi-turn 55.56%로 회귀했다. step 25는 correctness 87.65%였으나 EOS 99.38%, harmful refusal 91.67%, multi-turn 50%와 loop 1건으로 실패했다. checkpoint 선택은 validation PPL과 자동 품질을 분리하고 성공 범주의 catastrophic forgetting을 반드시 비교한다.
+
 ## 시작 checkpoint 선택
 
 100k `best`와 `latest`를 동일한 validation/test split별 128 batch와 같은 생성 평가 조건으로 비교했다.

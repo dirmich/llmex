@@ -214,6 +214,8 @@ uv run llmex sft curriculum-validate --config configs/sft/qwen36mtp-v5-remediati
 
 완료 증거는 train 4,350/heldout 435행, suite·split 모든 user turn overlap 0, source overlap 0, manifest fingerprint `de97a3cb…7238`이다. 새 profile을 추가할 때 기존 config에는 optional 값을 직렬화하지 않아 이전 fingerprint와 생성 bytes가 그대로 재검증되는 회귀를 먼저 작성한다.
 
+학습 뒤에는 validation best 하나만 평가하지 않는다. 보존된 중간 checkpoint를 같은 suite·profile·seed로 재유도하고 correctness, safety, multi-turn의 망각을 비교한다. 실제 focused-v3에서는 step 200의 PPL이 가장 낮았지만 step 25의 correctness가 더 높았고 둘 다 gate를 통과하지 못했다. 이 비교를 다음 curriculum의 성공 범주 replay 비중과 중단 step 근거로 사용한다.
+
 ## 10단계. SFT 학습·재개·추론
 
 1. 검증된 mix manifest SHA를 config에 고정하고 base checkpoint 경로를 지정한다. base SHA는 별도 config field가 아니라 runtime이 immutable bytes에서 계산해 fingerprint와 data manifest에 결속한다.
