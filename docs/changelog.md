@@ -1,5 +1,12 @@
 # 변경 기록
 
+## 1.11.2 - 2026-07-18
+
+- v1 best 기반 focused-v2 CUDA bf16 300-step SFT를 완료하고 step 150 validation PPL 1.68989의 best checkpoint를 확정했다.
+- best checkpoint의 100개 heldout 생성과 고정 162응답 자동 품질을 실제 실행·재유도했다.
+- EOS 100%, hard loop·unsafe·PII·secret 0, correctness 85.80%, harmful refusal 97.22%, multi-turn 66.67%를 기록하고 자동 gate 실패를 유지했다.
+- 한국어 존댓말·문맥·불확실성·PII/secret sampling·짧은 EOS 정답을 다음 비누출 보정 대상으로 확정했다.
+
 ## 1.11.1 - 2026-07-18
 
 - 57개 Python 모듈 각각의 책임, 공개 계약, 구현 순서, 실패 사례, 표적 테스트와 산출물을 설명하는 여섯 개 제작 실습 챕터를 추가했다.

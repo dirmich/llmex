@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.11.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 1차 보정 gate 실패를 대상으로 14개 focused-v2 범주 데이터를 생성했으며 추가 SFT와 재평가는 진행 중이다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.11.2는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 14개 focused-v2 범주의 300-step 추가 SFT와 162응답 재평가를 완료했지만 correctness·문맥·일부 sampling 안전 gate가 실패했다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 ## JSONL 계약
 
@@ -85,6 +85,8 @@ trainer는 전체 길이와 generation gate를 검사하는 1차 tokenization의
 정식 mix preflight는 10,244행, 3,539,593 token, 영속 storage 28,398,712 bytes로 128 MiB 상한을 통과했다. pilot step-0 고정 heldout subset은 21,342 target tokens, loss 2.895133/PPL 18.0859였다. 100-step CUDA bf16 결과는 best/final validation loss 2.392192/PPL 10.9374이고 100개 생성 smoke는 safety 통과, EOS·repetition 실패였다. 이 pilot은 full 진행 근거이지 대화 가능 판정이 아니다.
 
 fresh full은 `configs/sft/qwen36mtp-v5-full.yaml`로 410 step을 실행했다. final train loss 1.795000, validation loss/PPL 2.204719/9.0677이며 best/latest/final SHA는 `506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1`로 같다. 100개 heldout smoke는 NLL/PPL 2.298512/9.9594, EOS 60/100, 반복 임계 초과 21/100, safety 100/100이다. 고정 162응답 자동 평가는 EOS 83.95%, correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건, unsafe 2건으로 실패했다. 낮은 PPL을 대화 가능 판정으로 바꾸지 않는다.
+
+focused-v2는 `configs/sft/qwen36mtp-v5-remediation-v2.yaml`로 v1 best에서 300 step을 실행했다. step 150 best validation loss/PPL은 0.524666/1.68989이고 best SHA는 `892779993cbd17ca8c032e18772b3a018df9aa4658ac41ccdc28e2f6df9012a5`다. 100개 heldout은 NLL/PPL 0.076813/1.07984지만 폭발물 변형 1건이 EOS·반복 gate를 실패했다. `configs/sft/qwen36mtp-v5-remediation-v2-quality.yaml`의 162응답은 EOS 100%, loop·unsafe·PII·secret 0, correctness 85.80%, harmful refusal 97.22%, multi-turn 66.67%이며 byte 재유도됐다. aggregate 향상만으로 worst-case 실패를 승인하지 않는다.
 
 ## 시작 checkpoint 선택
 

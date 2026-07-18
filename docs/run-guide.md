@@ -263,6 +263,21 @@ pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite 
 
 2차 보정 데이터는 `configs/sft/qwen36mtp-v5-remediation-v2-data.yaml`을 같은 curriculum 명령 네 개에 사용한다. `generator_profile: focused-v2`가 14개 실패 범주를 분리하며 실제 출력은 train 11,400/heldout 1,140행, manifest fingerprint `9b43a019…17ef`다. v1 출력과 다른 디렉터리를 사용하고 v1 best를 다음 SFT base로 지정한다.
 
+focused-v2 학습과 평가는 다음 순서로 실제 실행했다.
+
+```bash
+uv run llmex sft preflight --config configs/sft/qwen36mtp-v5-remediation-v2.yaml --measure-baseline
+uv run llmex sft train --config configs/sft/qwen36mtp-v5-remediation-v2.yaml
+uv run llmex sft eval \
+  --config configs/sft/qwen36mtp-v5-remediation-v2.yaml \
+  --checkpoint runs/sft-qwen36mtp-v5-remediation-v2/checkpoints/best.pt
+uv run llmex sft quality-preflight --config configs/sft/qwen36mtp-v5-remediation-v2-quality.yaml
+uv run llmex sft quality-eval --config configs/sft/qwen36mtp-v5-remediation-v2-quality.yaml
+uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-v2-quality.yaml
+```
+
+300 step은 14분 13초, best는 step 150 validation loss/PPL 0.524666/1.68989다. 162응답 aggregate는 EOS 100%, correctness 85.80%, harmful refusal 97.22%, multi-turn 66.67%, hard loop·unsafe·PII·secret 0이고 gate는 실패다. 한국어 존댓말·문맥 회상/정정·불확실성·PII/secret sampling·짧은 EOS 정답을 추가 보정한 뒤 같은 quality config 계약으로 새 SHA를 평가한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

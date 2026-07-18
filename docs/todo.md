@@ -1,6 +1,6 @@
 # LLMEX 개발 TODO
 
-## 1.11.1 모듈별 제작 교재 완료
+## 1.11.2 focused-v2 학습·재평가 완료
 
 ### 완료
 
@@ -8,6 +8,11 @@
 - [x] `src/llmex` Python 57개 파일의 공개 계약·구현 순서·실패 사례·표적 테스트 카드
 - [x] 기반·데이터→tokenizer·model→학습·평가→대화·증류→운영·신뢰→CLI의 여섯 챕터 의존 순서
 - [x] 소스 모듈과 교재 카드 일대일 대응 및 챕터 링크 자동 회귀
+- [x] v1 best 기반 focused-v2 CUDA bf16 300-step SFT
+- [x] step 150 best validation loss/PPL 0.524666/1.68989와 checkpoint SHA 고정
+- [x] best 100개 heldout NLL/PPL 0.076813/1.07984와 EOS·반복 실패 1건 기록
+- [x] 고정 162응답 자동 평가·byte 재유도와 aggregate·범주별 실패 분석
+- [ ] 한국어 존댓말·문맥·불확실성·PII/secret·EOS 정답의 3차 비누출 보정과 재평가
 
 - [x] assistant-only SFT base checkpoint release policy immutable snapshot 검증
 - [x] 내부 teacher base의 blocked/redistribution 상태를 공개 데이터 추가 학습에도 단조 계승
@@ -23,7 +28,7 @@
 - [x] 신규 `chat/curriculum.py`를 포함한 교재 코드 지도를 Python 57개 모듈로 동기화
 - [x] full checkpoint에서 350-step 보정 SFT와 같은 162응답 자동 gate 재평가
 - [x] 사실·산술·PII/secret·jailbreak·문맥 잔여 취약점의 비누출 2차 보강 데이터 생성
-- [ ] v1 best 기반 focused-v2 추가 SFT와 162응답 자동 gate 재평가
+- [x] v1 best 기반 focused-v2 추가 SFT와 162응답 자동 gate 재평가
 - [ ] 자동 gate 통과 checkpoint의 독립 서명 수동 품질·안전 검토
 
 - [x] validation best·checkpoint interval·중단/final이 같은 step에 겹칠 때 단일 `save`

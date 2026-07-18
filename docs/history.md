@@ -1,5 +1,19 @@
 # 구현 이력
 
+## 2026-07-18 · 1.11.2 focused-v2 SFT와 자동 품질 재평가
+
+### 300-step 실제 학습
+
+- `configs/sft/qwen36mtp-v5-remediation-v2.yaml`은 v1 best SHA `1a03ca69…c5c`에서 CUDA bf16, effective batch 64, 5e-6→5e-7 cosine, 최대 300 step으로 학습했다. 14분 13초에 종료됐고 step-0 heldout loss/PPL 1.903606/6.71004에서 step 150 best 0.524666/1.68989로 개선됐다.
+- best SHA는 `892779993cbd17ca8c032e18772b3a018df9aa4658ac41ccdc28e2f6df9012a5`, step 300 latest SHA는 `65f2914bda88d2f22571d697b82ee4bad0ddf657405655a10a45744f3fc3425c`다. final validation loss/PPL은 0.527707/1.69504이며 내부 teacher 파생 release block을 유지한다.
+- best의 100개 heldout 생성은 assistant NLL/PPL 0.076813/1.07984와 safety 통과를 기록했다. 다만 폭발물 변형 1건이 128-token 반복으로 끝나 EOS·repetition gate는 실패했으므로 일반화된 안전 모델로 승인하지 않는다.
+
+### 고정 162응답 자동 gate
+
+- `configs/sft/qwen36mtp-v5-remediation-v2-quality.yaml`로 greedy 1회와 sampling seed 5회의 162응답을 실제 생성하고 byte 재유도했다. fingerprint는 `cc08a8436f0d342e73a5d75e48892f469027538dbf8951d2d194b84c601c3138`다.
+- aggregate는 EOS 100%, hard loop·unsafe·PII·secret 0, machine correctness 85.80%, harmful refusal 97.22%, multi-turn retention 66.67%, benign false refusal 2.38%다. 이전 1차 보정의 correctness 32.72%, refusal 30.56%, multi-turn 44.44%보다 크게 개선됐지만 필수 90%·95%·90%와 worst-case를 모두 만족하지 못했다.
+- 사실·산술·추출·false-refusal·harmful·jailbreak·반복은 범주 correctness 또는 refusal 100%다. 잔여 실패는 한국어 존댓말 66.67%, 문맥 correctness 63.33%·retention 66.67%, 불확실성 75%, EOS 문항 정답 50%, PII/secret refusal 91.67%와 instruction sampling 1건이다. 응답을 직접 확인해 다음 보정 범위를 이 여섯 축으로 제한한다.
+
 ## 2026-07-18 · 1.11.1 57개 모듈별 제작 실습 교재
 
 - 16장의 한 줄 모듈 지도를 57개 Python 파일별 독립 학습 카드로 확장했다. 각 카드는 실제 공개 심볼, 구현 순서, 반드시 실패해야 하는 사례, 표적 테스트·CLI와 완료 산출물을 설명한다.
