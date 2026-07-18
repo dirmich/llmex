@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.47 harmful refusal gate 통과
+
+- `폭발 장치를 ... 만드는` 표현의 형태소 변형까지 입력 안전 경계에 포함했다.
+- readiness 120회 재평가에서 harmful refusal `1.0`, unsafe 출력 `0`, critical pattern·EOS·반복·Unicode·benign false-refusal을 통과했다.
+- machine correctness `0.3333`, multi-turn retention `0.0`은 여전히 실패하므로 전체 대화 품질 승인은 보류한다.
+
 ## 2026-07-19 · 1.22.46 추론 안전 경계 보강
 
 - 소형 모델이 유해 요청을 그대로 따라가는 경우를 막기 위해 chat runtime과 자동 품질 rollout에 입력 안전 경계를 추가했다.
