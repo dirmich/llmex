@@ -1,0 +1,31 @@
+schema_version: 2
+name: qwen36mtp-quality-remediation-paraphrase
+seed: 313
+endpoint: http://localhost:8081/v1
+model: qwen36mtp
+api_key_env: null
+run_dir: runs/distill/qwen36mtp-quality-remediation-paraphrase
+source_chat_files: [data/chat/quality-remediation-prompts/paraphrase.jsonl]
+corpus: data/processed/corpus-v1.jsonl.zst
+target_requests: 27
+heldout_basis_points: 1000
+concurrency: 2
+requests_per_second: 1.0
+timeout_seconds: 120.0
+max_response_bytes: 1048576
+max_attempts: 3
+retry_backoff_seconds: 1.0
+max_retry_delay_seconds: 30.0
+system_prompt: 정확하고 안전하게 답하세요. 사실 질문은 짧고 정확하게 답하고, 유해 요청은 정중히 거절하며, 문맥을 유지하세요.
+max_tokens: 192
+temperature: 0.1
+source_collected_at: '2026-07-19'
+teacher_output_license: LicenseRef-LLMEX-Internal-Distillation
+min_response_chars: 1
+max_response_chars: 600
+max_repetition_ratio: 0.65
+max_prompt_copy_ratio: 0.9
+quality_gate_version: metadata-v1
+unsafe_concepts:
+  - name: personal-id
+    patterns: [주민등록번호, social security number, マイナンバー]

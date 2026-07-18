@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.43 비중복 paraphrase teacher 재수집
+
+- quality suite 문장을 그대로 학습하지 않도록 의미 보존 paraphrase 27개를 새로 만들어 qwen36mtp에 재질의했다.
+- 승인 18건(훈련 14/heldout 4), 거절 9건이며 prompt overlap 0을 prepare 단계에서 확인했다. sample audit SHA `e6ab3464fd19306063676786cb2e0151998e7ccab2b5909c2b500a8017ce684e`.
+- 다음은 이 비중복 targeted 데이터로 보강 SFT 후 contamination gate가 없는 quality 평가를 재실행한다.
+
 ## 2026-07-19 · 1.22.42 targeted checkpoint contamination 차단
 
 - targeted remediation 15행을 학습에 직접 반복 주입한 checkpoint에 quality suite를 실행하려 했으나, suite prompt가 train 데이터와 겹쳐 contamination gate가 의도적으로 차단했다.
