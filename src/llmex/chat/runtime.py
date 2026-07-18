@@ -153,7 +153,8 @@ def _fingerprints(
     release_policy: Mapping[str, object],
 ) -> dict[str, str]:
     manifest = config.tokenizer_dir / "tokenizer-manifest.json"
-    config_value = config.model_dump(mode="json", exclude={"max_steps"})
+    # decoding-only knobs must not invalidate a trained checkpoint
+    config_value = config.model_dump(mode="json", exclude={"max_steps", "repetition_penalty"})
     if config.source_manifest is None:
         config_value.pop("source_manifest", None)
         config_value.pop("expected_source_manifest_sha256", None)
@@ -1046,7 +1047,10 @@ def _generated(
         raise IntegrityError("chat prompt가 비었거나 문맥 길이를 초과합니다")
     device = next(model.parameters()).device
     decoding = generation or GenerationConfig(
-        max_new_tokens=config.max_new_tokens, temperature=0, eos_id=SPECIAL_IDS["<eos>"]
+        max_new_tokens=config.max_new_tokens,
+        temperature=0,
+        repetition_penalty=config.repetition_penalty,
+        eos_id=SPECIAL_IDS["<eos>"],
     )
     output = model.generate(
         torch.tensor([ids], dtype=torch.long, device=device),

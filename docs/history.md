@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.27 100M SFT 완료 및 생성 게이트 재평가
+
+- `qwen36mtp-v5-public-qwen-natural-v5-10k` SFT를 410/410 스텝까지 완료했다. 최종 검증 손실은 `1.7563964997357808`, PPL은 `5.791529967299593`이다.
+- 최종 checkpoint는 `runs/sft-qwen36mtp-v5-public-qwen-natural-v5-10k/checkpoints/step-00000410.pt`이며, heldout NLL은 `1.3757281474303453`, PPL은 `3.957957650615951`이다.
+- 실제 heldout 생성 게이트는 safety 통과, EOS/반복 실패(각 12건/2건)로 아직 대화 품질 완료가 아니다. 결과는 `runs/sft-qwen36mtp-v5-public-qwen-natural-v5-10k/heldout-evaluation.json`에 보존했다.
+- decoding 전용 `repetition_penalty` 설정(기본 1.5)을 추가하고 checkpoint fingerprint에서 제외해 재학습 없이 재평가할 수 있게 했다. 다음 작업은 anti-repetition 보강 학습 또는 생성 계약 개선 후 EOS·반복·수동 품질 게이트 재통과다.
+- 내부 teacher 데이터의 redistribution gate는 계속 blocked이며 Hugging Face 업로드는 하지 않는다.
+
 ## 2026-07-18 · 1.22.26 공개+Qwen natural-v5 혼합
 
 - `qwen36mtp-v5-public-qwen-natural-v5-10k.yaml`을 추가하고 preflight/prepare/validate-mix를 통과했다.

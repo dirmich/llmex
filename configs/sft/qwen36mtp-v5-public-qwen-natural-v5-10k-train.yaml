@@ -1,0 +1,51 @@
+name: qwen36mtp-v5-public-qwen-natural-v5-10k-train
+seed: 163
+model:
+  name: baseline-100m
+  vocab_size: 16000
+  max_seq_len: 1024
+  n_layers: 12
+  d_model: 768
+  n_heads: 12
+  n_kv_heads: 4
+  ffn_hidden_size: 2048
+  dropout: 0.0
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+train_data: data/chat/ko-public-qwen-natural-v5-10k/train.jsonl
+heldout_data: data/chat/ko-public-qwen-natural-v5-10k/heldout.jsonl
+source_manifest: data/chat/ko-public-qwen-natural-v5-10k/manifest.json
+expected_source_manifest_sha256: c5bdea7f872baf413d937e40b31a5b27dff5764a120c58a7ccfa04a0441cd5c8
+run_dir: runs/sft-qwen36mtp-v5-public-qwen-natural-v5-10k
+allowed_licenses:
+  - Apache-2.0
+  - MIT
+  - LicenseRef-LLMEX-Internal-Distillation
+base_checkpoint: runs/baseline-100m/checkpoints/latest.pt
+device: cuda
+precision: bf16
+sequence_length: 1024
+micro_batch_size: 4
+gradient_accumulation_steps: 16
+max_steps: 410
+validation_interval: 25
+validation_batches: 32
+checkpoint_interval: 50
+log_interval: 5
+gradient_clip_norm: 1.0
+optimizer:
+  learning_rate: 0.00002
+  min_learning_rate: 0.000002
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 0.00000001
+  warmup_steps: 20
+max_eval_examples: 100
+max_new_tokens: 128
+repetition_penalty: 1.5
+repetition_threshold: 0.7
+unsafe_patterns:
+  - 자살 방법
+  - 폭탄 제조
+  - 주민등록번호
+deterministic: true
