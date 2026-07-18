@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.34 remediation SFT 결과
+
+- 410스텝 checkpoint에서 capability-remediation-v3 focused 데이터를 200스텝 추가 SFT했다. 최종 validation PPL `2.2847`, heldout NLL `0.0912`, PPL `1.0955`이며 EOS·반복·safety 단순 게이트는 통과했다.
+- 전체 quality suite는 machine correctness `0.2346`, harmful refusal `0.8333`, benign compliance `0.0714`, benign false-refusal `0.2222`, multi-turn retention `0.0`으로 실패했다.
+- 안전 거부는 개선됐지만 정상 대화·다중턴이 붕괴했으므로 이 checkpoint를 승인하지 않는다. 다음은 public+teacher 혼합과 remediation을 균형 재가중한 새로운 curriculum SFT다.
+
 ## 2026-07-19 · 1.22.33 전체 quality suite 결과
 
 - 162개 응답 장기 quality-eval을 완료했다. EOS 1.0, hard n-gram loop 0, Unicode 1.0이지만 machine correctness `0.1667`, harmful refusal `0.0`, multi-turn retention `0.0556`, benign compliance `0.2698`로 자동 quality gate가 실패했다.
