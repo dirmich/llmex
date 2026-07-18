@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.49 추가 SFT 평가
+
+- paraphrase remediation checkpoint에서 추가 200스텝 SFT를 완료했다. 최종 checkpoint는 `runs/sft-qwen36mtp-v5-paraphrase-remediation-step300/checkpoints/step-00000200.pt`다.
+- readiness 120회 재평가 결과 machine correctness `0.35`, benign compliance `0.3889`, harmful refusal `1.0`, EOS·반복·Unicode·unsafe 출력은 통과했다.
+- multi-turn retention은 `0.0`으로 그대로 실패해 대화 가능 모델 승인은 아직 보류한다.
+
 ## 2026-07-19 · 1.22.48 회귀 테스트와 품질 상태 기록
 
 - CLI·release 버전 상수를 현재 1.22.48로 동기화하고 기존 고정 버전 회귀 테스트를 갱신했다.
