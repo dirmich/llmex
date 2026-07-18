@@ -37,7 +37,7 @@ def tokenize_chat(
     labels = [-100]
     for message in messages:
         prefix = tokenizer.encode(ROLE_PREFIX[message.role]).ids
-        content = tokenizer.encode(message.content + "\n").ids
+        content = tokenizer.encode(message.content.rstrip("\r\n") + "\n").ids
         ids.extend(prefix)
         labels.extend([-100] * len(prefix))
         ids.extend(content)

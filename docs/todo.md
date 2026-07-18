@@ -1,12 +1,13 @@
 # LLMEX 개발 TODO
 
-## 1.20.3 Gemma 4 대화 증류 진행
+## 1.20.4 Gemma 4 대화 증류 진행
 
 ### 완료
 
 - [x] 기본 loopback 유지와 명시적 신뢰 내부망 teacher hostname allowlist
 - [x] macmini Gemma 4 model inventory와 대화·PII 동작 실측
 - [x] OpenAI 호환 빈 `tool_calls` 수용과 실제 tool call 거부
+- [x] 말단 CR/LF가 있는 실제 이력의 학습·생성 prefix 토큰 완전 일치
 - [ ] Gemma 4 자연 대화 source·inventory·수집·export·validate
 
 - [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성

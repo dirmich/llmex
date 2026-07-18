@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.20.4 학습·추론 메시지 개행 정규화 일치
+
+- 기존 BOS와 과거 assistant EOS 경계는 일치했지만, assistant 메시지가 이미 줄바꿈으로 끝나면 학습 tokenization만 줄바꿈을 하나 더 붙였다. 실제 rollout 이력이 만드는 이 차이는 생성 prompt와 학습 prefix의 토큰 완전 일치 계약을 깨뜨렸다.
+- 학습 tokenization도 추론 renderer와 같이 메시지 말단 CR/LF를 제거한 뒤 줄바꿈 하나만 추가하도록 수정했다. 말단 줄바꿈을 가진 동일 assistant 이력을 사용해 생성 prompt 토큰과 학습 prefix 토큰이 정확히 같은지 회귀로 고정했다.
+- 이 수정은 checkpoint를 자동 승인하지 않는다. macmini Gemma 4 대화 증류, 100M latest 기반 재학습, EOS·반복·안전·수동 품질 gate는 계속 진행한다.
+
 ## 2026-07-18 · 1.20.3 OpenAI 호환 빈 tool_calls 수용
 
 - macmini Gemma 4의 실제 completion message는 `role`, `content`, 빈 `reasoning_content`와 함께 `tool_calls: []`를 반환했다. 기존 strict client는 이 표준 빈 필드를 예상하지 않은 확장으로 거부해 모든 수집이 실패하는 상태였다.
