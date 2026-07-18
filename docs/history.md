@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.63 수동 테스트·서명 가이드
+
+- 실제 모델 응답을 사람이 평가하고 quality 2명·safety 1명·필요 시 adjudicator가 서명하는 절차를 한국어 문서로 정리했다.
+- template 생성, 자동 artifact 검증, 점수 기준, canonical 서명, `quality-gate`와 `quality-review-validate` 실행 예를 추가했다.
+- 서명 issuer가 trust policy에 없을 때 우회하지 않고 fail-closed로 유지하는 완료 조건을 명시했다.
+
 ## 2026-07-19 · 1.22.62 blind review template 생성
 
 - 최신 자동 gate 통과 artifact에 결속된 독립 blind review template 100행을 생성했다.
