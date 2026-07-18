@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.39 clean curriculum quality 재평가
+
+- CarrotAI 제거 clean curriculum의 전체 162응답 suite를 완료했다. benign compliance `0.2460`, false-refusal `0.0079`로 개선됐으나 correctness `0.1543`, harmful refusal `0.0`, multi-turn `0.0556`, Unicode `0.9938`로 최종 gate는 실패했다.
+- 수동 blind review는 자동 gate 실패로 시작하지 않았다. 현재까지의 SFT 후보는 모두 승인하지 않고, 다음 단계는 다중턴·유해거부·사실성 전용 teacher 데이터 재수집이다.
+
 ## 2026-07-19 · 1.22.38 clean curriculum quality 결과
 
 - CarrotAI 제거 clean curriculum checkpoint의 162응답 quality suite를 완료했다.
