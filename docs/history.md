@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-18 · 1.22.19 Qwen 다국어 v2 수동 감사 기각
+
+- 반복 실패한 `distill-1f92f04c1f33ca08d6b1d356`을 살아 있는 `qwen36mtp` endpoint에 재호출했다. 자연스러운 한국어 번역을 받았지만 계약의 전달 동사 표면형과 일치하지 않아 `quality:term`으로 거절됐고, 최종 상태는 2,000/2,000, accepted 662/rejected 1,338/pending 0/failed 0이다.
+- accepted spool에서 task 균등 결정적 50건(conversation-en 17, conversation-ja 17, ko-ja 16)을 전수 검토했다. 간단한 제안 요청에 질문만 답함, 입력을 반복하지 말라는 요청에 사실을 그대로 재진술함, 걸으면서 책을 읽으라는 부자연스러운 제안, 짧은 질문 요청의 질문 누락을 확인했다.
+- `sample-audit.json`은 reviewer `Codex 독립 표본 감사`, `approved=false`, sample 50, artifact SHA `bab669bf4db4a9644ff88e5985ed1ed12a2e2583e7b3a111e8dc6ecc1c770db7`로 현재 inventory·accepted spool에 결속했다. 승인 artifact가 아니므로 export와 학습 혼합은 계속 실패-폐쇄한다.
+- `make release-check`는 382 tests, Ruff, format, Pyright 0 오류, 참조 checksum과 release audit를 통과했다.
+- 다음 작업은 자동 검증 가능한 question/suggestion conversation act를 source 계약에 추가하고 비반복처럼 휴리스틱이 불안정한 지시를 prompt에서 제거한 새 Qwen tranche를 fresh 수집하는 것이다. 최종 모델은 로컬 HF·GGUF와 llama.cpp까지만 검증하며 Hugging Face 업로드는 하지 않는다.
+
 ## 2026-07-18 · 1.22.18 지도 혼잡도 응답 보수 격리
 
 - 독립 재검토가 `지도 서비스의 혼잡도 정보를 참고하면 좋습니다`, `실시간 혼잡도 확인이 가능합니다`처럼 고정 종결형 열거를 피한 긍정 활용이 허용되는 우회를 확인했다.

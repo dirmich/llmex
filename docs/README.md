@@ -13,4 +13,4 @@ LLMEX는 《LLM을 만들기 위한 수학 기반 이론과 Python 실습》의 
 6. 중요한 결정은 [결정 기록](decisions.md)에 추가한다.
 7. 구현 전에 [`../0.ref/README.md`](../0.ref/README.md)에서 기반 교재 참조 코드와 사용 경계를 확인한다.
 
-현재 상태: 1.22.18. Qwen 다국어 v2는 2,000건 처리를 마쳤지만 반복 재시도에 실패한 1건 때문에 표본 감사·export를 실패-폐쇄하고 있다. 지도 혼잡도 우회 응답이 섞인 Gemma 한국어 v2는 격리·미export했으며, 응답 전체 compact text의 지도·map 계열과 혼잡도 계열 lexeme 공존을 전량 격리하는 gate로 Gemma 한국어 v3를 fresh 재개한다. 다음 단계는 Qwen 실패 1건 해소와 두 수집 완료→독립 표본 감사→export/validate→Gemma 다국어 순차 수집→mix→100M latest SFT→390응답과 suite 밖 smoke→로컬 HF/GGUF·llama.cpp 검증이다. Hugging Face 업로드는 실행하지 않는다.
+현재 상태: 1.22.19. Qwen 다국어 v2는 재시도로 2,000건을 모두 처리했지만 결정적 50건 표본에서 질문·제안·비반복 지시 불이행과 부자연스러운 조언을 확인해 승인하지 않고 미export했다. 지도 혼잡도 우회 응답이 섞인 Gemma 한국어 v2도 격리·미export했다. 다음 단계는 검증 가능한 conversation act 계약과 새 Qwen tranche 구현→Gemma 한국어 v3 수집→각 독립 표본 감사→export/validate→Gemma 다국어 순차 수집→mix→100M latest SFT→390응답과 suite 밖 smoke→로컬 HF/GGUF·llama.cpp 검증이다. Hugging Face 업로드는 실행하지 않는다.
