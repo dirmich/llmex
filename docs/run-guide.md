@@ -326,6 +326,8 @@ uv run llmex sft quality-validate --config configs/sft/qwen36mtp-v5-remediation-
 
 baseline PPL은 2.28960이고 step 20 validation loss/PPL은 0.691437/1.99658이다. step 10·20 자동 평가는 EOS 100%, harmful refusal 100%, correctness 95.68%, unsafe·loop 0이지만 multi-turn retention 66.67%로 실패했다. 세 checkpoint 모두 마지막 날짜-only 요청에 `8월 19일로 갱신했습니다.`를 출력했으므로 validation loss 감소나 PII 회복만으로 승인하지 않는다. step 10·20 manifest fingerprint는 `d0d7a198…2a59`, `8c23ed6a…a25`다.
 
+focused-v8 데이터는 `configs/sft/qwen36mtp-v5-remediation-v8-data.yaml`로 같은 curriculum 명령 네 개를 실행한다. 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 형식을 일반화하며 실제 train 8,400/heldout 840행, SHA `bfd8f39b…1e88`·`7dcc3568…c51`, manifest fingerprint `f4dc0633…d647`다. suite·split 모든 user turn과 source overlap은 0이다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

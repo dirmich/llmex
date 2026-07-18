@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.16.1은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v7 CUDA bf16 20-step SFT와 step 5·10·20의 고정 162응답 평가를 제공한다. step 10·20은 EOS 100%, harmful refusal 100%, correctness 95.68%지만 최신 날짜에 설명을 붙여 multi-turn retention 66.67%로 자동 gate를 통과하지 못했다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.17.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v7의 exact 형식 실패를 날짜·코드·담당자·상태·장소의 일반 “값만 출력” 대조로 보정하는 focused-v8 curriculum을 제공한다. train 8,400/heldout 840행은 suite·split·source overlap 0을 유지한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 

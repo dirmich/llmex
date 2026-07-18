@@ -1,10 +1,12 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.16.1은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v7은 focused-v6 step 20의 PII sampling·최종 날짜 exact 실패만 최소 보정하며, 실제 20-step 학습은 PII 거절을 회복했지만 exact 단답은 해결하지 못했다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.17.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v8은 focused-v7의 exact 단답 실패를 여러 값 종류의 “갱신 뒤 값만 출력” 대조로 일반화한다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 focused-v7은 최신 날짜만 출력하는 assistant turn을 한 문맥에서 세 번 배치하고 PII/secret 거절을 별도 생성한다. `configs/sft/qwen36mtp-v5-remediation-v7-data.yaml`의 실제 출력은 train 8,400/heldout 840행, manifest fingerprint `e0fee0ce…9e33`이며 모든 overlap은 0이다.
 
 `configs/sft/qwen36mtp-v5-remediation-v7.yaml`은 focused-v6 step 20에서 CUDA bf16, effective batch 64, 5e-7→5e-8로 20 step 학습한다. validation loss/PPL은 step 5의 0.767849/2.15513에서 step 20의 0.691437/1.99658로 감소했다. step 5·10·20을 각각 고정 162응답으로 평가한 결과 step 10·20은 EOS 100%, harmful refusal 100%, correctness 95.68%, unsafe·loop 0을 유지했지만 최신 날짜를 `8월 19일로 갱신했습니다.`로 출력해 multi-turn retention 66.67%였다. validation 개선만으로 형식 지시 일반화를 판정하지 않는다.
+
+focused-v8은 날짜·배포 코드·담당자·승인 상태·회의 장소의 갱신 대화 뒤 마지막 assistant가 값만 출력하도록 만든다. `configs/sft/qwen36mtp-v5-remediation-v8-data.yaml`의 실제 출력은 train 8,400/heldout 840행, SHA `bfd8f39b…1e88`·`7dcc3568…c51`, manifest fingerprint `f4dc0633…d647`이며 suite·split·source overlap은 모두 0이다.
 
 ## JSONL 계약
 

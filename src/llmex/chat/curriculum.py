@@ -75,6 +75,7 @@ _FOCUSED_V6_CATEGORIES = (
     "eos",
 )
 _FOCUSED_V7_CATEGORIES = ("context-exact", "harmful-pii-secret")
+_FOCUSED_V8_CATEGORIES = ("format-exact",)
 
 
 @dataclass(frozen=True)
@@ -1161,11 +1162,100 @@ def _focused_v7_messages(
     ]
 
 
+def _focused_v8_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    if category != "format-exact":
+        raise ValueError(f"focused-v8가 지원하지 않는 범주입니다: {category}")
+
+    variant = index % 8
+    serial = index // 8
+    if variant % 2 == 0:
+        month = 9 if split == "train" else 10
+        old_day = 1 + (serial * 3 + variant) % 14
+        new_day = 16 + (serial * 5 + variant) % 12
+        old_value = f"{month}월 {old_day}일"
+        new_value = f"{month}월 {new_day}일"
+        final_request = (
+            "최종 마감일만 다시 알려 주세요"
+            if split == "train"
+            else "최종 마감일만 다시 알려 주세요?"
+        )
+        return [
+            Message(role="user", content=f"프로젝트 마감일을 {old_value}로 임시 기억하세요."),
+            Message(role="assistant", content=f"{old_value}로 기억했습니다."),
+            Message(
+                role="user",
+                content=f"정정합니다. 마감일은 {new_value}입니다. 갱신했다고 답하세요.",
+            ),
+            Message(role="assistant", content=f"{new_value}로 갱신했습니다."),
+            Message(role="user", content=final_request),
+            Message(role="assistant", content=new_value),
+        ]
+
+    if split == "train":
+        values = (
+            (
+                "배포 코드는",
+                "배포 코드를",
+                f"RC-{11 + serial % 89:02d}",
+                f"GA-{21 + serial % 79:02d}",
+            ),
+            (
+                "최종 담당자는",
+                "최종 담당자를",
+                f"담당-{31 + serial % 67:02d}",
+                f"담당-{41 + serial % 57:02d}",
+            ),
+            ("승인 상태는", "승인 상태를", "검토 중", "승인 완료"),
+            ("회의 장소는", "회의 장소를", f"가람-{1 + serial % 9}실", f"누리-{1 + serial % 9}실"),
+        )
+    else:
+        values = (
+            (
+                "배포 코드는",
+                "배포 코드를",
+                f"BETA-{11 + serial % 89:02d}",
+                f"PROD-{21 + serial % 79:02d}",
+            ),
+            (
+                "최종 담당자는",
+                "최종 담당자를",
+                f"검토자-{31 + serial % 67:02d}",
+                f"책임자-{41 + serial % 57:02d}",
+            ),
+            ("승인 상태는", "승인 상태를", "확인 중", "확정 완료"),
+            ("회의 장소는", "회의 장소를", f"해솔-{1 + serial % 9}실", f"다온-{1 + serial % 9}실"),
+        )
+    subject, object_, old_value, new_value = values[variant // 2]
+    final_requests = (
+        "현재 배포 코드만 출력하세요.",
+        "최종 담당자 이름만 답하세요.",
+        "현재 승인 상태만 알려 주세요.",
+        "확정된 회의 장소만 쓰세요.",
+    )
+    split_qualifier = " 다른 설명은 쓰지 마세요." if split == "train" else " 값만 답하세요."
+    return [
+        Message(role="user", content=f"{subject} {old_value}입니다. 임시로 기억하세요."),
+        Message(role="assistant", content=f"{old_value}로 기억했습니다."),
+        Message(role="user", content=f"{object_} {new_value}로 바꿨습니다. 갱신해 주세요."),
+        Message(role="assistant", content=f"{new_value}로 갱신했습니다."),
+        Message(
+            role="user",
+            content=final_requests[variant // 2] + split_qualifier,
+        ),
+        Message(role="assistant", content=new_value),
+    ]
+
+
 def _generated(
     config: SFTCurriculumConfig, split: Literal["train", "heldout"], count: int
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    if config.generator_profile == "focused-v7":
+    if config.generator_profile == "focused-v8":
+        categories = _FOCUSED_V8_CATEGORIES
+        generator = _focused_v8_messages
+    elif config.generator_profile == "focused-v7":
         categories = _FOCUSED_V7_CATEGORIES
         generator = _focused_v7_messages
     elif config.generator_profile == "focused-v6":

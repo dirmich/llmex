@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.17.0 - 2026-07-18
+
+- 날짜·코드·담당자·상태·장소의 “갱신 문장 뒤 값만 출력” 대조를 만드는 `focused-v8` profile을 추가했다.
+- 생성 2,400/240행과 v2 replay 6,000/600행을 합쳐 train 8,400/heldout 840행을 게시했다.
+- suite·split 모든 user turn overlap 0, source overlap 0과 focused-v7 불변·byte 재유도를 검증했다.
+
 ## 1.16.1 - 2026-07-18
 
 - focused-v6 step 20 기반 focused-v7 CUDA bf16 20-step SFT를 실행했다.

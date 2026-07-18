@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.17.0 값-only 형식 일반화 focused-v8 curriculum
+
+- focused-v7의 step 증가로도 최신 날짜 단답이 바뀌지 않은 증거를 근거로 `focused-v8`을 추가했다. 날짜뿐 아니라 배포 코드·담당자·승인 상태·회의 장소의 갱신 확인 문장 뒤 값만 출력하는 대조를 만들어 표면 문장 암기 대신 형식 지시를 보강한다.
+- 생성 2,400/240행과 v2 성공 범주 replay 6,000/600행을 합쳐 train 8,400/heldout 840행을 게시했다. SHA는 `bfd8f39b…1e88`·`7dcc3568…c51`, manifest fingerprint는 `f4dc0633…d647`다.
+- format-exact 목표 token은 70,950개, replay는 127,144개다. suite·split 모든 user turn overlap과 source overlap은 0이며 focused-v7 preflight 불변과 byte 재유도를 유지한다.
+
 ## 2026-07-18 · 1.16.1 focused-v7 학습과 exact 형식 한계 확인
 
 - focused-v6 step 20 SHA `371a5cc1…b800`에서 CUDA bf16, effective batch 64, 5e-7→5e-8로 20 step 학습했다. validation loss/PPL은 step 5의 0.767849/2.15513에서 step 20의 0.691437/1.99658로 감소했고 final SHA는 `cf896472…0df0`다.

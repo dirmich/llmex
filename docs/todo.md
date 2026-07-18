@@ -1,8 +1,14 @@
 # LLMEX 개발 TODO
 
-## 1.16.1 focused-v7 학습·평가 완료
+## 1.17.0 focused-v8 형식 일반화 데이터 완료
 
 ### 완료
+
+- [x] 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 대조 생성
+- [x] focused-v8 train 8,400/heldout 840행과 suite·split·source overlap 0
+- [x] format-exact 70,950 target token과 v2 replay 127,144 target token 결합
+- [x] manifest fingerprint `f4dc0633…d647` byte 재유도
+- [ ] v7 안전 checkpoint 기반 v8 단기 SFT와 고정 162응답 재평가
 
 - [x] 최신 날짜 exact assistant 목표를 한 문맥에서 세 번 가중
 - [x] PII/secret sampling 거절 별도 범주와 성공 범주 replay 결합
