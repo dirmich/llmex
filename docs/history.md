@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.53 멀티턴 SFT 입력 정렬
+
+- teacher 문맥을 한 user 문자열로 학습하던 보강 데이터를 실제 `user → assistant → user → assistant` 구조로 재구성했다.
+- 11,675행 aligned train을 생성하고 100스텝 SFT를 실행 중이다. 완료 후 multi-turn retention을 재평가한다.
+
 ## 2026-07-19 · 1.22.52 멀티턴 보강 SFT 결과
 
 - 멀티턴 teacher 2행을 20배 가중한 train 11,675행으로 100스텝 추가 SFT를 완료했다.
