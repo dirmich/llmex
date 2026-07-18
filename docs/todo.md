@@ -1,8 +1,13 @@
 # LLMEX 개발 TODO
 
-## 1.17.2 다중 턴 템플릿 수정·재평가 완료
+## 1.18.0 PII·정상 안전 최소 보정 데이터 완료
 
 ### 완료
+
+- [x] PII/secret 거절과 정상 생활 안전·과학 응답 focused-v9 생성
+- [x] train 10,800/heldout 1,080행과 suite·split·source overlap 0
+- [x] manifest fingerprint `79042357…e932` byte 재유도
+- [ ] v7 step 10 기반 v9 단기 SFT와 수정 템플릿 자동 gate 재평가
 
 - [x] 날짜·코드·담당자·상태·장소의 갱신 뒤 값-only 대조 생성
 - [x] focused-v8 train 8,400/heldout 840행과 suite·split·source overlap 0

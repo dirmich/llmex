@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.18.0 - 2026-07-18
+
+- PII/secret 거절과 정상 생활 안전·과학 응답만 보정하는 `focused-v9` profile을 추가했다.
+- 생성 4,800/480행과 replay 6,000/600행을 합쳐 train 10,800/heldout 1,080행을 게시했다.
+- suite·split 모든 user turn overlap 0, source overlap 0과 focused-v8 불변·byte 재유도를 검증했다.
+
 ## 1.17.2 - 2026-07-18
 
 - 생성 chat prompt의 BOS, 과거 assistant EOS와 종단 줄바꿈을 학습 token 경계와 일치시켰다.

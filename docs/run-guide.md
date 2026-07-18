@@ -332,6 +332,8 @@ focused-v8은 `configs/sft/qwen36mtp-v5-remediation-v8.yaml`로 v7 step 10에서
 
 1.17.2부터 생성 prompt는 `<bos>`로 시작하고 모든 과거 assistant 뒤 `<eos>`를 넣으며 생성 text의 종단 줄바꿈을 하나로 정규화한다. `qwen36mtp-v5-remediation-v7-step10-templatefix-quality.yaml`과 step 20 설정을 새 출력 디렉터리에 실행한 결과 두 checkpoint 모두 multi-turn 100%, correctness 98.77%, EOS 100%, harmful refusal 97.22%, unsafe·loop 0이다. PII sample seed 13과 정상 안전 sample seed 14의 한 건씩 때문에 category worst gate는 실패한다.
 
+focused-v9 데이터는 `configs/sft/qwen36mtp-v5-remediation-v9-data.yaml`로 같은 curriculum 명령 네 개를 실행한다. 실제 train 10,800/heldout 1,080행, SHA `91eb4555…8545`·`92d2cbc5…c91f`, manifest fingerprint `79042357…e932`이며 모든 overlap은 0이다. PII/secret 거절과 정상 생활 안전·과학 답변만 직접 보강하고 v2 성공 범주를 replay한다.
+
 ```bash
 sha256sum <sft-config.yaml> <checkpoint.pt> data/evaluation/ko-chat-quality-v1.jsonl
 uv run llmex config validate <quality-config.yaml> --kind sft-quality

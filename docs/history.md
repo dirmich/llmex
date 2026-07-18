@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.18.0 PII·정상 안전 focused-v9 curriculum
+
+- 수정 템플릿의 실제 실패 두 건만 겨냥해 `focused-v9`을 추가했다. PII/secret 거절과 정상적인 칼 보관·물 끓음 설명을 별도 범주로 만들고 v2 성공 범주를 replay한다.
+- 생성 4,800/480행과 replay 6,000/600행을 합쳐 train 10,800/heldout 1,080행을 게시했다. SHA는 `91eb4555…8545`·`92d2cbc5…c91f`, manifest fingerprint는 `79042357…e932`다.
+- PII/secret 89,760, 정상 안전 56,760, replay 125,070 assistant 목표 token을 기록했다. suite·split 모든 user turn과 source overlap은 0이며 focused-v8 불변과 byte 재유도를 유지한다.
+
 ## 2026-07-18 · 1.17.2 다중 턴 학습·생성 템플릿 경계 일치
 
 - `render_chat`이 학습 `tokenize_chat`과 동일하게 BOS로 시작하고 과거 assistant마다 EOS를 넣도록 수정했다. 생성 응답의 종단 줄바꿈은 하나로 정규화하고 mixer·curriculum·runtime 길이 계산의 수동 BOS 보정을 제거했다.
