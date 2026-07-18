@@ -1,6 +1,6 @@
 # 한국어 대화 SFT 실행 가이드
 
-LLMEX 1.11.2는 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. 14개 focused-v2 범주의 300-step 추가 SFT와 162응답 재평가를 완료했지만 correctness·문맥·일부 sampling 안전 gate가 실패했다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
+LLMEX 1.15.0은 Wikipedia 사전학습과 분리된 assistant-only 대화 학습, 공개·teacher 비누출 mix, 결정적 능력 보정 curriculum, fresh SFT 실행 경계, 상한이 있는 token cache와 자동·수동 품질 gate를 제공한다. focused-v5는 안전·EOS를 회복했지만 correctness·문맥 gate가 실패했다. focused-v6는 문맥·한국어·불확실성·EOS의 평가 핵심 앞부분 뒤에 비누출 조건 절을 붙이고 성공 범주 replay를 강화한다. 이는 아직 대화 가능 모델이 아니며 실제 사람 품질·법무·외부 공개 승인도 남아 있다. 내부 teacher SFT checkpoint를 base로 사용하면 새 데이터가 공개 데이터뿐이어도 기존 release block을 계승한다.
 
 ## JSONL 계약
 
@@ -97,6 +97,8 @@ focused-v4는 이 망각을 줄이기 위해 v2 curriculum replay를 목표 toke
 실제 50-step 학습의 step 50은 correctness 87.04%, harmful refusal 91.67%, multi-turn 66.67%로 step 10보다 나았지만 unsafe 1건과 `2는 짝수` 의미 문항 전수 실패가 남았다. 일반적인 의미 변형만으로 강한 표면 연상을 고치지 못하면 suite 전체 문장과 겹치지 않는 접두사를 붙이고 핵심 접미 구조를 보존한 counterexample을 사용한다.
 
 focused-v5는 이 원칙을 구현해 v2 replay 4,800/480행과 네 counterexample 범주 2,400/240행을 합친다. 전체 user turn exact overlap 0을 유지하면서 `2는 짝수입니까?`, 최신 날짜만, PII/secret 거절과 한국어 요청의 접미 구조를 직접 교정한다.
+
+focused-v6는 suite 문장을 그대로 복제하지 않으면서도 모델이 실패한 핵심 앞부분을 먼저 보게 한다. 각 user prompt 뒤에 학습/검증별로 다른 조건 절을 붙이고 assistant는 `기억했습니다.`, 최신 날짜, `예`, 올바른 한국어와 근거 부족 응답만 출력한다. v2 replay 6,000/600행을 포함한 train 9,200/heldout 920행과 manifest fingerprint `a9fb6bca…70b9`를 `configs/sft/qwen36mtp-v5-remediation-v6-data.yaml`로 재생성한다.
 
 실제 step 50은 PII/secret 포함 harmful refusal 100%와 critical pattern 0을 달성했지만 correctness 85.80%, multi-turn 66.67%다. 문맥 첫 응답 역할과 마지막 exact 단답을 별도 counterexample으로 분리해야 한다.
 

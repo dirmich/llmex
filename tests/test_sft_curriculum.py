@@ -262,6 +262,27 @@ def test_focused_v5는_접미_counterexample도_suite_전체_문장과_겹치지
     assert preflight_curriculum(focused_v4) == previous
 
 
+def test_focused_v6는_suite_핵심_앞부분을_보존하고_전체_prompt는_비누출이다(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path)
+    focused_v5 = config.model_copy(update={"generator_profile": "focused-v5"})
+    previous = preflight_curriculum(focused_v5)
+    focused_v6 = config.model_copy(
+        update={
+            "name": "curriculum-focused-v6-test",
+            "generator_profile": "focused-v6",
+            "output_dir": tmp_path / "focused-v6",
+        }
+    )
+    result = preflight_curriculum(focused_v6)
+    mass = cast(dict[str, object], result["target_token_mass"])
+    assert set(mass) == {"context", "eos", "korean", "replay", "uncertainty"}
+    assert result["all_user_prompt_overlap"] == {"train_heldout": 0, "suite": 0}
+    assert result["source_overlap"] == 0
+    assert preflight_curriculum(focused_v5) == previous
+
+
 def test_curriculum_config와_CLI가_엄격한_종류를_지원한다(tmp_path: Path) -> None:
     config = _fixture(tmp_path)
     config_path = tmp_path / "curriculum.yaml"

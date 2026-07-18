@@ -1,5 +1,11 @@
 # 변경 기록
 
+## 1.15.0 - 2026-07-18
+
+- 문맥·한국어·불확실성·EOS의 평가 핵심 앞부분을 보존하고 후행 조건 절로 전체 prompt 중복을 피하는 `focused-v6` profile을 추가했다.
+- v2 성공 범주 replay 6,000/600행과 생성 3,200/320행을 합쳐 train 9,200/heldout 920행을 생성했다.
+- suite·split 모든 user turn overlap 0, source overlap 0, 이전 profile 불변과 byte 재유도를 검증했다.
+
 ## 1.14.2 - 2026-07-18
 
 - CPU/CUDA/DGX Spark/local teacher의 환경 프로필과 00~20장별 준비·종료 증거표를 추가했다.

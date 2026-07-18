@@ -1,8 +1,14 @@
 # LLMEX 개발 TODO
 
-## 1.14.2 교재 offline 대화 E2E 완료
+## 1.15.0 focused-v6 보정 데이터 완료
 
 ### 완료
+
+- [x] 평가 핵심 앞부분과 exact assistant 목표를 보존한 후행 조건 절 기반 focused-v6
+- [x] 문맥·한국어·불확실성·EOS 생성 3,200/320행과 v2 replay 6,000/600행
+- [x] train 9,200/heldout 920행, suite·split user overlap 0, source overlap 0
+- [x] assistant 목표 token replay 비중 약 74.7%, focused-v5 불변과 byte 재유도
+- [ ] v5 안전 checkpoint 기반 focused-v6 저학습률 SFT와 고정 162응답 평가
 
 - [x] CPU/CUDA/DGX Spark/local teacher 환경 프로필과 00~20장별 준비표
 - [x] 공개·teacher 4 split, teacher manifest, tokenizer, 동적 mix·SFT·quality 설정 생성기

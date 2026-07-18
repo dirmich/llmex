@@ -1,6 +1,6 @@
 # LLMEX
 
-LLMEX 1.14.2는 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v5 50-step은 harmful refusal 100%, unsafe·PII·secret·loop 0과 EOS 100%를 달성했지만 correctness 85.80%, multi-turn 66.67%로 자동 gate가 실패했다. 문맥 역할·exact 단답과 EOS sampling을 다음 보정 대상으로 유지한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
+LLMEX 1.15.0은 날짜가 고정된 한국어 Wikipedia 사전학습, 허가된 JSONL 대화 데이터의 assistant-only SFT와 내부 전용 teacher 증류 데이터 수집을 위한 재현 가능한 교육·연구 도구다. focused-v5 50-step은 안전·EOS를 회복했지만 correctness 85.80%, multi-turn 66.67%로 자동 gate가 실패했다. 이를 보정하는 focused-v6는 평가 핵심 앞부분 뒤에 비누출 조건 절을 붙인 문맥·한국어·불확실성·EOS 데이터와 강한 성공 범주 replay를 제공한다. 추가 SFT는 내부 teacher base의 release block을 항상 계승한다. 자동·수동 대화 품질 gate와 57개 Python 파일별 공개 계약·구현 순서·실패 테스트, 실행 가능한 offline 대화 E2E를 갖춘 [수학 기반 이론·Python 실습 교재](docs/book/README.md)를 포함한다. 내부 teacher 출력·가중치·corpus는 독립 사람 검토와 법무·공개 배포 승인 전 외부 공개하지 않는다.
 
 ## 빠른 시작
 
@@ -33,7 +33,7 @@ Python 3.11 이상과 `uv`가 필요하다. 테스트는 네트워크와 GPU를 
 - `data/`, `artifacts/`, `runs/`: Git에 넣지 않는 host 영속 데이터
 - `docs/environment.md`: 로컬·DGX Spark 환경 계약
 - `docs/history.md`: 구현·검증 이력
-- `docs/book/`: 환경부터 release까지 이어지는 00~19장 교재, 57개 모듈 카드와 결정적 smoke 예제
+- `docs/book/`: 환경부터 release까지 이어지는 00~20장 교재, 57개 모듈 카드와 결정적 smoke 예제
 - `docs/chat-sft.md`: JSONL 대화 데이터, SFT 재개, 평가·생성 계약
 - `docs/teacher-distillation.md`: teacher 10k 준비·수집·재개·export·검증 계약
 

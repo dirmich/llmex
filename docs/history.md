@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-18 · 1.15.0 핵심 앞부분 보존 focused-v6 curriculum
+
+- focused-v5의 실제 실패가 문맥 첫 turn 역할, 최신 날짜 exact 단답, EOS sampling과 한국어 형식에 집중된 것을 근거로 `focused-v6`를 추가했다. suite user 문장의 핵심 앞부분을 유지하고 별도 학습/검증 조건 절을 뒤에 붙여 전체 canonical prompt 중복은 만들지 않는다.
+- `configs/sft/qwen36mtp-v5-remediation-v6-data.yaml`은 생성 3,200/320행과 v2 성공 범주 replay 6,000/600행을 합쳐 train 9,200/heldout 920행을 게시했다. SHA는 `2e6ab62d…476a`·`a4a18e46…075d`, manifest fingerprint는 `a9fb6bca…70b9`다.
+- suite·split 모든 user turn overlap과 source overlap은 0이다. replay assistant 목표 token 131,085개는 전체 175,415개의 약 74.7%이며 focused-v5 preflight 결과 불변과 내부 teacher 파생 release block을 유지한다.
+
 ## 2026-07-18 · 1.14.2 실행 가능한 모듈별 학습 교재
 
 - CPU·CUDA pilot·DGX Spark·localhost teacher 환경을 분리하고 00~20장마다 최소 프로필, 입력, 시작 명령과 종료 증거를 정리했다. 현재 코드와 artifact를 권위로 사용하고 `../knowledge_base` wiki는 과거 운영 맥락의 보조 자료로 유지했다.

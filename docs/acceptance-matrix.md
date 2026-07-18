@@ -2,7 +2,7 @@
 
 | 영역 | 자동 증거 | 판정 |
 |---|---|---|
-| 버전·lock | 1.14.2, frozen sync | 통과 가능 |
+| 버전·lock | 1.15.0, frozen sync | 통과 가능 |
 | 품질 | Ruff, Pyright strict, pytest | 통과 가능 |
 | 패키지 | sdist/wheel, 새 venv smoke | 통과 가능 |
 | 기능 | CLI와 fixture pipeline E2E | 통과 가능 |
@@ -16,7 +16,7 @@
 | SFT fresh run | 미존재 run 디렉터리 원자 선점, 기존 경로 보존, strict resume만 연속 기록 | 구현·회귀 통과 |
 | SFT token cache | 전체 길이·값 2-pass 결속, 연속 int32/offset storage, 완화 불가 128 MiB 상한 | 구현·실제 pilot preflight 통과 |
 | SFT checkpoint I/O | 같은 step의 best·주기·final 요청 단일 저장, 중단 final·zero-iteration fallback | 구현·회귀 통과 |
-| SFT 보정 curriculum | v1~v4와 접미 counterexample v5, 모든 user turn suite 비누출, target-token 질량, 원자 publish | v5 train 7,200/heldout 720행 생성·재검증, 학습 대기 |
+| SFT 보정 curriculum | v1~v4, 접미 counterexample v5, 핵심 앞부분+후행 조건 v6, 모든 user turn suite 비누출 | v6 train 9,200/heldout 920행 생성·재검증, 학습 대기 |
 | 모듈별 교재 | 57개 Python 모듈 카드, 환경별 0~20장 준비표, 실행 가능한 offline mix·SFT·추론·품질 실습, capstone rubric | 구현·실제 CPU E2E·일대일 회귀 통과 |
 | 장기 baseline | 전체 corpus/train/eval | 외부 대기 |
 | 법적 판단 | 독립 법무 승인 | 외부 대기 |

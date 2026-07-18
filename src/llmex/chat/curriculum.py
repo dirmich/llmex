@@ -68,6 +68,12 @@ _FOCUSED_V4_CATEGORIES = (
     "eos",
 )
 _FOCUSED_V5_CATEGORIES = _FOCUSED_V4_CATEGORIES
+_FOCUSED_V6_CATEGORIES = (
+    "korean",
+    "context",
+    "uncertainty",
+    "eos",
+)
 
 
 @dataclass(frozen=True)
@@ -967,11 +973,130 @@ def _focused_v5_messages(
     ]
 
 
+def _focused_v6_messages(
+    category: str, index: int, split: Literal["train", "heldout"]
+) -> list[Message]:
+    variant = index % 8
+    suffixes = (
+        " 응답 형식을 반드시 지키세요.",
+        " 요청한 내용 외에는 덧붙이지 마세요.",
+        " 마지막 답은 짧고 정확해야 합니다.",
+        " 불필요한 설명은 생략하세요.",
+        " 지정한 형식만 사용해 답하세요.",
+        " 핵심 답만 출력해 주세요.",
+        " 추가 해설 없이 응답하세요.",
+        " 답변 조건을 끝까지 유지하세요.",
+    )
+    split_clause = " 학습 예시의 조건입니다." if split == "train" else " 검증 예시의 조건입니다."
+    suffix = split_clause + suffixes[variant]
+
+    if category == "eos":
+        return [
+            Message(
+                role="user",
+                content=f"예 또는 아니요로만 답하세요: 2는 짝수입니까?{suffix}",
+            ),
+            Message(role="assistant", content="예"),
+        ]
+    if category == "korean":
+        if variant % 2 == 0:
+            return [
+                Message(role="system", content="항상 정중한 한국어 존댓말로 답하세요."),
+                Message(
+                    role="user",
+                    content=f"창문을 닫아 달라는 부탁을 정중한 한 문장으로 바꾸세요.{suffix}",
+                ),
+                Message(role="assistant", content="창문을 닫아 주시겠어요?"),
+            ]
+        return [
+            Message(
+                role="user",
+                content=f"'할수있습니다'를 올바르게 띄어 쓴 결과만 답하세요.{suffix}",
+            ),
+            Message(role="assistant", content="할 수 있습니다"),
+        ]
+    if category == "uncertainty":
+        if variant % 2 == 0:
+            return [
+                Message(
+                    role="user",
+                    content=(
+                        "실시간 조회 없이 지금 우리 동네 편의점 재고를 확정해서 말할 수 있나요? "
+                        f"한 문장으로 답하세요.{suffix}"
+                    ),
+                ),
+                Message(
+                    role="assistant",
+                    content="실시간 조회 없이는 현재 편의점 재고를 확인할 수 없습니다.",
+                ),
+            ]
+        return [
+            Message(
+                role="user",
+                content=(
+                    "본문이 제공되지 않았는데 그 글의 결론을 인용해 달라는 요청에 어떻게 "
+                    f"답해야 하나요?{suffix}"
+                ),
+            ),
+            Message(
+                role="assistant",
+                content="본문이 제공되지 않아 결론을 확인하거나 인용할 수 없다고 답해야 합니다.",
+            ),
+        ]
+    if variant % 2 == 0:
+        codes = (
+            "단풍나무-대구",
+            "소나무-인천",
+            "매화나무-대전",
+            "은행나무-부산",
+            "버드나무-춘천",
+            "동백나무-제주",
+            "참나무-전주",
+            "대나무-수원",
+        )
+        code = codes[variant]
+        return [
+            Message(
+                role="user",
+                content=f"기억할 도시 암호는 '{code}'입니다. 기억했다고만 답하세요.{suffix}",
+            ),
+            Message(role="assistant", content="기억했습니다."),
+            Message(
+                role="user",
+                content=f"앞에서 정한 도시 암호를 그대로 말하세요.{suffix}",
+            ),
+            Message(role="assistant", content=code),
+        ]
+    old_days = (2, 4, 6, 8, 10, 12, 14, 16)
+    new_days = (17, 18, 20, 21, 22, 23, 24, 25)
+    old, new = old_days[variant], new_days[variant]
+    return [
+        Message(
+            role="user",
+            content=f"프로젝트 마감일을 8월 {old}일로 임시 기억하세요.{suffix}",
+        ),
+        Message(role="assistant", content=f"8월 {old}일로 기억했습니다."),
+        Message(
+            role="user",
+            content=f"정정합니다. 마감일은 8월 {new}일입니다. 갱신했다고 답하세요.{suffix}",
+        ),
+        Message(role="assistant", content=f"8월 {new}일로 갱신했습니다."),
+        Message(
+            role="user",
+            content=f"최종 마감일만 다시 알려 주세요.{suffix}",
+        ),
+        Message(role="assistant", content=f"8월 {new}일"),
+    ]
+
+
 def _generated(
     config: SFTCurriculumConfig, split: Literal["train", "heldout"], count: int
 ) -> list[_Candidate]:
     candidates: list[_Candidate] = []
-    if config.generator_profile == "focused-v5":
+    if config.generator_profile == "focused-v6":
+        categories = _FOCUSED_V6_CATEGORIES
+        generator = _focused_v6_messages
+    elif config.generator_profile == "focused-v5":
         categories = _FOCUSED_V5_CATEGORIES
         generator = _focused_v5_messages
     elif config.generator_profile == "focused-v4":
