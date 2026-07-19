@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.69 Gemma4 한국어 대화 데이터 10k 수집·검증
+
+- `http://macmini:11434/v1` Gemma4 teacher에서 자연스러운 한국어 대화 요청 10,000건을 수집했다.
+- 수집 결과: accepted 10,000건, rejected 0건, 오류 0건, 처리량 약 0.604 req/s, 총 소요 약 4시간 36분.
+- export 결과는 `runs/distill/gemma4-conversation-10000-v3/export/`에 저장했으며 train 6,215건·heldout 2,380건으로 분할됐다.
+- provenance, teacher manifest, inventory SHA-256을 고정하고 `distill validate`에서 prompt overlap 0, upstream source overlap 0, status ok를 확인했다.
+- 내부 teacher 파생물이므로 `redistribution_allowed=false`, `release_gate=blocked`를 유지한다. 이후 한국어 SFT teacher 혼합 입력으로 사용한다.
+
 ## 2026-07-19 · 1.22.68 identity oversampled 재학습
 
 - identity 데이터가 10k 일반 대화에 묻히지 않도록 `train_data_extra_repeats` 설정을 추가하고 100배 혼합 재학습을 실행했다.
