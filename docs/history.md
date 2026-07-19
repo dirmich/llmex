@@ -1,5 +1,14 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.68 identity oversampled 재학습
+
+- identity 데이터가 10k 일반 대화에 묻히지 않도록 `train_data_extra_repeats` 설정을 추가하고 100배 혼합 재학습을 실행했다.
+- 설정: `configs/sft/qwen36mtp-v5-conversation-identity-mix-oversampled-100.yaml`.
+- 결과: 100 step, validation loss 1.9680, perplexity 7.1564.
+- HF 산출물: `~/work/models/llmex/hf-conversation-identity-oversampled-v1`.
+- GGUF 산출물: `~/work/models/llmex/qwen36mtp-v5-conversation-identity-oversampled-f16.gguf`.
+- GGUF smoke는 여전히 즉시 EOS/빈 응답으로 끝나므로 대화 가능 판정은 보류한다. HF 직접 추론과 GGUF 간 변환 차이를 다음 수정 대상으로 고정했다.
+
 ## 2026-07-19 · 1.22.65 highmaru identity 혼합 SFT
 
 - 원래 한국어 10k 대화 데이터와 `data/chat/identity-highmaru.jsonl`을 함께 학습할 수 있도록 `train_data_extra`를 SFT 설정과 런타임에 추가했다.
