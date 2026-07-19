@@ -1,5 +1,44 @@
 # LLMEX 개발 TODO
 
+## 자연스러운 한국어 대화 모델 완성 계획 (1.22.70)
+
+현재 100M 모델은 위키 문장 연속 생성과 identity 실패가 확인되었으므로, 단순히 SFT step을 늘리지 않고 다음 순서를 완료해야 한다.
+
+### A. 기반 모델·데이터 계약
+
+- [ ] 100M from-scratch checkpoint와 pretrained 100M/1B 후보를 동일한 20개 prompt로 비교하고, 문장 완결률·반복률·한국어 비문율을 기록한다.
+- [ ] 채택 기반 모델의 tokenizer, BOS/EOS, role token, chat template을 HF·llmex runtime·GGUF에 걸쳐 byte 단위로 고정한다.
+- [ ] 일반 corpus와 대화 corpus를 분리한다. 일반 corpus는 한국어 50%, 영어 25%, 문서·기술 15%, 대화 10%를 목표로 하며 HTML·개인정보·중복·위키 연속문을 제거한다.
+- [ ] 모든 source row에 provenance, license, source SHA, split fingerprint를 남기고 train/heldout prompt·source overlap을 0으로 검증한다.
+
+### B. 대화 데이터 설계
+
+- [ ] Gemma4 10k export(train 6,215/heldout 2,380)와 기존 한국어 대화를 혼합하되, teacher 응답의 release block과 license를 계승한다.
+- [ ] identity 변형을 최소 300행으로 확장한다. 이름 `llmex`, 제작자 `highmaru`가 직접 질문·간접 질문·영어·일본어 질문에서도 일관되게 유지되어야 한다.
+- [ ] 자연 대화 유형을 균형 있게 구성한다: 인사, 감정 공감, 일상 조언, 사실 질문, 모르는 내용 처리, 3~5턴 기억, 안전 거절, 문서 작성.
+- [ ] 각 답변은 기본 1~3문장·300자 이내로 정제하고, 질문 반복·불필요한 서론·위키식 이어쓰기·근거 없는 확신을 제거한다.
+- [ ] teacher 생성 데이터는 canonical response 중복률과 prompt copy ratio를 측정하고, 중복 응답은 학습 전에 제거한다.
+
+### C. 학습 단계
+
+- [ ] pretrained 기반 모델이면 LoRA/SFT를 먼저 수행하고, from-scratch 100M이면 최소 20B token pretraining 없이는 대화 SFT를 최종 후보로 승격하지 않는다.
+- [ ] 일반 대화와 identity를 함께 학습하고 identity-only 학습은 금지한다. identity 비중은 전체 train의 1~3%로 제한하며 oversampling 전후 일반 validation loss를 비교한다.
+- [ ] 학습 checkpoint마다 일반 validation, identity validation, multi-turn validation을 별도로 기록한다. 한 지표만 좋아지고 다른 지표가 악화되면 폐기한다.
+- [ ] EOS 조기 종료, 반복률, assistant label mask, sequence truncation을 학습 중 자동 검사한다.
+
+### D. 실제 대화 품질 gate
+
+- [ ] 고정 suite에 identity 3개, 수도·사실성 3개, 감정 3개, 다중 턴 3개, 안전 거절 3개, 자유대화 10개를 포함한다.
+- [ ] 합격 기준: 빈 응답 0, 즉시 EOS 0, 반복률 기준 통과, identity 정확성 100%, 안전 거절 100%, 수도 질문 `서울` 포함, 다중 턴 기억 100%.
+- [ ] suite 밖의 새로운 한국어 질문 50개를 별도로 실행해 위키 연속생성·환각·문법 붕괴를 수동 점검한다.
+- [ ] HF 직접 추론을 먼저 통과시킨 뒤 동일 prompt의 GGUF/llama.cpp 결과와 token·EOS·응답을 비교한다. 둘 중 하나라도 다르면 export를 실패 처리한다.
+
+### E. 배포·기록
+
+- [ ] 통과 checkpoint만 HF 형식과 GGUF로 export하고 SHA-256, 파라미터 수, tokenizer manifest, 실행 명령을 기록한다.
+- [ ] 각 학습·수집·평가의 시작 시각, 종료 시각, 소요 시간, 처리량, 실패 수, 메모리 사용량을 `runs/*` artifact와 `docs/history.md`에 함께 기록한다.
+- [ ] 현재 100M GGUF는 자연 대화 gate 미통과로 유지하고, pretrained 100M/1B 후보 비교 결과가 나온 뒤 최종 기반 모델을 결정한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
