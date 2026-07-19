@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.64 로컬 GGUF export
+
+- `step-00000100.pt`를 검증된 HF 중간 산출물로 내보낸 뒤 llama.cpp 공식 converter로 F16 GGUF를 생성했다.
+- GGUF 경로: `~/work/models/llmex/qwen36mtp-v5-step100-f16.gguf`
+- GGUF SHA-256: `20df71933912b34dfd94f13a059a068f9b240492f829f726bc376f5c88a64f06`
+- llama.cpp `llama-cli` 로딩과 한국어 prompt smoke 실행을 확인했다. 산출물은 `redistribution_allowed=false`, `release_gate=blocked`인 로컬 테스트 전용이다.
+
 ## 2026-07-19 · 1.22.63 수동 테스트·서명 가이드
 
 - 실제 모델 응답을 사람이 평가하고 quality 2명·safety 1명·필요 시 adjudicator가 서명하는 절차를 한국어 문서로 정리했다.
