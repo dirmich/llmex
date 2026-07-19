@@ -1,5 +1,15 @@
 # 구현 이력
 
+## 2026-07-19 · 1.22.65 highmaru identity 혼합 SFT
+
+- 원래 한국어 10k 대화 데이터와 `data/chat/identity-highmaru.jsonl`을 함께 학습할 수 있도록 `train_data_extra`를 SFT 설정과 런타임에 추가했다.
+- identity-only 100 step은 일반 질의가 깨지는 과적합을 확인해 최종 모델로 채택하지 않고, 원본 대화 데이터와 identity를 섞은 100 step SFT를 실행했다.
+- 실행 설정: `configs/sft/qwen36mtp-v5-conversation-identity-mix-100.yaml`, 체크포인트: `runs/sft-qwen36mtp-v5-conversation-identity-mix-100/checkpoints/best.pt`.
+- 최종 학습 기록: step 100, validation loss 1.9685, perplexity 7.1600.
+- 로컬 HF 산출물: `~/work/models/llmex/hf-conversation-identity-mix-v1`.
+- 로컬 GGUF 산출물: `~/work/models/llmex/qwen36mtp-v5-conversation-identity-mix-f16.gguf` (SHA-256 `1a4e8b41e811358731606c7bf10eb3ac3afcfbd6fd3e92d37f35545bb44c1c71`).
+- identity 문구는 `llmex`와 `highmaru`를 명시하도록 데이터에 고정했다. llama.cpp 실행 파일의 이번 smoke 출력은 빈 응답으로 끝나 별도 런타임 원인 조사 대상이며, 이를 대화 품질 통과로 주장하지 않는다.
+
 ## 2026-07-19 · 1.22.64 로컬 GGUF export
 
 - `step-00000100.pt`를 검증된 HF 중간 산출물로 내보낸 뒤 llama.cpp 공식 converter로 F16 GGUF를 생성했다.

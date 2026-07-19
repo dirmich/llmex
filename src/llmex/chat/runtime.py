@@ -62,7 +62,21 @@ class _TokenizedSplitCache:
 
 def _datasets(config: SFTConfig) -> tuple[ChatDataset, ChatDataset]:
     allowed = set(config.allowed_licenses)
-    train = load_chat_jsonl(config.train_data, split="train", allowed_licenses=allowed)
+    train_parts = [load_chat_jsonl(config.train_data, split="train", allowed_licenses=allowed)]
+    train_parts.extend(
+        load_chat_jsonl(path, split="train", allowed_licenses=allowed)
+        for path in config.train_data_extra
+    )
+    if len(train_parts) == 1:
+        train = train_parts[0]
+    else:
+        examples = tuple(item for part in train_parts for item in part.examples)
+        train = ChatDataset(
+            examples=examples,
+            file_sha256=fingerprint([part.file_sha256 for part in train_parts]),
+            fingerprint=fingerprint([part.fingerprint for part in train_parts]),
+            licenses=tuple(sorted({license for part in train_parts for license in part.licenses})),
+        )
     heldout = load_chat_jsonl(config.heldout_data, split="heldout", allowed_licenses=allowed)
     overlap = {item.sha256 for item in train.examples} & {item.sha256 for item in heldout.examples}
     if overlap:

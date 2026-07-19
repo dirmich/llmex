@@ -233,6 +233,7 @@ class SFTConfig(StrictModel):
     model: ModelConfig
     tokenizer_dir: YamlPath
     train_data: YamlPath
+    train_data_extra: list[YamlPath] = Field(default_factory=list)
     heldout_data: YamlPath
     source_manifest: YamlPath | None = None
     expected_source_manifest_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
