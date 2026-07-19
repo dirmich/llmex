@@ -67,6 +67,8 @@ def _datasets(config: SFTConfig) -> tuple[ChatDataset, ChatDataset]:
         load_chat_jsonl(path, split="train", allowed_licenses=allowed)
         for path in config.train_data_extra
     )
+    if config.train_data_extra_repeats > 1 and len(train_parts) > 1:
+        train_parts = [train_parts[0], *train_parts[1:] * config.train_data_extra_repeats]
     if len(train_parts) == 1:
         train = train_parts[0]
     else:

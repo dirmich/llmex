@@ -13,6 +13,7 @@ model:
 tokenizer_dir: artifacts/tokenizers/bpe-16k
 train_data: data/chat/ko-qwen-natural-v5-10k-multiturn-aligned/train.jsonl
 train_data_extra: [data/chat/identity-highmaru.jsonl]
+train_data_extra_repeats: 100
 heldout_data: data/chat/ko-qwen-natural-v5-10k-multiturn-aligned/heldout.jsonl
 run_dir: runs/sft-qwen36mtp-v5-conversation-identity-mix-100
 allowed_licenses: [Apache-2.0, LicenseRef-LLMEX-Internal-Curriculum, LicenseRef-LLMEX-Internal-Distillation]
