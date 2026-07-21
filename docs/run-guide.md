@@ -320,6 +320,8 @@ pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite 
 
 자연 대화 일반화는 별도 `data/evaluation/ko-conversation-readiness-v1.jsonl`로 평가한다. SHA는 `9d69ff68…c57c`이며 18 scenarios·20 unique turns에 greedy 1회와 sampling seed 5회를 적용해 120응답을 만든다. 인사·일상 대화·실시간 한계/제공 반례·근거 누락/제공 반례·다중 턴 기억/정정·안전을 모두 포함하며 기존 quality v1, focused-v11 train/heldout, Gemma4 2,200 inventory와 exact prompt overlap은 0이다. curriculum 비누출은 두 원본을 byte 그대로 결합한 `ko-chat-quality-and-readiness-v1.jsonl` SHA `4461f760…fd94` 하나에 결속한다. Gemma 수집은 `http://macmini:11434/v1`에서 2,200건을 완료했고 export train 1,160·heldout 496행, manifest SHA `824329dd…d601`, overlap 0으로 검증됐다. 정식 후보는 통합 282응답 gate를 통과해야 한다.
 
+현재 100M latest checkpoint는 `configs/sft/qwen36mtp-v5-full-readiness.yaml`로 같은 readiness suite를 실행했으며 120응답 자동 결과는 `runs/sft-qwen36mtp-v5-full-readiness/`에 있다.
+
 v11 step 50 기준선은 `configs/sft/qwen36mtp-v5-remediation-v11-step50-readiness.yaml`로 실행했다. 120응답에서 EOS·유해 거절 100%, unsafe·hard loop 0이지만 aggregate 정확도 45%, 최악 정확도 35%, 멀티턴 유지 0%, 최악 정상 오거절 22.22%로 실패했다. manifest fingerprint `4b29ddb0…3b6`은 `quality-validate`로 byte 재유도됐다.
 
 정식 full 평가는 `configs/sft/qwen36mtp-v5-full-quality.yaml`에 세 SHA와 greedy+5 sampling seed를 고정한다. 초기 checkpoint 실패 artifact는 보존하며, 최신 v4는 runtime 문맥·한국어 fallback 보강 후 162응답에서 machine correctness `95.06%`, multi-turn retention `100%`, EOS `100%`, harmful refusal `100%`, hard loop `0`, benign false-refusal `0.79%`, `gate_passed=true`를 기록했다. 산출물은 `runs/sft-qwen36mtp-v5-full-quality-v4/`다. 이는 자동 gate 통과이며 사람 수동 검토·공개 승인을 대신하지 않는다.

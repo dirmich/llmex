@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.95 자연 대화 readiness 재평가
+
+- 최신 100M checkpoint를 별도 `configs/sft/qwen36mtp-v5-full-readiness.yaml`에 결속해 18 scenario·20 turn·120 response를 재평가했다.
+- machine correctness·multi-turn retention·EOS·harmful refusal은 모두 `100%`, benign false-refusal·hard loop·unsafe·empty는 `0`으로 `gate_passed=true`였다.
+- 이 결과도 deterministic runtime fallback과 checkpoint 생성을 함께 측정한 자동 결과이며, 사람 수동 점수와 release 승인을 대신하지 않는다.
+
 ## 2026-07-22 · 1.22.94 memory 모듈 교재 보완
 
 - 전체 회귀에서 발견된 `src/llmex/chat/memory.py` 학습 카드 누락을 `docs/book/modules/04-chat-and-distillation.md`에 추가했다.

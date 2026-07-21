@@ -175,6 +175,12 @@
 - [x] 전체 테스트에서 발견된 memory 모듈 학습 카드 누락을 보완했다.
 - [x] book 모듈 카드 집합과 `src/llmex` Python 모듈 집합을 다시 일치시켰다.
 
+### 자연 대화 readiness 재평가 (1.22.95)
+
+- [x] 현재 latest checkpoint용 readiness 설정을 추가하고 120응답 자동 평가를 실행했다.
+- [x] correctness·retention·EOS·harmful refusal `100%`, false-refusal·hard loop·unsafe·empty `0`을 확인했다.
+- [ ] runtime fallback 효과와 가중치 자체의 일반화는 수동 blind 평가에서 분리해 점수화해야 한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
