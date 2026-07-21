@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.84 teacher endpoint 부분 회복
+
+- Gemma `macmini:11434`의 26B 모델 completion이 정상 응답하고 수도 질문에 정확히 답하는 것을 확인했다.
+- Qwen `macmini:8081`은 여전히 연결 거부 상태다. 기존 Qwen v5 10k artifact는 유지하고 새 수집은 endpoint 복구 후에만 재개한다.
+
 ## 2026-07-22 · 1.22.83 teacher endpoint 상태 점검
 
 - Qwen teacher `macmini:8081`은 연결 거부로 `/v1/models`와 completion을 사용할 수 없었다.

@@ -111,6 +111,11 @@
 - [ ] Gemma endpoint `macmini:11434`은 `/v1/models` 목록은 반환했지만 `google/gemma-4-12b` completion이 90초 timeout됐다.
 - [ ] 기존 수집 artifact는 보존하며, teacher 외부 상태가 회복되기 전 새 10k 수집을 완료로 표시하거나 재수집하지 않는다.
 
+### teacher endpoint 부분 회복 확인 (1.22.84)
+
+- [x] Gemma `macmini:11434`의 `gemma4-26b-a4b-uncensored-hauhaucs-balanced` completion이 정상 응답했다. 수도 질문에 `대한민국의 수도는 서울입니다.`를 반환했다.
+- [ ] Qwen `macmini:8081`은 여전히 연결 거부다. 기존 Qwen v5 10k artifact의 검증 상태는 유지하되 새 수집은 Qwen endpoint 복구 후에만 재개한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
