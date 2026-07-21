@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.89 runtime identity·공감 보정
+
+- deterministic memory 계층에 `highmaru`가 만든 `llmex` identity 응답과 우울감 최소 공감 응답을 추가했다.
+- 이는 100M 모델 가중치 학습 성공이 아니라 제품 runtime의 명시적 fallback이며, 두 동작을 문서에서 분리했다.
+
 ## 2026-07-22 · 1.22.88 mixed identity remediation 100단계
 
 - mixed best checkpoint에 identity 5행을 100배 추가해 100 step 보정 SFT를 실행했다. source manifest는 extra 입력과 결속되지 않아 제거했고 내부 release blocked는 유지했다.

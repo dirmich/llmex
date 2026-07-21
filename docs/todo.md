@@ -139,6 +139,11 @@
 - [ ] identity gate 실패: 이름 질문은 노래 제목 위키 문장, `너는 누구냐?`는 질문 되풀이와 잘못된 이름을 출력했다. 수도 exact prompt만 `서울` 후 EOS였다.
 - [ ] 결론: identity 반복 배수 증가는 해법이 아니며 해당 checkpoint를 승격하지 않는다.
 
+### runtime identity·공감 보정 (1.22.89)
+
+- [x] 모델 가중치 학습과 구분되는 deterministic memory fallback에 `llmex/highmaru` identity와 우울감 공감 최소 응답을 추가했다.
+- [x] 이 보정은 제품 runtime의 명시적 계약이며, 100M checkpoint가 해당 내용을 학습했다는 증거로 사용하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
