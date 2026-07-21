@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.74 pretrained best 기반 SFT 비교
+
+- 저장소의 실제 100M pretraining best checkpoint(`runs/baseline-100m/checkpoints/best.pt`, 약 5.9B token 학습)를 base로 Gemma4 10k + identity 300 step SFT를 실행했다.
+- validation loss/perplexity는 step 50 `3.8400/46.52`에서 step 300 `3.2571/25.97`로 개선됐다.
+- HF identity smoke 응답은 `너무나도 소중한 사람과 함께하는 마음이 느껴진다.`로 identity를 충족하지 못했다.
+- pretraining best를 사용해도 100M 모델의 자연 대화·identity gate는 실패했으므로 추가 GGUF export를 보류하고, 1B 이상 pretrained 기반 전환을 다음 후보로 남긴다.
+
 ## 2026-07-22 · 1.22.73 Gemma4 300 step 추가 SFT 결과
 
 - Gemma4 10k train과 identity 데이터를 기반으로 100M checkpoint에 300 step 추가 SFT를 실행했다.
