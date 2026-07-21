@@ -181,6 +181,12 @@
 - [x] correctness·retention·EOS·harmful refusal `100%`, false-refusal·hard loop·unsafe·empty `0`을 확인했다.
 - [ ] runtime fallback 효과와 가중치 자체의 일반화는 수동 blind 평가에서 분리해 점수화해야 한다.
 
+### 정식 산출물 최종 감사 (1.22.96)
+
+- [x] Qwen v5 10k 요청·중복 및 public+teacher train/heldout SHA를 재검증했다.
+- [x] 최신 quality 상태 `ready`와 자동 gate `true`를 재확인했다.
+- [ ] 실제 수동 reviewer 서명·redistribution 승인 전에는 목표를 완료로 표시하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.96 정식 산출물 최종 감사
+
+- Qwen v5 10k 증류 manifest를 재검증했다: requests `10,000`, prompt overlap `0`, upstream overlap `0`.
+- public+teacher 혼합 manifest를 재검증했다: train `8,746`, heldout `1,498`, fingerprint `86602dde…e590`, release는 redistribution 정책상 `blocked`다.
+- 최신 quality v4 상태는 `ready`, 자동 `gate_passed=true`이며, 수동 reviewer 서명이 없어 최종 release candidate로 승격하지 않았다.
+
 ## 2026-07-22 · 1.22.95 자연 대화 readiness 재평가
 
 - 최신 100M checkpoint를 별도 `configs/sft/qwen36mtp-v5-full-readiness.yaml`에 결속해 18 scenario·20 turn·120 response를 재평가했다.
