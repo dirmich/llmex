@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.81 로컬 모델 크기 조사
+
+- `/home/dirmich/work/models`를 조사해 1B~3B 호환 pretrained checkpoint가 없음을 확인했다.
+- 확인 가능한 가장 작은 별도 대화 모델은 Bonsai 8B이며, Gemma4/Qwen 26B~35B 모델과 함께 현재 llmex 100M `CausalLM`에 직접 주입할 수 없다.
+- 100M SFT 반복 대신 HF/Transformers 1B~3B adapter 또는 8B teacher 추론 경로를 다음 구현 대상으로 지정했다.
+
 ## 2026-07-22 · 1.22.80 혼합 SFT exact prompt 보조 검증
 
 - 시스템 문맥 없는 CLI exact prompt `대한민국의 수도는`에서 `서울` 후 EOS가 발생해 단일 암기 응답은 확인했다.

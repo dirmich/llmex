@@ -94,6 +94,12 @@
 - [x] 보조 확인: 시스템 문맥 없이 exact prompt `대한민국의 수도는`은 `서울` 후 EOS로 끝났지만, `너는 누구냐?`는 인터넷 방송인 위키 문장으로 이어졌다. 단일 암기 prompt 통과를 대화 gate 통과로 간주하지 않는다.
 - [ ] 결론: public+teacher 혼합과 validation loss 개선만으로 100M 자연대화가 성립하지 않는다. 다음 실험은 모델 크기/사전학습 품질을 바꾸지 않고 반복하지 않는다.
 
+### 모델 크기 전환 조사 (1.22.81)
+
+- [x] 로컬 `/home/dirmich/work/models`를 조사했다. 저장소의 100M 모델 외 가장 작은 확인 가능 대화 모델은 `bonsai-8b`이며, 1B~3B 호환 pretrained checkpoint는 없다.
+- [x] Gemma4/Qwen 계열 26B~35B와 Bonsai 8B는 GGUF 또는 별도 Transformers 구조라 현재 llmex 100M `CausalLM`에 직접 base로 주입할 수 없다.
+- [ ] 따라서 100M 자연대화 gate를 억지로 통과시키기 위해 step만 반복하지 않는다. 다음 구현은 HF/Transformers 1B~3B base adapter 또는 8B teacher용 별도 추론 경로를 추가하고 동일 suite를 재사용하는 것이다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
