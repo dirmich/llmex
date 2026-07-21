@@ -1,5 +1,45 @@
 # LLMEX 개발 TODO
 
+## 자연스러운 대화를 만들기 위한 상세 실행안 (1.22.77)
+
+현재 100M 후보는 위키식 문장 이어쓰기와 identity 불안정이 함께 관찰되었다. 따라서 `step`이나 identity 반복만 늘리는 방식은 중단하고, 아래의 원인별 순서를 지킨다.
+
+### 1. 먼저 모델·런타임 문제를 분리한다
+
+- [ ] 동일한 20개 prompt를 pretraining best, 각 SFT checkpoint, teacher에 실행해 빈 응답·즉시 EOS·반복·문법 붕괴를 표로 비교한다.
+- [ ] schema-1 pretraining checkpoint도 직접 생성할 수 있는 평가 경로를 추가한다. SFT resume 경로와 섞지 말고, tokenizer/BOS/EOS/role prefix의 토큰을 각각 dump해 차이를 확인한다.
+- [ ] HF runtime에서 통과한 모델만 GGUF로 변환한다. known-good GGUF와 llama.cpp를 먼저 smoke해 실행기 문제와 모델 문제를 분리하며, parity가 깨지면 배포하지 않는다.
+
+### 2. 대화 데이터의 질량과 다양성을 확보한다
+
+- [ ] teacher 10k를 최종 데이터로 간주하지 않는다. 실제 사용을 대표하는 한국어 1~3턴 대화 20k 이상을 목표로 하고, 인사·설명·질문 명확화·공감·요약·문서 작성·모름 처리·안전 거절을 균등하게 채운다.
+- [ ] 각 task에 좋은 답변·짧은 답변·잘못된 답변 교정·모호한 질문의 네 변형을 둔다. 답변은 질문을 반복하지 않고, 사실과 추정을 분리하며, 필요한 경우 한 가지 후속 질문만 한다.
+- [ ] identity는 300행 이상을 만들되 전체 학습 질량의 1~3%로 제한한다. `llmex`, `highmaru`, 이름/제작자/역할을 한국어 질문의 위치와 말투만 바꿔 표현하고, 일반 대화 validation에도 identity가 섞이지 않게 한다.
+- [ ] assistant 응답을 사람이 200행 이상 직접 감사한다. 위키 문체, 근거 없는 수치, 과도한 장문, 서로 다른 persona, 개인정보·위험 조언은 제거하거나 수정한다.
+- [ ] prompt hash·source hash·언어·task·turn 수·target token 수를 manifest에 기록하고, train/heldout의 prompt·source·의미 조합 overlap을 0으로 고정한다.
+
+### 3. 학습을 단계적으로 재설계한다
+
+- [ ] 일반 corpus로 충분히 언어를 습득한 pretrained base를 먼저 선택한다. from-scratch 100M은 최소 20B token과 heldout 언어 평가를 통과하기 전 대화 모델 후보로 승격하지 않는다.
+- [ ] 첫 SFT는 낮은 learning rate(2e-6~1e-5), 짧은 100~300 step으로 시작하고, 1,000 step 이상 장기 학습은 validation 악화가 없을 때만 진행한다. 매 실험은 seed·base SHA·data manifest SHA를 고정한다.
+- [ ] assistant label mask, EOS label, truncation 비율, gradient norm, train/validation loss를 매 checkpoint에 저장한다. EOS가 학습되지 않거나 truncation이 5%를 넘으면 학습을 중단한다.
+- [ ] identity oversampling, 전체 응답 replay, conversational-only 학습을 서로 독립적인 A/B로 비교한다. 일반 validation PPL이 10% 이상 악화되거나 identity 이외 응답이 위키식으로 변하면 해당 실험을 폐기한다.
+- [ ] 필요하면 2단계로 진행한다: (a) 대화 형식·EOS 적응 100~300 step, (b) 다양한 자연대화와 교정 예시 300~1,000 step. 단계 사이에 고정 suite를 실행해 망각을 확인한다.
+
+### 4. 자연스러움 합격 기준을 수치화한다
+
+- [ ] 자동 suite를 identity 10, 사실성 10, 공감 10, 모호성 10, multi-turn 10, 안전 10, 문서작성 10, 자유대화 30개로 고정한다.
+- [ ] 필수 gate는 빈/EOS 응답 0%, hard loop 0%, identity 정확도 100%, 안전 거절 100%, multi-turn 핵심 사실 보존 90% 이상, 한국어 비문·위키 연속생성 5% 미만이다.
+- [ ] suite 밖 신규 한국어 질문 100개를 blind set으로 생성하고, 사람이 자연스러움·도움됨·간결함·사실성·말투를 1~5점으로 평가한다. 평균 4.0 미만이면 승격하지 않는다.
+- [ ] decoding을 greedy와 고정 seed sampling(temperature/top-p/repetition penalty) 두 방식으로 평가한다. 한 설정에서만 자연스러우면 실패로 기록한다.
+
+### 5. 실패 시 복구 순서와 종료 조건
+
+- [ ] identity만 실패하면 데이터 누락·template·tokenizer를 먼저 검사하고, 반복 배수 증가는 마지막 수단으로 둔다.
+- [ ] 일반 응답이 위키식이면 conversational data를 더 넣기 전에 base corpus의 문서 연속성·문장 경계·EOS를 점검하고, 필요하면 더 나은 pretrained base로 교체한다.
+- [ ] HF 생성이 실패하면 GGUF 변환을 금지하고, GGUF만 실패하면 known-good 모델·metadata·special token을 비교해 export/runtime을 수정한다.
+- [ ] 위 gate를 모두 통과한 동일 SHA checkpoint만 `runs/release-candidate/`에 복사하고, 그 전까지는 HF 업로드·최종 GGUF 배포를 하지 않는다.
+
 ## 자연스러운 한국어 대화 모델 완성 계획 (1.22.70)
 
 현재 100M 모델은 위키 문장 연속 생성과 identity 실패가 확인되었으므로, 단순히 SFT step을 늘리지 않고 다음 순서를 완료해야 한다.

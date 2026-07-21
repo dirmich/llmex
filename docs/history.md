@@ -1408,3 +1408,12 @@
   train/evaluate/pack, model inspect, smoke train/resume, eval/generate/benchmark의 실제 `uv run`
   명령과 입력·출력 경로를 실행 순서대로 정리했다.
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
+# 변경 이력
+
+## 2026-07-22 · 1.22.77 자연스러운 대화 상세 실행안
+
+- 100M 모델의 위키식 이어쓰기·identity 불안정 문제를 런타임, 데이터, 학습, 평가, 배포 단계로 분리해 `docs/todo.md`에 실행 순서를 추가했다.
+- teacher 10k 의존을 피하고 20k 이상 균형 대화 데이터, 300행 이상 identity, 사람 감사, provenance·overlap 검증을 필수 조건으로 명시했다.
+- 낮은 학습률 A/B, 2단계 SFT, EOS·label mask·truncation 관찰과 일반 validation 망각 기준을 추가했다.
+- identity·사실성·공감·모호성·multi-turn·안전·문서작성·자유대화 고정 suite와 blind 100문항 사람 평가, HF/GGUF parity 및 실패 복구 종료 조건을 정의했다.
+- 프로젝트 버전을 1.22.77로 올리고 CLI/release 버전 회귀 기대값을 동기화했다.
