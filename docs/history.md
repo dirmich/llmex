@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.71 Gemma4 10k 기반 SFT 재실행
+
+- Gemma4 teacher export `runs/distill/gemma4-conversation-10000-v3/export/train.jsonl`(6,215행)과 identity 데이터를 사용해 100M latest checkpoint 기반 SFT를 실행했다.
+- 설정: `configs/sft/qwen36mtp-v5-gemma4-natural-10k-sft-100.yaml`, 100 step, identity extra 25회 반복.
+- validation loss/perplexity: step 25 `3.5939/36.38` → step 100 `3.3539/28.61`.
+- HF runtime smoke에서 identity 질문이 `llmex/highmaru`를 답하지 못하고 위키식 문장을 생성했다. 따라서 이번 checkpoint도 자연스러운 대화 gate를 통과하지 못했으며 GGUF export를 최종 산출물로 승격하지 않는다.
+- 이 결과는 100M 기반 checkpoint의 언어 능력 부족을 재확인하는 증거이며, 다음 후보는 pretrained 100M/1B 기반 SFT 비교다.
+
 ## 2026-07-19 · 1.22.70 자연스러운 대화 모델 완성 계획 추가
 
 - 100M 모델의 위키식 연속생성·identity 실패·GGUF 실행 불일치를 근거로, 기반 모델 선정부터 데이터 계약·대화 SFT·HF/GGUF parity·자유대화 gate까지의 상세 실행 계획을 `docs/todo.md`에 추가했다.
