@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.75 SFT identity batch 유입 검증
+
+- SFT runtime의 실제 train dataset을 점검해 Gemma4 train 6,215행과 identity 반복 25회가 합쳐진 6,340행, identity 포함 example 125개가 batch 입력 후보로 존재함을 확인했다.
+- 따라서 identity 실패는 데이터 파일 누락이 아니라 100M 모델의 표현·학습 용량 또는 생성 정렬 문제로 분류했다.
+- HF identity smoke는 여전히 제작자·이름을 회수하지 못하므로 gate 미통과 상태를 유지한다.
+
 ## 2026-07-22 · 1.22.74 pretrained best 기반 SFT 비교
 
 - 저장소의 실제 100M pretraining best checkpoint(`runs/baseline-100m/checkpoints/best.pt`, 약 5.9B token 학습)를 base로 Gemma4 10k + identity 300 step SFT를 실행했다.
