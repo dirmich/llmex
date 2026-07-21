@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.79 public+teacher 혼합 500단계 SFT 검증
+
+- 검증된 `data/chat/ko-public-qwen-gemma-v1` 혼합 데이터(train 9,906/heldout 1,984)를 실제 100M pretraining best에서 500 step 학습했다.
+- validation perplexity는 100 step `13.35`, 300 step `12.01`, 500 step `11.79`로 낮아졌다.
+- 그러나 HF 생성은 수도 질문에서 `서울대학교` 위키 문장으로 이어졌고 identity·공감·모름 처리·자기소개도 비문 또는 위키식 생성으로 실패했다.
+- 혼합 데이터와 SFT loss 개선만으로는 자연대화 gate를 충족하지 못하므로 checkpoint를 승격하지 않고, 모델 크기·pretraining 품질 변경을 다음 필수 조건으로 남겼다.
+
 ## 2026-07-22 · 1.22.78 100M 1,000 step SFT 검증
 
 - 실제 pretraining best에서 Gemma4 6,215행과 identity 25배를 사용해 `runs/sft-qwen36mtp-v5-gemma4-from-pretrained-100m-sft-1000`을 1,000 step까지 학습했다.

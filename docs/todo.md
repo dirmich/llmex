@@ -86,6 +86,13 @@
 - [ ] 실제 생성 gate는 실패했다. `너는 누구야?`는 `highmaru`만 부분 회수하고 `llmex`를 누락했으며, 수도·우울함·모름 처리·자기소개 질문은 비문 또는 위키식 이어쓰기였다.
 - [ ] 결론: 현재 100M base의 언어 표현력이 부족한 상태에서 SFT step만 늘려서는 자연스러운 대화가 되지 않는다. 다음은 더 나은 pretrained base(최소 1B) 비교 또는 대화 전용 사전학습을 우선한다.
 
+### public+teacher 혼합 500 step 결과 (1.22.79)
+
+- [x] 검증된 `data/chat/ko-public-qwen-gemma-v1` 혼합 데이터(train 9,906/heldout 1,984)를 실제 pretraining best에서 500 step SFT했다.
+- [x] validation perplexity는 100 step `13.35` → 300 step `12.01` → 500 step `11.79`였다.
+- [ ] 생성 gate 실패: 수도 질문이 `서울대학교` 위키 문장으로 이어졌고, identity·공감·모름 처리·자기소개 모두 비문 또는 위키식 응답이었다.
+- [ ] 결론: public+teacher 혼합과 validation loss 개선만으로 100M 자연대화가 성립하지 않는다. 다음 실험은 모델 크기/사전학습 품질을 바꾸지 않고 반복하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
