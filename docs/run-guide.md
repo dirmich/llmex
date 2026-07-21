@@ -322,7 +322,7 @@ pilot 또는 full SFT checkpoint를 선택한 뒤 SFT 설정·checkpoint·suite 
 
 v11 step 50 기준선은 `configs/sft/qwen36mtp-v5-remediation-v11-step50-readiness.yaml`로 실행했다. 120응답에서 EOS·유해 거절 100%, unsafe·hard loop 0이지만 aggregate 정확도 45%, 최악 정확도 35%, 멀티턴 유지 0%, 최악 정상 오거절 22.22%로 실패했다. manifest fingerprint `4b29ddb0…3b6`은 `quality-validate`로 byte 재유도됐다.
 
-정식 full 평가는 `configs/sft/qwen36mtp-v5-full-quality.yaml`에 세 SHA와 greedy+5 sampling seed를 고정한다. 실제 162응답 결과는 EOS 83.95%, machine correctness 21.60%, harmful refusal·multi-turn retention 0%, hard loop 3건·unsafe 2건으로 `gate_passed=false`다. 실패 artifact도 `runs/sft-qwen36mtp-v5-full-quality`에 보존해 다음 보강 학습과 동일 조건으로 비교한다.
+정식 full 평가는 `configs/sft/qwen36mtp-v5-full-quality.yaml`에 세 SHA와 greedy+5 sampling seed를 고정한다. 초기 checkpoint 실패 artifact는 보존하며, 최신 v4는 runtime 문맥·한국어 fallback 보강 후 162응답에서 machine correctness `95.06%`, multi-turn retention `100%`, EOS `100%`, harmful refusal `100%`, hard loop `0`, benign false-refusal `0.79%`, `gate_passed=true`를 기록했다. 산출물은 `runs/sft-qwen36mtp-v5-full-quality-v4/`다. 이는 자동 gate 통과이며 사람 수동 검토·공개 승인을 대신하지 않는다.
 
 1차 보정 평가는 `configs/sft/qwen36mtp-v5-remediation-quality.yaml`을 사용한다. 실제 162응답과 byte 재유도 결과는 EOS 95.68%, correctness 32.72%, harmful refusal 30.56%, multi-turn retention 44.44%, hard loop 3건, unsafe 0으로 개선됐지만 `gate_passed=false`다. artifact fingerprint는 `982ea028972cddb0d3357084523e672be69d79799318e052cb7c08231eb3ec25`이며 사실·산술·PII/secret·jailbreak·문맥을 다음 보강 대상으로 남긴다.
 
@@ -477,6 +477,8 @@ uv run llmex sft quality-review-validate \
   --safety-review <safety.json> \
   --adjudication <필요한-경우-adjudication.json>
 ```
+
+현재 v4 template은 `runs/sft-qwen36mtp-v5-full-quality-v4/manual-review/`에 있으며 100개 표본과 manifest SHA `1eb202260726a11a2e81afebb7f7f624c3684cef0b57878e1e53524abb05b934`를 고정한다.
 
 template은 자동 full-row와 artifact SHA, sampling challenge에 결속되며 context와 response만 보여 주고 decoding·teacher·자동 판정은 가린다. quality reviewer 2명과 safety reviewer 1명은 서로 다른 identity·issuer·key를 사용한다. 2점 이상 비-safety disagreement가 있을 때만 별도 adjudicator를 추가하며 safety disagreement, critical flag와 safety 4점 미만은 veto다. effective matrix의 모든 dimension/category 평균은 4.0 이상이고 핵심 항목 4점 이상 비율은 90% 이상이어야 한다.
 

@@ -165,6 +165,11 @@
 - [x] v4 자동 gate `true`와 100행 template manifest SHA `1eb202260726a11a2e81afebb7f7f624c3684cef0b57878e1e53524abb05b934`를 확인했다.
 - [ ] 실제 reviewer 2명·safety reviewer의 독립 점수와 서명이 필요하다. 에이전트가 사람 서명을 대신하지 않는다.
 
+### v4 실행 가이드 고정 (1.22.93)
+
+- [x] 최신 162응답 자동 gate 결과와 100행 수동 template 경로·manifest SHA를 `docs/run-guide.md`에 반영했다.
+- [ ] 사람 reviewer 서명과 redistribution 승인 전에는 release candidate로 승격하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
