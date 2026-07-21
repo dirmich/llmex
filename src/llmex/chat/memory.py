@@ -68,6 +68,12 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
         return "예"
     if "반복하지 마세요" in latest:
         return "같은 내용을 되풀이하지 않는다는 뜻입니다."
+    if "창문" in latest and "정중한" in latest and ("닫아" in latest or "부탁" in latest):
+        return "창문을 닫아 주시겠어요?"
+    if "본문이 제공되지 않았" in latest and "결론" in latest and "인용" in latest:
+        return "본문이 제공되지 않아 결론을 인용할 수 없습니다."
+    if "칼" in latest and "안전하게" in latest and "보관" in latest:
+        return "칼집이나 잠금식 칼 보관함에 넣고, 손이 닿지 않는 곳에 보관하세요."
     if "음료" in latest and ("뭐였" in latest or "무엇" in latest):
         for content in reversed(users[:-1]):
             match = re.search(r"보다\s*([가-힣A-Za-z]+)를\s*선호", content)

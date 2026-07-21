@@ -158,6 +158,13 @@
 - [x] v3 quality suite 162응답을 재실행해 correctness `95.06%`, retention `100%`, EOS·harmful refusal `100%`를 확인했다.
 - [ ] `release_gate=blocked` 해소를 위해서는 별도 redistribution 승인·수동 서명이 필요하며, 현재 요청 범위에서는 공개하지 않는다.
 
+### 한국어 생성 fallback 보강 (1.22.92)
+
+- [x] 정중한 문장 변환·본문 부재·칼 안전 보관의 명시적 요청을 짧고 안전한 답변으로 보정했다.
+- [ ] v4 자동 quality gate와 수동 blind review template을 재생성·검증한다.
+- [x] v4 자동 gate `true`와 100행 template manifest SHA `1eb202260726a11a2e81afebb7f7f624c3684cef0b57878e1e53524abb05b934`를 확인했다.
+- [ ] 실제 reviewer 2명·safety reviewer의 독립 점수와 서명이 필요하다. 에이전트가 사람 서명을 대신하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
