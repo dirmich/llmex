@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.94 memory 모듈 교재 보완
+
+- 전체 회귀에서 발견된 `src/llmex/chat/memory.py` 학습 카드 누락을 `docs/book/modules/04-chat-and-distillation.md`에 추가했다.
+- memory fallback의 가중치 학습과 분리된 역할, 최신 정정 우선·보수적 위임 원칙과 검증 명령을 문서화했다.
+
 ## 2026-07-22 · 1.22.93 최신 quality 결과를 실행 가이드에 반영
 
 - run-guide의 오래된 full quality 실패 수치를 v4 실제 산출물과 교체했다.

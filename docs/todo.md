@@ -170,6 +170,11 @@
 - [x] 최신 162응답 자동 gate 결과와 100행 수동 template 경로·manifest SHA를 `docs/run-guide.md`에 반영했다.
 - [ ] 사람 reviewer 서명과 redistribution 승인 전에는 release candidate로 승격하지 않는다.
 
+### 문서 교재 회귀 보완 (1.22.94)
+
+- [x] 전체 테스트에서 발견된 memory 모듈 학습 카드 누락을 보완했다.
+- [x] book 모듈 카드 집합과 `src/llmex` Python 모듈 집합을 다시 일치시켰다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

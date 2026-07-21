@@ -72,6 +72,14 @@ focused-v6 실측에서는 validation best step 40보다 step 20의 harmful refu
 - 검증: `uv run llmex sft preflight --config <설정> --measure-baseline`, 표적 chat 테스트, 중단·재개 parity를 실행한다.
 - 완료 산출물: metrics JSONL, best/latest checkpoint, 입력 fingerprint와 release 정책이 결속된 manifest다.
 
+### `src/llmex/chat/memory.py`
+
+- 책임: 최신 사용자 발화에서 명시적으로 제공된 사실·identity·안전 요청만 보수적으로 재호출한다.
+- 구현 순서: 사용자 메시지 history 추출 → exact 사실·정정 규칙 → 최신 값 우선 regex → 모르는 내용은 `None`으로 위임하는 순서다.
+- 실패 사례: assistant가 말하지 않은 내용을 기억한다고 주장하거나, 오래된 값을 최신 정정값보다 우선하거나, 모든 질문을 고정 답변으로 가로채면 안 된다.
+- 검증: `uv run pytest -q tests/test_foundation.py -k memory`와 quality suite의 multi-turn retention·identity·안전 시나리오를 함께 실행한다.
+- 완료 산출물: 모델 가중치 학습과 구분되는 deterministic fallback 모듈과 회귀 테스트다.
+
 ### `src/llmex/chat/quality.py`
 
 - 책임: 실제 멀티턴 rollout에서 EOS·반복·정확성·안전·오염 지표와 gate를 계산한다.
