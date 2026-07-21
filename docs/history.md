@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.80 혼합 SFT exact prompt 보조 검증
+
+- 시스템 문맥 없는 CLI exact prompt `대한민국의 수도는`에서 `서울` 후 EOS가 발생해 단일 암기 응답은 확인했다.
+- 같은 형식의 `너는 누구냐?`는 인터넷 방송인 위키 문장으로 이어져 identity와 자연대화는 실패했다.
+- 따라서 exact 사실 prompt 한 건의 통과를 전체 대화 gate 통과로 오인하지 않도록 TODO와 평가 해석을 보강했다.
+
 ## 2026-07-22 · 1.22.79 public+teacher 혼합 500단계 SFT 검증
 
 - 검증된 `data/chat/ko-public-qwen-gemma-v1` 혼합 데이터(train 9,906/heldout 1,984)를 실제 100M pretraining best에서 500 step 학습했다.

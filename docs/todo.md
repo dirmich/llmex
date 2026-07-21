@@ -91,6 +91,7 @@
 - [x] 검증된 `data/chat/ko-public-qwen-gemma-v1` 혼합 데이터(train 9,906/heldout 1,984)를 실제 pretraining best에서 500 step SFT했다.
 - [x] validation perplexity는 100 step `13.35` → 300 step `12.01` → 500 step `11.79`였다.
 - [ ] 생성 gate 실패: 수도 질문이 `서울대학교` 위키 문장으로 이어졌고, identity·공감·모름 처리·자기소개 모두 비문 또는 위키식 응답이었다.
+- [x] 보조 확인: 시스템 문맥 없이 exact prompt `대한민국의 수도는`은 `서울` 후 EOS로 끝났지만, `너는 누구냐?`는 인터넷 방송인 위키 문장으로 이어졌다. 단일 암기 prompt 통과를 대화 gate 통과로 간주하지 않는다.
 - [ ] 결론: public+teacher 혼합과 validation loss 개선만으로 100M 자연대화가 성립하지 않는다. 다음 실험은 모델 크기/사전학습 품질을 바꾸지 않고 반복하지 않는다.
 
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
