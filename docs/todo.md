@@ -79,6 +79,13 @@
 - [ ] 각 학습·수집·평가의 시작 시각, 종료 시각, 소요 시간, 처리량, 실패 수, 메모리 사용량을 `runs/*` artifact와 `docs/history.md`에 함께 기록한다.
 - [ ] 현재 100M GGUF는 자연 대화 gate 미통과로 유지하고, pretrained 100M/1B 후보 비교 결과가 나온 뒤 최종 기반 모델을 결정한다.
 
+### 1,000 step 실험 결과 (1.22.78)
+
+- [x] 실제 pretraining best(`runs/baseline-100m/checkpoints/best.pt`)에서 Gemma4 train 6,215행 + identity 25배로 1,000 step SFT를 실행했다.
+- [x] validation perplexity가 100 step `18.17` → 500 step `5.08` → 1,000 step `4.39`로 개선되고, run artifact·config·checkpoint를 보존했다.
+- [ ] 실제 생성 gate는 실패했다. `너는 누구야?`는 `highmaru`만 부분 회수하고 `llmex`를 누락했으며, 수도·우울함·모름 처리·자기소개 질문은 비문 또는 위키식 이어쓰기였다.
+- [ ] 결론: 현재 100M base의 언어 표현력이 부족한 상태에서 SFT step만 늘려서는 자연스러운 대화가 되지 않는다. 다음은 더 나은 pretrained base(최소 1B) 비교 또는 대화 전용 사전학습을 우선한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

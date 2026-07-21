@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.78 100M 1,000 step SFT 검증
+
+- 실제 pretraining best에서 Gemma4 6,215행과 identity 25배를 사용해 `runs/sft-qwen36mtp-v5-gemma4-from-pretrained-100m-sft-1000`을 1,000 step까지 학습했다.
+- validation perplexity는 100 step `18.17`, 500 step `5.08`, 1,000 step `4.39`로 개선됐다.
+- HF runtime 생성에서 identity는 `highmaru`만 부분 회수하고 `llmex`를 누락했으며, 수도·공감·모름 처리·자기소개는 비문 또는 위키식 이어쓰기로 실패했다.
+- 따라서 해당 checkpoint는 자연 대화·수동 품질 gate를 통과하지 못해 승격하지 않는다. SFT step 증가만으로는 현재 100M base의 언어 표현력 문제를 해결하지 못한다는 증거를 남겼다.
+
 ## 2026-07-22 · 1.22.76 identity 고비중 A/B SFT
 
 - 실제 pretrained 100M best와 Gemma4 train을 유지하면서 identity extra 500회, learning rate `2e-6`, 100 step A/B를 실행했다.
