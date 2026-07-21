@@ -105,6 +105,12 @@
 - [x] `/home/dirmich/work/models/bonsai-8b/Bonsai-8B.gguf`를 전용 llama.cpp binary로 실행했다.
 - [ ] 60초 실행에서 생성 본문이 비어 있어 대화 기준선으로 사용할 수 없었다. 모델 품질이 아니라 현재 llama.cpp 빌드·chat template·GGUF runtime 호환 문제를 먼저 분리해야 한다.
 
+### teacher endpoint 현재 상태 (1.22.83)
+
+- [ ] Qwen teacher `macmini:8081`은 `/v1/models`와 completion 모두 연결 거부 상태였다.
+- [ ] Gemma endpoint `macmini:11434`은 `/v1/models` 목록은 반환했지만 `google/gemma-4-12b` completion이 90초 timeout됐다.
+- [ ] 기존 수집 artifact는 보존하며, teacher 외부 상태가 회복되기 전 새 10k 수집을 완료로 표시하거나 재수집하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

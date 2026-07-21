@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.83 teacher endpoint 상태 점검
+
+- Qwen teacher `macmini:8081`은 연결 거부로 `/v1/models`와 completion을 사용할 수 없었다.
+- Gemma `macmini:11434`는 모델 목록은 응답했으나 `google/gemma-4-12b` completion이 90초 timeout됐다.
+- 기존 10k 수집 artifact는 보존하고, teacher 외부 상태가 회복되기 전 새 수집을 완료로 표시하지 않도록 기록했다.
+
 ## 2026-07-22 · 1.22.82 Bonsai 8B 로컬 기준선 실행
 
 - 로컬 Bonsai 8B GGUF를 전용 llama.cpp binary로 60초 실행했다.
