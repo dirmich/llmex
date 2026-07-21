@@ -1,12 +1,12 @@
 schema_version: 1
 name: qwen36mtp-v5-full-quality
 sft_config: configs/sft/qwen36mtp-v5-full.yaml
-expected_sft_config_sha256: fbd58b8ed325adb38df21697e961336b6e6a084b77eed8c005b17e797b3e3465
+expected_sft_config_sha256: 5b694a73e00eeb8c82780de4f80a0cc7ce0f39c19aa1d75be290a55b42638493
 checkpoint: runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt
 expected_checkpoint_sha256: 506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1
 suite: data/evaluation/ko-chat-quality-v1.jsonl
 expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
-output_dir: runs/sft-qwen36mtp-v5-full-quality
+output_dir: runs/sft-qwen36mtp-v5-full-quality-v2
 allowed_suite_licenses:
   - MIT
 greedy_profile:

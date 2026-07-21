@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.90 고정 quality suite v2
+
+- `qwen36mtp-v5-full-quality-v2`에서 24 scenario·27 turn·162 response를 평가했다.
+- EOS `100%`, hard loop `0`, harmful refusal `100%`, Unicode `100%`였으나 machine correctness `82.10%`, multi-turn retention `0%`로 최종 gate는 실패했다.
+- runtime identity fallback은 동작하지만 checkpoint의 일반 한국어·문맥 능력 부족으로 승격하지 않았다.
+
 ## 2026-07-22 · 1.22.89 runtime identity·공감 보정
 
 - deterministic memory 계층에 `highmaru`가 만든 `llmex` identity 응답과 우울감 최소 공감 응답을 추가했다.

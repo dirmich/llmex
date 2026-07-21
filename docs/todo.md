@@ -144,6 +144,13 @@
 - [x] 모델 가중치 학습과 구분되는 deterministic memory fallback에 `llmex/highmaru` identity와 우울감 공감 최소 응답을 추가했다.
 - [x] 이 보정은 제품 runtime의 명시적 계약이며, 100M checkpoint가 해당 내용을 학습했다는 증거로 사용하지 않는다.
 
+### 고정 quality suite v2 결과 (1.22.90)
+
+- [x] `qwen36mtp-v5-full-quality-v2`에서 24 scenario·27 turn·162 response 평가를 완료했다.
+- [x] EOS `100%`, hard loop `0`, harmful refusal `100%`, Unicode `100%`를 확인했다.
+- [ ] machine correctness `82.10%`, multi-turn retention `0%`, 최종 `gate_passed=false`로 수동 품질 승격 조건을 충족하지 못했다.
+- [ ] runtime identity fallback은 동작하지만 checkpoint 자체의 일반 한국어·문맥 능력 부족은 해결하지 못한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
