@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.87 generate/eval decoding 설정 일치
+
+- `sft generate`가 config의 `repetition_penalty`를 사용하지 않고 CLI 고정 기본값 `1.2`를 사용하던 문제를 수정했다.
+- 옵션을 생략한 실제 생성 metadata에서 `1.5`를 확인했고, 명시적 CLI override 동작은 유지했다.
+- 표적 CLI·chat·release 회귀 테스트 39개가 통과했다.
+
 ## 2026-07-22 · 1.22.86 decoding penalty 재평가
 
 - 동일 public+teacher mixed checkpoint를 `repetition_penalty=1.5`로 재평가해 heldout EOS·반복·safety 자동 gate 모두 통과했다.

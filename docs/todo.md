@@ -127,6 +127,11 @@
 - [x] 동일 mixed checkpoint에 `repetition_penalty=1.5`를 적용해 heldout EOS·반복·safety 자동 gate가 모두 통과하는 것을 확인했다.
 - [ ] 수동 대화 smoke는 여전히 실패했다. identity 질문은 `너도, 너는 누구냐?`로 되풀이되고 우울감 질문은 정신건강 문구를 반복한다. decoding 조정만으로 자연대화 gate를 통과한 것으로 보지 않는다.
 
+### generate/eval decoding 설정 일치 (1.22.87)
+
+- [x] `sft generate`의 CLI 기본값이 config의 `repetition_penalty`를 덮어쓰던 문제를 수정했다.
+- [x] 옵션을 생략한 실제 생성 metadata가 `repetition_penalty=1.5`를 기록하고, 명시적 `--repetition-penalty`는 계속 override한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

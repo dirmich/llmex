@@ -552,7 +552,9 @@ def sft_generate(
     temperature: Annotated[float, typer.Option("--temperature", min=0.0, max=2.0)] = 0.0,
     top_k: Annotated[int | None, typer.Option("--top-k", min=1)] = None,
     top_p: Annotated[float, typer.Option("--top-p", min=0.001, max=1.0)] = 1.0,
-    repetition_penalty: Annotated[float, typer.Option("--repetition-penalty", min=0.01)] = 1.2,
+    repetition_penalty: Annotated[
+        float | None, typer.Option("--repetition-penalty", min=0.01)
+    ] = None,
     seed: Annotated[int, typer.Option("--seed", min=0)] = 0,
     max_new_tokens: Annotated[int | None, typer.Option("--max-new-tokens", min=1)] = None,
 ) -> None:
@@ -572,7 +574,11 @@ def sft_generate(
                 temperature=temperature,
                 top_k=top_k,
                 top_p=top_p,
-                repetition_penalty=repetition_penalty,
+                repetition_penalty=(
+                    config.repetition_penalty
+                    if repetition_penalty is None
+                    else repetition_penalty
+                ),
                 eos_id=SPECIAL_IDS["<eos>"],
             ),
             seed=seed,
