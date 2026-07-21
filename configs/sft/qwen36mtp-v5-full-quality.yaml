@@ -6,7 +6,7 @@ checkpoint: runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt
 expected_checkpoint_sha256: 506c5e2247089cada2c3940b7560d2b6a1c9b00353c159b68ec9d4466e5365e1
 suite: data/evaluation/ko-chat-quality-v1.jsonl
 expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
-output_dir: runs/sft-qwen36mtp-v5-full-quality-v2
+output_dir: runs/sft-qwen36mtp-v5-full-quality-v3
 allowed_suite_licenses:
   - MIT
 greedy_profile:

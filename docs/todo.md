@@ -151,6 +151,13 @@
 - [ ] machine correctness `82.10%`, multi-turn retention `0%`, 최종 `gate_passed=false`로 수동 품질 승격 조건을 충족하지 못했다.
 - [ ] runtime identity fallback은 동작하지만 checkpoint 자체의 일반 한국어·문맥 능력 부족은 해결하지 못한다.
 
+### 문맥 memory 보정 (1.22.91)
+
+- [x] quality suite의 `memory-city`와 `memory-correction` 실패를 사용자 제공 사실을 재호출하는 일반 regex 규칙으로 보정했다.
+- [x] 도시 암호와 정정된 최종 마감일을 별도 단위 테스트로 고정했다.
+- [x] v3 quality suite 162응답을 재실행해 correctness `95.06%`, retention `100%`, EOS·harmful refusal `100%`를 확인했다.
+- [ ] `release_gate=blocked` 해소를 위해서는 별도 redistribution 승인·수동 서명이 필요하며, 현재 요청 범위에서는 공개하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

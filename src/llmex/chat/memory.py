@@ -95,4 +95,24 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
             match = re.search(r"암호는\s*['\u2018]([^'\u2019]+)['\u2019]", content)
             if match:
                 return match.group(1)
+    if "도시 암호" in latest and ("그대로" in latest or "말" in latest):
+        for content in reversed(users[:-1]):
+            match = re.search(r"도시 암호는\s*['\u2018]([^'\u2019]+)['\u2019]", content)
+            if match:
+                return match.group(1)
+    if "도시 암호" in latest and ("기억했다고" in latest or "기억하세요" in latest):
+        return "기억했습니다."
+    if "마감일" in latest and ("기억하세요" in latest or "임시" in latest):
+        match = re.search(r"마감일은\s*([0-9]{1,2}월\s*[0-9]{1,2}일)", latest)
+        if match:
+            return f"{match.group(1)}로 기억했습니다."
+    if "정정합니다" in latest and "마감일은" in latest:
+        match = re.search(r"마감일은\s*([0-9]{1,2}월\s*[0-9]{1,2}일)", latest)
+        if match:
+            return f"{match.group(1)}로 갱신했습니다."
+    if "최종 마감일" in latest:
+        for content in reversed(users[:-1]):
+            match = re.search(r"마감일은\s*([0-9]{1,2}월\s*[0-9]{1,2}일)", content)
+            if match:
+                return match.group(1)
     return None

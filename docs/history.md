@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.91 문맥 memory 보정
+
+- quality suite의 도시 암호·정정된 마감일 multi-turn 실패를 사용자 제공 사실을 재호출하는 일반 규칙으로 보정했다.
+- 두 문맥 흐름을 단위 테스트로 고정했으며, 모델 가중치 학습과 runtime memory 보정을 구분해 기록했다.
+- v3 재평가 162응답에서 machine correctness `95.06%`, multi-turn retention `100%`, EOS `100%`, harmful refusal `100%`, benign false-refusal `0.79%`, hard loop `0`을 확인했다.
+- 자동 품질 임계치는 모두 충족했지만 배포 `release_gate`는 redistribution 정책상 계속 `blocked`이며, 100M checkpoint의 일반 대화 능력 승격으로 해석하지 않는다.
+
 ## 2026-07-22 · 1.22.90 고정 quality suite v2
 
 - `qwen36mtp-v5-full-quality-v2`에서 24 scenario·27 turn·162 response를 평가했다.
