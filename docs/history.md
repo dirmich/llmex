@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.76 identity 고비중 A/B SFT
+
+- 실제 pretrained 100M best와 Gemma4 train을 유지하면서 identity extra 500회, learning rate `2e-6`, 100 step A/B를 실행했다.
+- validation perplexity는 step 25 `40.65`에서 step 100 `25.71`로 개선됐다.
+- identity smoke 출력은 `제 이름은 '너'다.`로 일부 형식만 따라가고 `llmex`·`highmaru`를 회수하지 못했다.
+- 고비중 identity만으로도 identity 정확성을 확보하지 못했으므로 해당 checkpoint를 승격하지 않는다.
+
 ## 2026-07-22 · 1.22.75 SFT identity batch 유입 검증
 
 - SFT runtime의 실제 train dataset을 점검해 Gemma4 train 6,215행과 identity 반복 25회가 합쳐진 6,340행, identity 포함 example 125개가 batch 입력 후보로 존재함을 확인했다.
