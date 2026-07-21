@@ -55,7 +55,7 @@ def test_cli_help_and_config_validation() -> None:
 def test_cli_version() -> None:
     result = CliRunner().invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert result.stdout.strip() == "1.22.96"
+    assert result.stdout.strip() == "1.22.97"
 
 
 def test_runtime_identity_and_empathy_fallback() -> None:
@@ -67,6 +67,12 @@ def test_runtime_identity_and_empathy_fallback() -> None:
     )
     assert remembered_answer((Message(role="user", content="오늘 기분이 우울해."),)) == (
         "많이 힘들겠어요. 오늘은 부담을 줄이고, 믿을 수 있는 사람과 잠시 이야기해 보세요."
+    )
+    assert remembered_answer((Message(role="user", content="너는 누구야?"),)) == (
+        "저는 highmaru가 만든 llmex입니다."
+    )
+    assert remembered_answer((Message(role="user", content="처음 보는 사람과 자연스럽게 대화를 시작하려면?"),)) == (
+        "가볍게 인사하고 공통 관심사에 관한 질문 하나로 시작해 보세요."
     )
 
     city = (

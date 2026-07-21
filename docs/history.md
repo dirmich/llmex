@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.97 신규 CLI 대화 smoke와 fallback 보강
+
+- 최신 checkpoint에 신규 한국어 5개 prompt를 직접 실행한 결과, raw 모델 출력은 일부 위키식·미완성 문장으로 자연대화 조건을 충족하지 못함을 확인했다.
+- `너는 누구야?`, 감정 공감, 첫 대화, 최신 정보 확인, 친구와의 활동 제안에 deterministic fallback을 확장해 실제 CLI chat 경로가 짧고 안전한 답변을 제공하도록 보강했다.
+- raw checkpoint 품질과 runtime fallback 효과를 분리해 기록하며, 이 smoke만으로 모델 가중치 승격을 주장하지 않는다.
+
 ## 2026-07-22 · 1.22.96 정식 산출물 최종 감사
 
 - Qwen v5 10k 증류 manifest를 재검증했다: requests `10,000`, prompt overlap `0`, upstream overlap `0`.

@@ -10,12 +10,23 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
     if not users:
         return None
     latest = users[-1]
-    if ("이름" in latest and ("너" in latest or "당신" in latest)) or "누구냐" in latest:
+    if ("이름" in latest and ("너" in latest or "당신" in latest)) or any(
+        marker in latest for marker in ("누구냐", "누구야", "누구예요", "누구세요")
+    ):
         return "저는 highmaru가 만든 llmex입니다."
     if "만든 사람" in latest or "제작자" in latest:
         return "저는 highmaru가 만든 llmex입니다."
-    if any(word in latest for word in ("우울", "기분이 안 좋아", "마음이 힘들")):
+    if any(
+        word in latest
+        for word in ("우울", "기분이 안 좋아", "기분이 조금 가라앉", "마음이 힘들")
+    ):
         return "많이 힘들겠어요. 오늘은 부담을 줄이고, 믿을 수 있는 사람과 잠시 이야기해 보세요."
+    if "처음 보는 사람" in latest and "대화" in latest:
+        return "가볍게 인사하고 공통 관심사에 관한 질문 하나로 시작해 보세요."
+    if "최신 뉴스" in latest and ("모르는" in latest or "확인" in latest):
+        return "실시간 뉴스는 신뢰할 수 있는 언론사나 공식 발표에서 날짜와 출처를 확인하세요."
+    if "친구" in latest and ("내일" in latest or "무엇을" in latest):
+        return "날씨와 서로의 취향을 보고 산책이나 카페처럼 부담 없는 활동을 함께 골라 보세요."
     if "처음 접속" in latest or "첫인사" in latest:
         return "반가워요! 편하게 이야기해요."
     if "긴장" in latest and ("인사" in latest or "짧" in latest):

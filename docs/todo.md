@@ -187,6 +187,12 @@
 - [x] 최신 quality 상태 `ready`와 자동 gate `true`를 재확인했다.
 - [ ] 실제 수동 reviewer 서명·redistribution 승인 전에는 목표를 완료로 표시하지 않는다.
 
+### 신규 CLI 대화 smoke (1.22.97)
+
+- [x] 고정 suite 밖 한국어 5개 prompt를 latest checkpoint에 직접 실행해 raw 위키식 출력을 확인했다.
+- [x] 해당 입력 유형의 runtime fallback을 보강하고 identity·공감·첫 대화 회귀 테스트를 추가했다.
+- [ ] runtime 보정 없이 raw checkpoint가 자연스러워지는 것은 별도 학습·수동 평가 과제로 남아 있다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
