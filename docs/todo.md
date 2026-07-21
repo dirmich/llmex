@@ -100,6 +100,11 @@
 - [x] Gemma4/Qwen 계열 26B~35B와 Bonsai 8B는 GGUF 또는 별도 Transformers 구조라 현재 llmex 100M `CausalLM`에 직접 base로 주입할 수 없다.
 - [ ] 따라서 100M 자연대화 gate를 억지로 통과시키기 위해 step만 반복하지 않는다. 다음 구현은 HF/Transformers 1B~3B base adapter 또는 8B teacher용 별도 추론 경로를 추가하고 동일 suite를 재사용하는 것이다.
 
+### Bonsai 8B 로컬 기준선 실행 (1.22.82)
+
+- [x] `/home/dirmich/work/models/bonsai-8b/Bonsai-8B.gguf`를 전용 llama.cpp binary로 실행했다.
+- [ ] 60초 실행에서 생성 본문이 비어 있어 대화 기준선으로 사용할 수 없었다. 모델 품질이 아니라 현재 llama.cpp 빌드·chat template·GGUF runtime 호환 문제를 먼저 분리해야 한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

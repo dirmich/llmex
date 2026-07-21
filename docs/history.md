@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.82 Bonsai 8B 로컬 기준선 실행
+
+- 로컬 Bonsai 8B GGUF를 전용 llama.cpp binary로 60초 실행했다.
+- 생성 본문이 비어 있어 대화 품질 기준선으로 채택하지 않았다. 모델 크기 비교 전에 llama.cpp 빌드·chat template·GGUF runtime 호환을 분리해야 한다.
+
 ## 2026-07-22 · 1.22.81 로컬 모델 크기 조사
 
 - `/home/dirmich/work/models`를 조사해 1B~3B 호환 pretrained checkpoint가 없음을 확인했다.
