@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.73 Gemma4 300 step 추가 SFT 결과
+
+- Gemma4 10k train과 identity 데이터를 기반으로 100M checkpoint에 300 step 추가 SFT를 실행했다.
+- validation loss/perplexity: step 50 `3.2646/26.17` → step 300 `3.0281/20.66`.
+- HF runtime identity smoke 응답은 `너와 함께한 이별은...`으로 잘못 생성되어 `llmex/highmaru` identity와 자연 대화 gate를 통과하지 못했다.
+- perplexity 개선만으로 대화 품질을 보장하지 못함을 확인했으며, 이 checkpoint는 GGUF 최종 산출물로 승격하지 않는다.
+
 ## 2026-07-22 · 1.22.71 Gemma4 10k 기반 SFT 재실행
 
 - Gemma4 teacher export `runs/distill/gemma4-conversation-10000-v3/export/train.jsonl`(6,215행)과 identity 데이터를 사용해 100M latest checkpoint 기반 SFT를 실행했다.
