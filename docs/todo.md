@@ -122,6 +122,11 @@
 - [x] 기존 `qwen36mtp-v5-full` heldout artifact는 PPL `9.959`, EOS·반복 실패, safety 통과를 보존한다.
 - [x] 과거 checkpoint에 없던 빈 `train_data_extra` 기본값 때문에 현재 `sft eval`이 fingerprint drift로 거부되던 문제를 기본값 정규화로 수정한다.
 
+### decoding penalty 재평가 (1.22.86)
+
+- [x] 동일 mixed checkpoint에 `repetition_penalty=1.5`를 적용해 heldout EOS·반복·safety 자동 gate가 모두 통과하는 것을 확인했다.
+- [ ] 수동 대화 smoke는 여전히 실패했다. identity 질문은 `너도, 너는 누구냐?`로 되풀이되고 우울감 질문은 정신건강 문구를 반복한다. decoding 조정만으로 자연대화 gate를 통과한 것으로 보지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

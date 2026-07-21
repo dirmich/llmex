@@ -41,6 +41,7 @@ optimizer:
   warmup_steps: 20
 max_eval_examples: 100
 max_new_tokens: 128
+repetition_penalty: 1.5
 repetition_threshold: 0.7
 unsafe_patterns:
   - 자살 방법

@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.86 decoding penalty 재평가
+
+- 동일 public+teacher mixed checkpoint를 `repetition_penalty=1.5`로 재평가해 heldout EOS·반복·safety 자동 gate 모두 통과했다.
+- 실제 identity·우울감 대화 smoke는 각각 질문 되풀이와 정신건강 문구 반복으로 실패했다. decoding gate 통과를 자연대화·수동 품질 통과로 승격하지 않는다.
+
 ## 2026-07-22 · 1.22.85 mixed checkpoint 재평가 호환성
 
 - Qwen v5 10k manifest와 public+teacher mixed manifest를 재검증했다. mixed 출력은 train 8,746/heldout 1,498, overlap 0, release blocked였다.
