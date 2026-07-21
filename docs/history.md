@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.88 mixed identity remediation 100단계
+
+- mixed best checkpoint에 identity 5행을 100배 추가해 100 step 보정 SFT를 실행했다. source manifest는 extra 입력과 결속되지 않아 제거했고 내부 release blocked는 유지했다.
+- validation perplexity는 `8.51`로 유지됐지만 이름 질문은 노래 제목 위키 문장, identity 질문은 되풀이·오답으로 실패했다.
+- 수도 exact prompt만 `서울` 후 EOS였으며 identity 반복 배수 증가는 해법이 아니어서 checkpoint를 폐기했다.
+
 ## 2026-07-22 · 1.22.87 generate/eval decoding 설정 일치
 
 - `sft generate`가 config의 `repetition_penalty`를 사용하지 않고 CLI 고정 기본값 `1.2`를 사용하던 문제를 수정했다.

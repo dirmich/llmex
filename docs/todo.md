@@ -132,6 +132,13 @@
 - [x] `sft generate`의 CLI 기본값이 config의 `repetition_penalty`를 덮어쓰던 문제를 수정했다.
 - [x] 옵션을 생략한 실제 생성 metadata가 `repetition_penalty=1.5`를 기록하고, 명시적 `--repetition-penalty`는 계속 override한다.
 
+### mixed identity remediation 100 step 결과 (1.22.88)
+
+- [x] mixed best checkpoint에 identity 5행을 100배 추가한 100 step 보정 SFT를 실행했다. source manifest는 extra 입력과 결속되지 않아 제거했으며 내부 license/release blocked는 유지했다.
+- [x] validation perplexity는 step 25 `8.51`에서 step 100 `8.51`로 유지됐다.
+- [ ] identity gate 실패: 이름 질문은 노래 제목 위키 문장, `너는 누구냐?`는 질문 되풀이와 잘못된 이름을 출력했다. 수도 exact prompt만 `서울` 후 EOS였다.
+- [ ] 결론: identity 반복 배수 증가는 해법이 아니며 해당 checkpoint를 승격하지 않는다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
