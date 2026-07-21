@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-22 · 1.22.85 mixed checkpoint 재평가 호환성
+
+- Qwen v5 10k manifest와 public+teacher mixed manifest를 재검증했다. mixed 출력은 train 8,746/heldout 1,498, overlap 0, release blocked였다.
+- 기존 100M mixed checkpoint의 heldout artifact(PPL `9.959`, EOS·반복 실패, safety 통과)를 확인했다.
+- 과거 config에 없던 빈 보조 데이터 기본값이 fingerprint drift를 일으키던 문제를 정규화해 checkpoint 재평가 호환성을 보강했다.
+
 ## 2026-07-22 · 1.22.84 teacher endpoint 부분 회복
 
 - Gemma `macmini:11434`의 26B 모델 completion이 정상 응답하고 수도 질문에 정확히 답하는 것을 확인했다.

@@ -178,6 +178,12 @@ def _fingerprints(
     manifest = config.tokenizer_dir / "tokenizer-manifest.json"
     # decoding-only knobs must not invalidate a trained checkpoint
     config_value = config.model_dump(mode="json", exclude={"max_steps", "repetition_penalty"})
+    # 과거 checkpoint에는 존재하지 않았던 빈 보조 데이터 기본값은
+    # 학습 의미가 없으므로 fingerprint에서 생략해 재평가 호환성을 유지한다.
+    if config_value.get("train_data_extra") == []:
+        config_value.pop("train_data_extra", None)
+    if config_value.get("train_data_extra_repeats") == 1:
+        config_value.pop("train_data_extra_repeats", None)
     if config.source_manifest is None:
         config_value.pop("source_manifest", None)
         config_value.pop("expected_source_manifest_sha256", None)

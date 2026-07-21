@@ -116,6 +116,12 @@
 - [x] Gemma `macmini:11434`의 `gemma4-26b-a4b-uncensored-hauhaucs-balanced` completion이 정상 응답했다. 수도 질문에 `대한민국의 수도는 서울입니다.`를 반환했다.
 - [ ] Qwen `macmini:8081`은 여전히 연결 거부다. 기존 Qwen v5 10k artifact의 검증 상태는 유지하되 새 수집은 Qwen endpoint 복구 후에만 재개한다.
 
+### mixed checkpoint 재평가 호환성 (1.22.85)
+
+- [x] `sft preflight-mix`와 `validate-mix`를 다시 실행해 train 8,746/heldout 1,498, prompt/source overlap 0, release gate blocked를 확인했다.
+- [x] 기존 `qwen36mtp-v5-full` heldout artifact는 PPL `9.959`, EOS·반복 실패, safety 통과를 보존한다.
+- [x] 과거 checkpoint에 없던 빈 `train_data_extra` 기본값 때문에 현재 `sft eval`이 fingerprint drift로 거부되던 문제를 기본값 정규화로 수정한다.
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).
