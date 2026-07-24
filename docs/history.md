@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-25 · 1.22.99 Qwen3-14B QLoRA 학습 경로
+
+- 기존 100M trainer와 분리된 `python -m llmex.qwen3` 학습·평가 진입점을 추가했다.
+- 로컬 Qwen3 safetensors·tokenizer·ChatRow split을 GPU load 전에 검증하고, PEFT 4-bit QLoRA adapter만 별도 디렉터리에 저장한다.
+- Qwen chat template를 thinking 비활성으로 고정하고 assistant 본문·종료 token만 loss에 포함하는 mask 회귀 테스트를 추가했다.
+- 현재 로컬 모델 경로에는 safetensors shard가 없어 preflight가 다운로드 명령과 종료 코드 3을 반환하며, 실제 14B GPU smoke는 원본 다운로드 완료 후 실행한다.
+- Qwen3 집중 테스트 6개와 전체 회귀 416개를 통과시켰다.
+
 ## 2026-07-25 · 1.22.98 Qwen3-14B 기반 모델 선정
 
 - 0.1B 결과를 baseline으로 보존하고 다음 학습 기반을 `Qwen/Qwen3-14B`로 선정했다.
