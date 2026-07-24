@@ -112,7 +112,7 @@ def _load(config: Qwen3Config, *, adapter_dir: Path | None = None) -> tuple[Any,
         trust_remote_code=False,
         quantization_config=quantization,
         torch_dtype=dtype,
-        device_map="auto",
+        device_map={"": 0},
     )
     if adapter_dir is not None:
         return peft.PeftModel.from_pretrained(model, adapter_dir, is_trainable=False), tokenizer
