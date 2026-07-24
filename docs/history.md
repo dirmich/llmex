@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.01 Qwen3 학습 입력 호환성 보강
+
+- Transformers `BatchEncoding`을 일반 token id 목록으로 정규화해 Qwen3 assistant loss mask를 안정적으로 생성한다.
+- chat template prefix가 불안정한 tokenizer에서도 assistant 본문 span을 찾아 라벨을 구성하는 fallback을 추가했다.
+- Qwen3-14B QLoRA 학습은 25 step checkpoint와 heldout `eval_loss=1.028`을 기록하고 27/100 step에서 계속 진행 중이다.
+
 ## 2026-07-25 · 1.22.99 Qwen3-14B QLoRA 학습 경로
 
 - 기존 100M trainer와 분리된 `python -m llmex.qwen3` 학습·평가 진입점을 추가했다.
