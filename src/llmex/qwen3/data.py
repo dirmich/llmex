@@ -36,12 +36,17 @@ def _ids(
     *,
     generation_prompt: bool,
 ) -> list[int]:
-    return tokenizer.apply_chat_template(
+    encoded = tokenizer.apply_chat_template(
         _chat(messages),
         tokenize=True,
         add_generation_prompt=generation_prompt,
         enable_thinking=False,
     )
+    # Transformers returns BatchEncoding for recent tokenizers; normalize it
+    # to the flat id list expected by the masking code.
+    if hasattr(encoded, "input_ids"):
+        return list(encoded.input_ids[0] if encoded.input_ids and isinstance(encoded.input_ids[0], list) else encoded.input_ids)
+    return list(encoded)
 
 
 def tokenize_assistant_only(
@@ -62,10 +67,18 @@ def tokenize_assistant_only(
         prefix_changed = through_ids[: len(prefix_ids)] != prefix_ids
         full_changed = full_ids[: len(through_ids)] != through_ids
         if prefix_changed or full_changed:
-            raise IntegrityError(
-                "Qwen chat template token prefix가 안정적이지 않아 "
-                "assistant label을 만들 수 없습니다"
-            )
+            encode = getattr(tokenizer, "__call__", None)
+            if encode is None:
+                raise IntegrityError("Qwen chat template prefix가 불안정하고 tokenizer 인코더가 없습니다")
+            content_ids = encode(message.content, add_special_tokens=False)["input_ids"]
+            start = next((pos for pos in range(len(full_ids) - len(content_ids) + 1)
+                          if full_ids[pos : pos + len(content_ids)] == content_ids), None)
+            if start is None:
+                raise IntegrityError("assistant content token span을 찾을 수 없습니다")
+            labels[start : start + len(content_ids)] = content_ids
+            if start + len(content_ids) < len(full_ids):
+                labels[start + len(content_ids)] = full_ids[start + len(content_ids)]
+            continue
         labels[len(prefix_ids) : len(through_ids)] = through_ids[len(prefix_ids) :]
     if len(full_ids) > max_length:
         full_ids = full_ids[-max_length:]
