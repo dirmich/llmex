@@ -193,6 +193,14 @@
 - [x] 해당 입력 유형의 runtime fallback을 보강하고 identity·공감·첫 대화 회귀 테스트를 추가했다.
 - [ ] runtime 보정 없이 raw checkpoint가 자연스러워지는 것은 별도 학습·수동 평가 과제로 남아 있다.
 
+### Qwen3-14B 전환 (1.22.98)
+
+- [x] 10B급 후보 비교와 채택 근거를 `docs/model-candidates.md`에 기록했다.
+- [ ] Qwen3-14B safetensors 원본 확보
+- [ ] Transformers + PEFT QLoRA 학습 경로 구현
+- [ ] 기존 public+teacher 데이터의 Qwen3 chat template 변환·label mask 검증
+- [ ] raw 대화·EOS·반복·안전·tool-call·수동 blind gate 재평가
+
 ## 1.22.26 공개+Qwen natural-v5 혼합 완료
 
 - [x] preflight-mix → prepare-mix → validate-mix 통과(학습 12,606행, heldout 2,722행).

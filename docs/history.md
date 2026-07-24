@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.22.98 Qwen3-14B 기반 모델 선정
+
+- 0.1B 결과를 baseline으로 보존하고 다음 학습 기반을 `Qwen/Qwen3-14B`로 선정했다.
+- Gemma4 12B, Mistral Nemo 12B, Polyglot-Ko 12.8B, EXAONE 3.5 7.8B, Llama 3.1 8B를 한국어·다국어·라이선스·학습 가능성 기준으로 비교한 문서를 추가했다.
+- GGUF agentic 변형은 추론 비교용으로만 두고 safetensors 원본 기반 QLoRA/SFT 경로를 새로 구성한다.
+
 ## 2026-07-22 · 1.22.97 신규 CLI 대화 smoke와 fallback 보강
 
 - 최신 checkpoint에 신규 한국어 5개 prompt를 직접 실행한 결과, raw 모델 출력은 일부 위키식·미완성 문장으로 자연대화 조건을 충족하지 못함을 확인했다.
