@@ -15,8 +15,21 @@ def detect_language(text: str) -> str:
     return "en"
 
 
+def target_language(text: str) -> str:
+    """명시적인 출력 언어 지시를 우선하고 없으면 질문 언어를 사용한다."""
+
+    lowered = text.lower()
+    if re.search(r"영어로|영문으로|in english|英語で", lowered):
+        return "en"
+    if re.search(r"일본어로|日本語で|にほんごで", lowered):
+        return "ja"
+    if re.search(r"한국어로|한글로|in korean|韓国語で", lowered):
+        return "ko"
+    return detect_language(text)
+
+
 def system_prompt(user_text: str) -> str:
-    language = detect_language(user_text)
+    language = target_language(user_text)
     language_name = {"ko": "한국어", "ja": "일본어", "en": "영어"}[language]
     return (
         f"{IDENTITY} 사용자의 질문과 같은 언어({language_name})로만 답하라. "
@@ -27,7 +40,7 @@ def system_prompt(user_text: str) -> str:
 def language_gate(prompt: str, answer: str) -> dict[str, object]:
     """답변에 금지된 문자권이 섞였는지 보수적으로 판정한다."""
 
-    language = detect_language(prompt)
+    language = target_language(prompt)
     has_hangul = bool(re.search(r"[가-힣]", answer))
     has_kana = bool(re.search(r"[\u3040-\u30ff]", answer))
     # identity에 필수인 고유명사는 한국어 답변의 허용 토큰으로 제외한다.
