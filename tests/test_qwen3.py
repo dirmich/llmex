@@ -40,6 +40,11 @@ def test_allowlisted_tools_execute_without_code_execution() -> None:
     assert registry.execute("current_time", {})['name'] == "current_time"
     with pytest.raises(InputError, match="허용되지 않은 tool"):
         registry.execute("shell", {"command": "id"})
+    gpio = registry.execute("gpio_write", {"pin": 17, "value": True})
+    assert gpio["result"] == {"pin": 17, "value": True, "dry_run": True}
+    assert registry.execute("gpio_read", {"pin": 17})["result"]["value"] is False
+    with pytest.raises(InputError, match="GPIO pin"):
+        registry.execute("gpio_read", {"pin": 99})
 
 
 class FakeQwenTokenizer:

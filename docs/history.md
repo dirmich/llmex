@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.17 Linux·Raspberry Pi tool 확장
+
+- 임의 셸 대신 `uname`·`free`·`df /` 고정 명령만 timeout과 출력 제한으로 조회하는 `linux_system_info`를 추가했다.
+- BCM GPIO `gpio_read`·`gpio_write`를 추가하고 기본 dry-run, `gpiozero` 선택 의존성, pin 범위 검증을 적용했다.
+- 실제 하드웨어 사용 전 `LLMEX_GPIO_DRY_RUN=0`과 전기적 안전 검증이 필요하다는 내용을 `docs/tools.md`에 기록했다.
+
 ## 2026-07-25 · 1.23.16 안전한 tool 실행 계약 추가
 
 - `ToolRegistry`와 OpenAI 호환 schema를 추가해 등록된 `calculator`·`current_time`만 실행하도록 했다.

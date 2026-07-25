@@ -6,6 +6,8 @@ LLMEX의 tool 사용은 모델이 임의의 셸 명령을 실행하는 방식이
 
 - `calculator`: `{"expression": "2 + 3 * 4"}` 형태의 제한된 산술식 계산
 - `current_time`: 현재 UTC 시각 반환
+- `linux_system_info`: `uname`, `free`, `df /`만 고정 argv로 조회
+- `gpio_read` / `gpio_write`: Raspberry Pi BCM GPIO 읽기·쓰기
 
 ```python
 from llmex.tools import ToolRegistry
@@ -13,12 +15,17 @@ from llmex.tools import ToolRegistry
 registry = ToolRegistry()
 print(registry.schemas())       # OpenAI 호환 function schema
 result = registry.execute("calculator", {"expression": "12 / 3"})
+registry.execute("gpio_write", {"pin": 17, "value": True})  # 기본 dry-run
 ```
 
 등록되지 않은 이름, JSON이 아닌 인자, 객체가 아닌 인자는 `InputError`로
 거부된다. 계산기는 AST 허용 목록과 빈 builtins 환경을 사용하므로 파일·네트워크·
-셸 접근을 제공하지 않는다. 실제 서비스에서는 tool별 인자 검증, 타임아웃,
-호출 횟수 제한, 감사 로그, 사용자 권한을 추가해야 한다.
+셸 접근을 제공하지 않는다. Linux tool도 임의 command 문자열을 받지 않고 고정된
+읽기 전용 명령만 timeout과 출력 길이 제한으로 실행한다.
+
+GPIO는 안전을 위해 기본적으로 dry-run이다. Raspberry Pi에서 실제 핀을 제어할 때만
+`LLMEX_GPIO_DRY_RUN=0`으로 설정하고 `gpiozero`를 설치한다. 핀 번호는 BCM 기준이며,
+프로덕션에서는 릴레이·모터 같은 부하의 전기적 안전과 권한을 별도로 검증해야 한다.
 
 ## 모델 학습과 런타임의 역할
 
