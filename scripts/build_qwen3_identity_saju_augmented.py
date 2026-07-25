@@ -21,7 +21,6 @@ def main() -> None:
     train = base + saju * 100 + identity * 100
     for index, row in enumerate(train):
         row["id"] = f"identity-saju-v2-{index:06d}"
-        row.setdefault("provenance", {})["augmentation"] = "identity_and_saju_oversample_v2"
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "train.jsonl").write_text(
         "\n".join(json.dumps(row, ensure_ascii=False) for row in train) + "\n", encoding="utf-8"
