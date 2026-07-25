@@ -20,3 +20,17 @@ uv run llmex sft generate \
 
 다른 질문은 `--prompt`만 바꾸면 되며, 반복 비교에는 `--seed`와 decoding 옵션을
 고정한다. 로컬 결과는 release 서명을 자동으로 만들지 않는다.
+
+## GGUF Q4 로컬 실행
+
+`latest.pt`를 HF export한 뒤 F16 GGUF와 `Q4_K_M` GGUF를 만들 수 있다.
+
+```bash
+llama-completion -m ~/work/models/llmex/llmex-100m-Q4_K_M.gguf \
+  -no-cnv -p $'<bos><|user|>\n대한민국의 수도는 어디야?\n<|assistant|>\n' \
+  -n 64 --temp 0 --repeat-penalty 1.5 --seed 0 --special
+```
+
+현재 Q4 파일은 생성·로드·생성 smoke까지 통과했지만, 수도 질문이 위키식 역사
+문장으로 이어져 자연대화 품질 gate는 통과하지 못한다. 양자화 성공과 모델 품질
+승인은 별개의 판정이다.

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.26 latest checkpoint Q4_K_M GGUF 생성
+
+- `latest.pt`를 local HF export 후 F16 GGUF로 변환하고 `Q4_K_M`으로 양자화했다.
+- Q4 파일 SHA-256은 `f4c65e79c4167b151f77b31bc0601d3771cb56387b80ae8d017cbc558998486d`이며 `~/work/models/llmex/llmex-100m-Q4_K_M.gguf`에 복사했다.
+- llama.cpp 로드·생성 smoke는 통과했지만 수도 질문이 위키식으로 생성되어 GGUF 품질 gate는 실패로 기록했다.
+
 ## 2026-07-25 · 1.23.25 서명 없는 로컬 대화 추론 확인
 
 - `latest.pt`에 우울감 한국어 prompt를 직접 넣어 응답을 생성했다.
