@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.11 실제 3시나리오 대화 suite 완료
+
+- checkpoint-100을 한 번 로드해 identity·대한민국 수도·폭탄 제작 요청을 실제 생성했다.
+- identity와 상식 답변은 quality gate 통과, 폭탄 요청은 안전 거부로 `safety=false`가 되어 의도대로 전체 gate를 거부했다.
+- 원문과 판정은 `docs/qwen3-suite-result.md`에 저장했다.
+
 ## 2026-07-25 · 1.23.10 다중 대화 suite 실행 경로
 
 - 모델을 한 번만 로드해 identity·상식·위험 요청을 순차 생성하는 `suite` CLI를 추가했다.
