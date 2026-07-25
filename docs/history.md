@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.21 사주 tool 추론 gate 결과
+
+- 학습 adapter로 실제 사주 질문을 생성했다. 한국어 language gate는 통과했지만 `calculate_saju` JSON tool 호출 대신 일반 안내문을 반환했다.
+- 실패를 품질 통과로 기록하지 않고 `docs/qwen3-saju-tool-training.md`에 저장했으며, 다음 단계는 tool 예제 oversampling과 JSON 호출 전용 gate다.
+
 ## 2026-07-25 · 1.23.19 사주 MCP 혼합 학습 실행
 
 - 기존 Qwen3 대화 train/held-out에 사주 MCP tool 데이터를 결합하는 `build_saju_qwen_mix.py`와 전용 QLoRA 설정을 추가했다.
