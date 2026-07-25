@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.06 BatchEncoding 속성 접근 보강
+
+- Transformers `BatchEncoding`이 dict subclass가 아닌 경우에도 `input_ids` 속성에서 tensor를 꺼내도록 보강했다.
+- 두 번째 실제 14B 추론 smoke에서 확인된 동일 `KeyError: shape`를 반영한 수정이며, 답변 생성 결과는 아직 재확보하지 못했다.
+
 ## 2026-07-25 · 1.23.05 Qwen tokenizer 추론 입력 수정
 
 - `apply_chat_template(..., return_tensors="pt")`가 반환하는 `BatchEncoding`에서 `input_ids`를 추출하도록 수정했다.
