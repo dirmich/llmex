@@ -7,6 +7,7 @@ output_dir: runs/qwen3-14b-qlora-identity-saju-v2
 allowed_licenses:
   - Apache-2.0
   - LicenseRef-LLMEX-Internal-Distillation
+  - LicenseRef-LLMEX-Internal-Curriculum
   - MIT
 sequence_length: 2048
 seed: 42

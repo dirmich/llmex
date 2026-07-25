@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-26 · 1.23.33 identity 데이터 라이선스 허용
+
+- 증량 split의 내부 identity 커리큘럼 라이선스를 Qwen3 QLoRA 설정 allowlist에 추가했다.
+- 데이터 무결성 검증은 통과했으며, 이제 identity·사주 증량 학습을 재개한다.
+
 ## 2026-07-26 · 1.23.28 identity·사주 증량 학습 시작
 
 - 기존 8,766행 학습 split에 사주 tool 20행과 Highmaru/llmex identity 20행을 각각 100배 oversampling해 11,246행의 전용 split을 만들었다.
