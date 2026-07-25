@@ -1,6 +1,7 @@
 """Qwen3 사주 tool과 llmex identity를 반복 보강한 학습 split을 만든다."""
 
 import json
+import copy
 from pathlib import Path
 
 from llmex.fingerprint import fingerprint
@@ -20,7 +21,7 @@ def main() -> None:
     saju = rows(SAJU)
     identity = rows(IDENTITY)
     # Special behavior is intentionally oversampled: it is otherwise below 0.3% of the corpus.
-    train = base + saju * 100 + identity * 100
+    train = [copy.deepcopy(row) for row in (base + saju * 100 + identity * 100)]
     for index, row in enumerate(train):
         row["id"] = f"identity-saju-v2-{index:06d}"
         row["sha256"] = fingerprint(
