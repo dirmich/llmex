@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.27 Qwen3-14B Q4_K_M GGUF 생성
+
+- Qwen3-14B 원본과 `runs/qwen3-14b-qlora-saju-tool` adapter를 병합해 **14,768,307,200 파라미터** HF 변환본을 만들었다.
+- 공식 llama.cpp 변환기로 F16 GGUF를 만든 뒤 `Q4_K_M`으로 양자화했다. Q4 파일은 약 8.4GiB이며 SHA-256은 `58a4558193a1aa817fed204d7bce228df415be5cd4b77294ac9a843b0ddb0539`다.
+- 로컬 파일: `~/work/models/llmex/qwen3-14b-saju-Q4_K_M.gguf`. `llama-completion` CUDA smoke에서 `대한민국의 수도는 서울입니다.` 생성을 확인했다(약 18 token/s).
+- 이 작업은 로컬 테스트 산출물이며 release gate는 기존처럼 `blocked`를 유지하고 Hugging Face에는 업로드하지 않았다.
+
 ## 2026-07-25 · 1.23.26 latest checkpoint Q4_K_M GGUF 생성
 
 - `latest.pt`를 local HF export 후 F16 GGUF로 변환하고 `Q4_K_M`으로 양자화했다.
