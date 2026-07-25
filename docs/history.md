@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.18 사주·만세력 MCP tool 데이터 추가
+
+- `../0.ref/saju-mcp`의 MIT README/MCP schema를 출처로 `calculate_saju`, `solar_to_lunar`, `lunar_to_solar` 호출 예제를 생성하는 빌더를 추가했다.
+- `data/chat/ko-saju-mcp-tool-v1/`에 train 20행, held-out 4행과 manifest를 생성하고 기존 ChatRow loader로 검증했다.
+- 계산은 tool에 위임하고 해석은 참고용으로 제한하는 system 지침과 정보 부족 시 추가 질문 예제를 포함했다.
+
 ## 2026-07-25 · 1.23.17 Linux·Raspberry Pi tool 확장
 
 - 임의 셸 대신 `uname`·`free`·`df /` 고정 명령만 timeout과 출력 제한으로 조회하는 `linux_system_info`를 추가했다.

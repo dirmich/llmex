@@ -1,0 +1,11 @@
+{
+  "dataset": "ko-saju-mcp-tool-v1",
+  "source": "../0.ref/saju-mcp",
+  "license": "MIT",
+  "train": 20,
+  "heldout": 4,
+  "files": {
+    "train.jsonl": "572c8b1b9d883b5f2c95ba435f6877bd46a2d9d4138bafe0dba3859c85e69ce2",
+    "heldout.jsonl": "a758f73705541053c3d1f7141eb7434db8922e8d4757e5a55ce69269babb3bbb"
+  }
+}

@@ -44,3 +44,18 @@ GPIO는 안전을 위해 기본적으로 dry-run이다. Raspberry Pi에서 실�
 도구 사용 예제(선택, 인자 작성, 오류 복구, 결과 요약)를 별도 SFT 데이터로
 추가한 뒤 held-out tool 평가를 통과시켜야 한다. 현재 테스트는 실행기 안전성과
 allowlist 경계를 검증하며, 모델의 tool-call 학습 완료를 의미하지 않는다.
+
+## 사주·만세력 MCP 데이터
+
+`../0.ref/saju-mcp`를 MIT 출처로 확인하고 다음 명령으로 tool-use 데이터셋을
+생성한다.
+
+```bash
+uv run python scripts/build_saju_tool_dataset.py
+```
+
+생성물은 `data/chat/ko-saju-mcp-tool-v1/`에 저장되며 train 20행과 held-out
+4행, `manifest.json`을 포함한다. 예제는 `calculate_saju`, `solar_to_lunar`,
+`lunar_to_solar`의 인자 선택과 정보 부족 시 추가 질문을 가르친다. 사주 결과는
+계산 tool의 반환값을 근거로 설명해야 하며 미래를 확정적으로 예언하는 답변은
+학습 대상에서 제외한다.

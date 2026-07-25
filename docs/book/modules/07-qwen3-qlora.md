@@ -57,6 +57,15 @@ assistant-only mask를 먼저 고정한다.
 - 중요한 한계: 실행기는 tool 호출을 안전하게 처리하지만, 모델 자체가 올바른
   호출을 생성하려면 별도의 tool-use SFT 데이터와 held-out 평가가 필요하다.
 
+### `scripts/build_saju_tool_dataset.py`
+
+- 책임: `../0.ref/saju-mcp`의 MIT 라이선스 README/MCP schema를 출처로 삼아
+  사주·만세력 tool 호출 예제와 held-out 예제를 JSONL로 생성한다.
+- 실행: `uv run python scripts/build_saju_tool_dataset.py` 후
+  `data/chat/ko-saju-mcp-tool-v1/{train,heldout}.jsonl`을 확인한다.
+- 원칙: 사주 계산은 모델이 암기하거나 산술로 추측하지 않고 `calculate_saju`,
+  `solar_to_lunar`, `lunar_to_solar` tool에 위임한다. 결과 해석은 참고용으로만 말한다.
+
 ## 챕터 종료 체크
 
 - [ ] 원본 Qwen3 safetensors와 tokenizer가 로컬에서 검증된다.
