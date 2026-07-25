@@ -8,7 +8,7 @@ import typer
 
 from llmex.errors import LlmexError
 from llmex.qwen3.config import load_qwen3_config
-from llmex.qwen3.runtime import evaluate, preflight, train
+from llmex.qwen3.runtime import evaluate, generate, preflight, train
 
 app = typer.Typer(help="로컬 Qwen3 safetensors를 PEFT QLoRA로 학습·평가합니다.")
 
@@ -50,3 +50,21 @@ def eval(
     """heldout assistant-only loss를 계산합니다."""
 
     _run(config, "evaluate", adapter)
+
+
+@app.command()
+def infer(
+    config: Annotated[Path, typer.Option("--config")],
+    adapter: Annotated[Path, typer.Option("--adapter")],
+    prompt: Annotated[str, typer.Option("--prompt")],
+    max_new_tokens: Annotated[int, typer.Option("--max-new-tokens")] = 128,
+) -> None:
+    """adapter로 한 턴을 생성하고 언어 일치 gate를 확인합니다."""
+
+    try:
+        config_obj = load_qwen3_config(config)
+        result = generate(config_obj, adapter, prompt, max_new_tokens=max_new_tokens)
+    except LlmexError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=int(exc.code)) from exc
+    typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))

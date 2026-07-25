@@ -50,3 +50,12 @@ sequence length와 batch에 따라 달라진다. 먼저 `micro_batch_size: 1`,
 `gradient_accumulation_steps: 16`으로 smoke run을 수행하고 OOM이면
 `sequence_length`를 줄인다. adapter 산출물은 `output_dir`에 저장되며 원본
 safetensors는 변경하지 않는다.
+
+실제 추론:
+
+```bash
+python -m llmex.qwen3 infer \
+  --config configs/qwen3-14b/qlora.yaml \
+  --adapter runs/qwen3-14b-qlora/checkpoint-100 \
+  --prompt "너는 누구야?"
+```

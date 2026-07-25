@@ -9,6 +9,7 @@ from llmex.chat.data import load_chat_jsonl
 from llmex.errors import InputError, IntegrityError
 from llmex.qwen3.config import Qwen3Config
 from llmex.qwen3.data import Qwen3ChatDataset, Qwen3DataCollator
+from llmex.qwen3.harness import language_gate, system_prompt
 
 _OPTIONAL_MODULES = ("transformers", "peft", "bitsandbytes", "accelerate")
 _INSTALL = "uv pip install -r configs/qwen3-14b/requirements.txt"
@@ -201,3 +202,22 @@ def evaluate(config: Qwen3Config, adapter_dir: Path | None = None) -> dict[str, 
     model, tokenizer = _load(config, adapter_dir=target)
     metrics = _trainer(config, model, tokenizer, training=False).evaluate()
     return {"adapter_dir": str(target), **metrics}
+
+
+def generate(config: Qwen3Config, adapter_dir: Path, prompt: str, *, max_new_tokens: int = 128) -> dict[str, object]:
+    """adapter를 로드해 한 턴을 생성하고 언어 gate 결과를 반환합니다."""
+
+    if not adapter_dir.is_dir():
+        raise InputError(f"추론할 PEFT adapter 디렉터리가 없습니다: {adapter_dir}")
+    model, tokenizer = _load(config, adapter_dir=adapter_dir)
+    transformers, _, torch = _libraries()
+    messages = [{"role": "system", "content": system_prompt(prompt)}, {"role": "user", "content": prompt}]
+    encoded = tokenizer.apply_chat_template(
+        messages, tokenize=True, add_generation_prompt=True, enable_thinking=False, return_tensors="pt"
+    )
+    if hasattr(encoded, "to"):
+        encoded = encoded.to(model.device)
+    with torch.inference_mode():
+        output = model.generate(encoded, max_new_tokens=max_new_tokens, do_sample=False, eos_token_id=tokenizer.eos_token_id)
+    answer = tokenizer.decode(output[0][encoded.shape[-1] :], skip_special_tokens=True).strip()
+    return {"prompt": prompt, "answer": answer, "language_gate": language_gate(prompt, answer)}

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.04 adapter 추론 CLI 추가
+
+- `python -m llmex.qwen3 infer --config ... --adapter ... --prompt ...` 명령으로 checkpoint adapter를 실제 생성 경로에 연결했다.
+- 생성 결과에 answer와 언어 gate 판정을 함께 JSON으로 반환하며, llmex identity system prompt를 자동 적용한다.
+- 14B checkpoint 로드는 시작됐으나 443 shard 로드 중 실행 세션이 종료되어 실제 답변 생성 결과는 아직 확보하지 못했다.
+
 ## 2026-07-25 · 1.23.03 생성 하네스·언어 게이트 추가
 
 - llmex identity(`Highmaru`가 `Qwen3`를 기반으로 파인튜닝한 AI 모델)를 고정 system prompt로 제공한다.
