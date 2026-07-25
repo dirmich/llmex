@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+from llmex.fingerprint import fingerprint
+
 BASE = Path("data/chat/ko-public-teacher-v5/train.jsonl")
 SAJU = Path("data/chat/ko-saju-mcp-tool-v1/train.jsonl")
 IDENTITY = Path("data/chat/identity-highmaru.jsonl")
@@ -21,6 +23,10 @@ def main() -> None:
     train = base + saju * 100 + identity * 100
     for index, row in enumerate(train):
         row["id"] = f"identity-saju-v2-{index:06d}"
+        row["sha256"] = fingerprint(
+            {"id": row["id"], "messages": row["messages"],
+             "provenance": row["provenance"], "split": row["split"]}
+        )
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "train.jsonl").write_text(
         "\n".join(json.dumps(row, ensure_ascii=False) for row in train) + "\n", encoding="utf-8"
