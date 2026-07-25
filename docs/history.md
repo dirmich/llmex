@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.05 Qwen tokenizer 추론 입력 수정
+
+- `apply_chat_template(..., return_tensors="pt")`가 반환하는 `BatchEncoding`에서 `input_ids`를 추출하도록 수정했다.
+- 이전 실제 14B 추론 smoke는 443 shard 로드 후 이 호환성 오류(`KeyError: shape`)로 종료됐으며, 수정 후 재시도할 수 있다.
+
 ## 2026-07-25 · 1.23.04 adapter 추론 CLI 추가
 
 - `python -m llmex.qwen3 infer --config ... --adapter ... --prompt ...` 명령으로 checkpoint adapter를 실제 생성 경로에 연결했다.

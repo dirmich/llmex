@@ -215,6 +215,8 @@ def generate(config: Qwen3Config, adapter_dir: Path, prompt: str, *, max_new_tok
     encoded = tokenizer.apply_chat_template(
         messages, tokenize=True, add_generation_prompt=True, enable_thinking=False, return_tensors="pt"
     )
+    if isinstance(encoded, dict):
+        encoded = encoded["input_ids"]
     if hasattr(encoded, "to"):
         encoded = encoded.to(model.device)
     with torch.inference_mode():
