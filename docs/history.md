@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.13 reviewer 점수·서명 등록 절차 정리
+
+- reviewer 대상 고정, 점수 입력, canonical JSON 서명, `quality-gate`, `quality-review-validate`, 완료 조건을 `docs/reviewer-signing-guide.md`에 정리했다.
+- self-signing·policy 우회 금지와 현재 실제 reviewer 서명이 없는 상태를 명시했다.
+
 ## 2026-07-25 · 1.23.12 수동 품질 reviewer 기준 고정
 
 - 질문 적합성·자연스러움·언어 일치·반복/EOS·안전성을 0~2점으로 평가하는 reviewer 양식을 추가했다.
