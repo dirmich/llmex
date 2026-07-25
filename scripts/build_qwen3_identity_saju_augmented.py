@@ -9,6 +9,7 @@ from llmex.chat.data import Message, Provenance
 
 BASE = Path("data/chat/ko-public-teacher-v5/train.jsonl")
 SAJU = Path("data/chat/ko-saju-mcp-tool-v1/train.jsonl")
+SAJU_HELDOUT = Path("data/chat/ko-saju-mcp-tool-v1/heldout.jsonl")
 IDENTITY = Path("data/chat/identity-highmaru.jsonl")
 OUT = Path("data/chat/ko-public-teacher-v5-identity-saju-v2")
 
@@ -35,7 +36,7 @@ def main() -> None:
     (OUT / "train.jsonl").write_text(
         "\n".join(json.dumps(row, ensure_ascii=False) for row in train) + "\n", encoding="utf-8"
     )
-    heldout = rows(SAJU)
+    heldout = rows(SAJU_HELDOUT)
     (OUT / "heldout.jsonl").write_text(
         "\n".join(json.dumps(row, ensure_ascii=False) for row in heldout) + "\n", encoding="utf-8"
     )

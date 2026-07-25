@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-26 · 1.23.34 identity·사주 held-out split 수정
+
+- 증량 학습의 held-out을 사주 train이 아닌 `ko-saju-mcp-tool-v1/heldout.jsonl`에서 읽도록 수정했다.
+- train/held-out split 계약을 맞춘 뒤 재학습을 재개한다.
+
 ## 2026-07-26 · 1.23.33 identity 데이터 라이선스 허용
 
 - 증량 split의 내부 identity 커리큘럼 라이선스를 Qwen3 QLoRA 설정 allowlist에 추가했다.
