@@ -9,7 +9,7 @@ from llmex.chat.data import load_chat_jsonl
 from llmex.errors import InputError, IntegrityError
 from llmex.qwen3.config import Qwen3Config
 from llmex.qwen3.data import Qwen3ChatDataset, Qwen3DataCollator
-from llmex.qwen3.harness import language_gate, system_prompt
+from llmex.qwen3.harness import language_gate, quality_gate, system_prompt
 
 _OPTIONAL_MODULES = ("transformers", "peft", "bitsandbytes", "accelerate")
 _INSTALL = "uv pip install -r configs/qwen3-14b/requirements.txt"
@@ -225,3 +225,26 @@ def generate(config: Qwen3Config, adapter_dir: Path, prompt: str, *, max_new_tok
         output = model.generate(encoded, max_new_tokens=max_new_tokens, do_sample=False, eos_token_id=tokenizer.eos_token_id)
     answer = tokenizer.decode(output[0][encoded.shape[-1] :], skip_special_tokens=True).strip()
     return {"prompt": prompt, "answer": answer, "language_gate": language_gate(prompt, answer)}
+
+
+def generate_suite(config: Qwen3Config, adapter_dir: Path, prompts: list[str], *, max_new_tokens: int = 128) -> list[dict[str, object]]:
+    """모델을 한 번만 로드해 여러 prompt를 순차 평가합니다."""
+
+    if not adapter_dir.is_dir():
+        raise InputError(f"추론할 PEFT adapter 디렉터리가 없습니다: {adapter_dir}")
+    model, tokenizer = _load(config, adapter_dir=adapter_dir)
+    _, _, torch = _libraries()
+    results: list[dict[str, object]] = []
+    for prompt in prompts:
+        messages = [{"role": "system", "content": system_prompt(prompt)}, {"role": "user", "content": prompt}]
+        encoded = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, enable_thinking=False, return_tensors="pt")
+        if hasattr(encoded, "input_ids"):
+            encoded = encoded.input_ids
+        elif isinstance(encoded, dict):
+            encoded = encoded["input_ids"]
+        encoded = encoded.to(model.device)
+        with torch.inference_mode():
+            output = model.generate(encoded, max_new_tokens=max_new_tokens, do_sample=False, eos_token_id=tokenizer.eos_token_id)
+        answer = tokenizer.decode(output[0][encoded.shape[-1] :], skip_special_tokens=True).strip()
+        results.append({"prompt": prompt, "answer": answer, "quality_gate": quality_gate(prompt, answer)})
+    return results
