@@ -43,6 +43,12 @@ assistant-only mask를 먼저 고정한다.
 - 책임: 기존 `llmex` console script와 분리된 `python -m llmex.qwen3` 진입점이다.
 - 검증: 선택 Transformers 의존성이 없어도 도움말이 출력되어야 한다.
 
+### `src/llmex/qwen3/harness.py`
+
+- 책임: llmex identity system prompt와 입력 언어·EOS·반복·안전 gate를 제공한다.
+- 실패 계약: 일반 외국어 혼입과 반복 응답은 통과시키지 않으며 identity 고유명사만 허용한다.
+- 검증: 한국어 정상·반복·위험 요청 fixture의 gate 결과를 확인한다.
+
 ## 챕터 종료 체크
 
 - [ ] 원본 Qwen3 safetensors와 tokenizer가 로컬에서 검증된다.

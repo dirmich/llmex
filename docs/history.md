@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.14 전체 회귀 테스트 정리
+
+- 새 `qwen3/harness.py` 학습 카드를 교재에 추가하고 릴리스 테스트의 버전 기대값을 현재 버전과 동기화했다.
+- `uv run pytest -q` 결과 **417 passed, 1 warning**을 확인했다. warning은 기존 torch pickle protocol 안내이며 테스트 실패가 아니다.
+
 ## 2026-07-25 · 1.23.13 reviewer 점수·서명 등록 절차 정리
 
 - reviewer 대상 고정, 점수 입력, canonical JSON 서명, `quality-gate`, `quality-review-validate`, 완료 조건을 `docs/reviewer-signing-guide.md`에 정리했다.
