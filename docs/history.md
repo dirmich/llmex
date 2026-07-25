@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.07 Qwen3 실제 한국어 추론 smoke
+
+- checkpoint-100을 실제 로드해 `너는 누구야?`에 자연스러운 identity 답변을 생성했다.
+- 생성 답변: `안녕하세요, 저는 Qwen3를 기반으로 파인튜닝한 Highmaru의 AI 모델 llmex입니다. 궁금한 점이나 도움이 필요하시면 언제든지 말씀해주세요!`
+- identity 고유명사 때문에 언어 gate가 오거절하던 문제를 수정해 해당 답변은 `language_gate.passed=true`가 되며, 일반 영어 혼입은 계속 거부한다.
+
 ## 2026-07-25 · 1.23.06 BatchEncoding 속성 접근 보강
 
 - Transformers `BatchEncoding`이 dict subclass가 아닌 경우에도 `input_ids` 속성에서 tensor를 꺼내도록 보강했다.

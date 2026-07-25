@@ -30,7 +30,9 @@ def language_gate(prompt: str, answer: str) -> dict[str, object]:
     language = detect_language(prompt)
     has_hangul = bool(re.search(r"[가-힣]", answer))
     has_kana = bool(re.search(r"[\u3040-\u30ff]", answer))
-    has_latin = bool(re.search(r"[A-Za-z]", answer))
+    # identity에 필수인 고유명사는 한국어 답변의 허용 토큰으로 제외한다.
+    neutral = re.sub(r"Highmaru|Qwen3|llmex|AI", "", answer, flags=re.IGNORECASE)
+    has_latin = bool(re.search(r"[A-Za-z]", neutral))
     forbidden = (
         (language == "ko" and (has_kana or has_latin))
         or (language == "ja" and has_hangul)
