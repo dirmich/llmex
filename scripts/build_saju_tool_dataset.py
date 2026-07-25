@@ -107,7 +107,12 @@ def make_row(index: int, prompt: str, tool: str, arguments: dict | None, split: 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    rows = CASES * 3
+    variants = ["", " 자세한 계산을 부탁해요.", " 결과를 tool로 먼저 확인해줘."]
+    rows = [
+        (f"{prompt}{variants[round]}", tool, arguments)
+        for round in range(3)
+        for prompt, tool, arguments in CASES
+    ]
     for split, selected in (("train", rows[:20]), ("heldout", rows[20:])):
         path = OUT / f"{split}.jsonl"
         path.write_text(

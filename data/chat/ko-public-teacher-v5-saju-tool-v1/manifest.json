@@ -1,0 +1,7 @@
+{
+  "dataset": "ko-public-teacher-v5-saju-tool-v1",
+  "base": "ko-public-teacher-v5",
+  "extra": "ko-saju-mcp-tool-v1",
+  "train_rows": 8766,
+  "heldout_rows": 1502
+}

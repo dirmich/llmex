@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.19 사주 MCP 혼합 학습 실행
+
+- 기존 Qwen3 대화 train/held-out에 사주 MCP tool 데이터를 결합하는 `build_saju_qwen_mix.py`와 전용 QLoRA 설정을 추가했다.
+- 혼합 preflight는 train 8,766행, held-out 1,502행, Qwen3 safetensors 8 shard를 확인했다.
+- 선택 의존성 버전을 고정한 실행으로 `qwen3-14b-qlora-saju-tool` 학습을 시작했으며, 완료 후 adapter 평가와 tool 호출 추론을 기록한다.
+
 ## 2026-07-25 · 1.23.18 사주·만세력 MCP tool 데이터 추가
 
 - `../0.ref/saju-mcp`의 MIT README/MCP schema를 출처로 `calculate_saju`, `solar_to_lunar`, `lunar_to_solar` 호출 예제를 생성하는 빌더를 추가했다.
