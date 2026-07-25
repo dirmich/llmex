@@ -10,6 +10,12 @@
 
 위 수치는 토큰 수준 assistant-only loss다. 실제 대화 가능 여부는 별도의 생성 테스트에서 identity, 언어 일치, EOS, 반복, 안전, 수동 품질 게이트를 통과해야 한다.
 
+## 생성 하네스
+
+`llmex.qwen3.harness`는 모든 생성 요청에 llmex identity와 입력 언어 일치 지시를 넣고,
+답변에 다른 문자권이 섞였는지 보수적으로 검사한다. 이 검사는 모델의 품질을 대신하지
+않으며, 실패 시 재생성·수동 검토가 필요하다.
+
 이 경로는 기존 100M 모델의 tokenizer·trainer·CLI와 분리되어 있다. 입력은
 `Qwen/Qwen3-14B`의 원본 Transformers safetensors이며 GGUF는 학습 입력으로
 받지 않는다.
