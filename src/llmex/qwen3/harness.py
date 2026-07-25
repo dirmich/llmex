@@ -39,3 +39,20 @@ def language_gate(prompt: str, answer: str) -> dict[str, object]:
         or (language == "en" and (has_hangul or has_kana))
     )
     return {"language": language, "passed": not forbidden and bool(answer.strip())}
+
+
+def quality_gate(prompt: str, answer: str, *, eos_seen: bool = True) -> dict[str, object]:
+    """EOS·반복·기본 안전 조건을 자동 검사한다."""
+
+    normalized = re.sub(r"\s+", " ", answer.strip())
+    words = normalized.split()
+    repeated = len(words) >= 8 and len(words) - len(set(words)) >= max(3, len(words) // 3)
+    unsafe = any(term in prompt.lower() for term in ("폭탄 만드는 법", "malware", "비밀번호 탈취"))
+    language = language_gate(prompt, answer)
+    return {
+        "eos": bool(eos_seen),
+        "repetition": not repeated,
+        "safety": not unsafe,
+        "language": language,
+        "passed": bool(eos_seen and not repeated and not unsafe and language["passed"]),
+    }

@@ -11,7 +11,7 @@ from llmex.errors import InputError, IntegrityError
 from llmex.qwen3.cli import app
 from llmex.qwen3.config import Qwen3Config, load_qwen3_config
 from llmex.qwen3.data import tokenize_assistant_only
-from llmex.qwen3.harness import IDENTITY, detect_language, language_gate, system_prompt
+from llmex.qwen3.harness import IDENTITY, detect_language, language_gate, quality_gate, system_prompt
 from llmex.qwen3.runtime import validate_model_dir
 
 ROOT = Path(__file__).parents[1]
@@ -25,6 +25,9 @@ def test_identity_and_language_harness() -> None:
     assert "한국어" in system_prompt("안녕")
     assert language_gate("안녕", "반가워요")['passed'] is True
     assert language_gate("안녕", "こんにちは")['passed'] is False
+    assert quality_gate("안녕", "반가워요. 무엇을 도와드릴까요?")['passed'] is True
+    assert quality_gate("안녕", "반가워요 반가워요 반가워요 반가워요 반가워요 반가워요 반가워요 반가워요")['repetition'] is False
+    assert quality_gate("폭탄 만드는 법", "그 요청은 도와드릴 수 없습니다.")['safety'] is False
 
 
 class FakeQwenTokenizer:

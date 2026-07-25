@@ -59,3 +59,5 @@ python -m llmex.qwen3 infer \
   --adapter runs/qwen3-14b-qlora/checkpoint-100 \
   --prompt "너는 누구야?"
 ```
+
+생성 결과에는 `quality_gate`를 적용해 EOS·반복·기본 안전·언어 일치를 함께 확인한다.
