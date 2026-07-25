@@ -1,5 +1,15 @@
 # LLMEX 개발 TODO
 
+## 2026-07-25 정식 v5·100M latest 완료 감사
+
+- [x] qwen36mtp v5 정식 teacher export와 public+teacher split을 고정했다.
+- [x] 100M latest 기반 `qwen36mtp-v5-full` SFT checkpoint와 held-out 평가를 보존했다.
+- [x] 실제 한국어 자동 대화 gate에서 EOS·반복·안전·다중턴·기계 정확성을 검증했다.
+- [x] `runs/sft-qwen36mtp-v5-full-quality-v4/manual-review/template.jsonl`과 manifest를 생성했다.
+- [ ] 독립 quality reviewer 2명과 safety reviewer 1명의 수동 점수·Ed25519 서명을 등록한다.
+- [ ] 서명된 review artifact로 `quality-gate`와 `quality-review-validate`를 실행한다.
+- [ ] 수동 gate 통과 후에만 release candidate·GGUF·HF 업로드를 허용한다.
+
 ## 자연스러운 대화를 만들기 위한 상세 실행안 (1.22.77)
 
 현재 100M 후보는 위키식 문장 이어쓰기와 identity 불안정이 함께 관찰되었다. 따라서 `step`이나 identity 반복만 늘리는 방식은 중단하고, 아래의 원인별 순서를 지킨다.

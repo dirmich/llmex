@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.24 release handoff TODO 고정
+
+- 정식 v5·100M latest 자동 검증 완료 항목과 남은 독립 reviewer 2명·safety reviewer 1명 서명 절차를 `docs/todo.md` 상단에 고정했다.
+- 수동 gate 전 release candidate·GGUF·HF 업로드를 금지하는 순서를 명확히 했다.
+
 ## 2026-07-25 · 1.23.23 전체 회귀와 pipeline telemetry 경계 수정
 
 - 로컬 단계가 telemetry JSON을 교체하는 순간의 부분 파일을 최종 권위 검증까지 보존하도록 pipeline 실행 경계를 수정했다.
