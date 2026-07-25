@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.25 서명 없는 로컬 대화 추론 확인
+
+- `latest.pt`에 우울감 한국어 prompt를 직접 넣어 응답을 생성했다.
+- 응답은 공감·실행 가능한 조언을 반환했고 `eos_reached=true`, repetition penalty 1.5를 사용했다.
+- 로컬 추론은 서명 없이 가능하고, 서명은 release 승격에만 필요하다는 실행법을 `docs/local-inference-guide.md`에 추가했다.
+
 ## 2026-07-25 · 1.23.24 release handoff TODO 고정
 
 - 정식 v5·100M latest 자동 검증 완료 항목과 남은 독립 reviewer 2명·safety reviewer 1명 서명 절차를 `docs/todo.md` 상단에 고정했다.
