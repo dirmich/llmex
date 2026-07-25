@@ -5,6 +5,7 @@ import copy
 from pathlib import Path
 
 from llmex.fingerprint import fingerprint
+from llmex.chat.data import Message, Provenance
 
 BASE = Path("data/chat/ko-public-teacher-v5/train.jsonl")
 SAJU = Path("data/chat/ko-saju-mcp-tool-v1/train.jsonl")
@@ -24,6 +25,8 @@ def main() -> None:
     train = [copy.deepcopy(row) for row in (base + saju * 100 + identity * 100)]
     for index, row in enumerate(train):
         row["id"] = f"identity-saju-v2-{index:06d}"
+        row["messages"] = [Message.model_validate(item).model_dump() for item in row["messages"]]
+        row["provenance"] = Provenance.model_validate(row["provenance"]).model_dump(exclude_none=True)
         row["sha256"] = fingerprint(
             {"id": row["id"], "messages": row["messages"],
              "provenance": row["provenance"], "split": row["split"]}
