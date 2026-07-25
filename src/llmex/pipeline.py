@@ -258,7 +258,15 @@ def _execute(
     )
     started = time.monotonic()
     while process.poll() is None:
-        usage = _usage(config)
+        try:
+            usage = _usage(config)
+        except IntegrityError:
+            # 로컬 단계가 telemetry 파일을 교체하는 순간에는 부분 JSON을
+            # 잠깐 볼 수 있다. 외부 단계는 즉시 실패시키고, 로컬 단계는
+            # 최종 권위 telemetry 재검증에서 실패 원인을 보존한다.
+            if stage.external:
+                raise
+            usage = {"tokens": 0.0, "energy_kwh": 0.0}
         if (
             usage["tokens"] > config.budget.token_budget
             or usage["energy_kwh"] > config.budget.maximum_energy_kwh

@@ -1,5 +1,16 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.23 전체 회귀와 pipeline telemetry 경계 수정
+
+- 로컬 단계가 telemetry JSON을 교체하는 순간의 부분 파일을 최종 권위 검증까지 보존하도록 pipeline 실행 경계를 수정했다.
+- 전체 회귀 테스트 **418 passed, 1 warning**을 확인했다.
+
+## 2026-07-25 · 1.23.22 qwen36mtp v5·100M 최종 자동 감사
+
+- 정식 v5 teacher export 8,746/1,498행과 100M latest checkpoint를 재확인했다.
+- quality 162응답에서 EOS 100%, hard loop 0, harmful refusal 100%, multi-turn retention 100%와 benign false refusal 0%를 확인했다.
+- `quality-status`는 자동 gate 통과와 `release_gate=blocked`를 함께 반환했으며, 독립 reviewer 수동 점수·서명 없이는 최종 승격하지 않는 상태를 문서화했다.
+
 ## 2026-07-25 · 1.23.21 사주 tool 추론 gate 결과
 
 - 학습 adapter로 실제 사주 질문을 생성했다. 한국어 language gate는 통과했지만 `calculate_saju` JSON tool 호출 대신 일반 안내문을 반환했다.
