@@ -1,5 +1,15 @@
 # Qwen3-14B QLoRA 실행
 
+## 완료된 학습 산출물
+
+100 step QLoRA 학습과 checkpoint-100 단독 heldout 재평가를 완료했다.
+
+- adapter: `runs/qwen3-14b-qlora/checkpoint-100/adapter_model.safetensors`
+- 학습 loss: `0.88898`
+- heldout: 학습 중 `0.9439`, 단독 재평가 `0.94556` (100 samples)
+
+위 수치는 토큰 수준 assistant-only loss다. 실제 대화 가능 여부는 별도의 생성 테스트에서 identity, 언어 일치, EOS, 반복, 안전, 수동 품질 게이트를 통과해야 한다.
+
 이 경로는 기존 100M 모델의 tokenizer·trainer·CLI와 분리되어 있다. 입력은
 `Qwen/Qwen3-14B`의 원본 Transformers safetensors이며 GGUF는 학습 입력으로
 받지 않는다.

@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-25 · 1.23.02 Qwen3-14B QLoRA 학습·재평가 완료
+
+- Qwen3-14B QLoRA 학습을 100/100 step까지 완료했다. 최종 학습 loss는 `0.88898`, 총 소요 시간은 약 1시간 31분 29초다.
+- 100개 heldout 평가에서 학습 중 최종 `eval_loss=0.9439`, 학습 종료 후 checkpoint 단독 재평가 `eval_loss=0.94556`을 확인했다.
+- 최종 adapter는 `runs/qwen3-14b-qlora/checkpoint-100/adapter_model.safetensors`에 저장됐다. 이는 assistant-only loss와 재현성 평가 결과이며, 자연스러운 대화 품질·EOS·반복·안전·수동 품질 게이트 통과를 의미하지 않는다.
+
 ## 2026-07-25 · 1.23.01 Qwen3 학습 입력 호환성 보강
 
 - Transformers `BatchEncoding`을 일반 token id 목록으로 정규화해 Qwen3 assistant loss mask를 안정적으로 생성한다.
