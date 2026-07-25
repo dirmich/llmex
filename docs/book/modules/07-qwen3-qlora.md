@@ -49,6 +49,14 @@ assistant-only mask를 먼저 고정한다.
 - 실패 계약: 일반 외국어 혼입과 반복 응답은 통과시키지 않으며 identity 고유명사만 허용한다.
 - 검증: 한국어 정상·반복·위험 요청 fixture의 gate 결과를 확인한다.
 
+### `src/llmex/tools.py`
+
+- 책임: 모델이 요청한 구조화 tool 중 허용 목록에 등록된 함수만 실행한다.
+- 기본 실습: `calculator`와 `current_time`의 schema를 확인하고 `execute`로 호출한다.
+- 실패 계약: 미등록 tool, 잘못된 JSON, 셸·파일 접근 산술식은 `InputError`로 거부한다.
+- 중요한 한계: 실행기는 tool 호출을 안전하게 처리하지만, 모델 자체가 올바른
+  호출을 생성하려면 별도의 tool-use SFT 데이터와 held-out 평가가 필요하다.
+
 ## 챕터 종료 체크
 
 - [ ] 원본 Qwen3 safetensors와 tokenizer가 로컬에서 검증된다.
