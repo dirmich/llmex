@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-26 · 1.23.28 identity·사주 증량 학습 시작
+
+- 기존 8,766행 학습 split에 사주 tool 20행과 Highmaru/llmex identity 20행을 각각 100배 oversampling해 11,246행의 전용 split을 만들었다.
+- `configs/qwen3-14b/qlora-identity-saju-v2.yaml`과 `scripts/build_qwen3_identity_saju_augmented.py`로 재현 가능한 QLoRA 학습 경로를 고정했다.
+- 목표는 기본 Qwen identity 회수 대신 `Highmaru에서 만든 llmex`, 사주 tool JSON 호출 형식을 반복 학습하는 것이다. 학습·추론·GGUF gate는 완료 후 별도 기록한다.
+
 ## 2026-07-25 · 1.23.27 Qwen3-14B Q4_K_M GGUF 생성
 
 - Qwen3-14B 원본과 `runs/qwen3-14b-qlora-saju-tool` adapter를 병합해 **14,768,307,200 파라미터** HF 변환본을 만들었다.

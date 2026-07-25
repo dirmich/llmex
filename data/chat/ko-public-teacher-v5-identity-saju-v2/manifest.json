@@ -1,0 +1,10 @@
+{
+  "dataset": "ko-public-teacher-v5-identity-saju-v2",
+  "base_rows": 8746,
+  "saju_rows": 20,
+  "identity_rows": 5,
+  "saju_repeat": 100,
+  "identity_repeat": 100,
+  "train_rows": 11246,
+  "heldout_rows": 20
+}
