@@ -6,6 +6,12 @@
 - 혼합 preflight는 train 8,766행, held-out 1,502행, Qwen3 safetensors 8 shard를 확인했다.
 - 선택 의존성 버전을 고정한 실행으로 `qwen3-14b-qlora-saju-tool` 학습을 시작했으며, 완료 후 adapter 평가와 tool 호출 추론을 기록한다.
 
+### 학습 완료 기록
+
+- 100/100 step 완료, 총 1시간 31분 1초, train loss `0.887926`.
+- 학습 중 held-out loss `0.942531`, adapter는 `runs/qwen3-14b-qlora-saju-tool`에 저장했다.
+- 후속 독립 adapter 평가와 실제 사주 tool 호출 추론은 별도 실행 중이다.
+
 ## 2026-07-25 · 1.23.18 사주·만세력 MCP tool 데이터 추가
 
 - `../0.ref/saju-mcp`의 MIT README/MCP schema를 출처로 `calculate_saju`, `solar_to_lunar`, `lunar_to_solar` 호출 예제를 생성하는 빌더를 추가했다.
