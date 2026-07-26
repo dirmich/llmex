@@ -1888,3 +1888,8 @@
 - 최신 100M checkpoint의 `sft generate` 실제 실행에서 감정 공감, 사주 필수정보 요청, Highmaru identity가 모두 의도한 응답으로 나오는 것을 확인했다.
 - raw Q4_K_M GGUF는 runtime 라우터를 포함하지 않아 의미 변형 보장이 없다는 차이를 실행 가이드에 명시했다.
 - 검증 명령과 배포 harness 경계를 `docs/runtime-capability-routing.md`에 추가했다.
+## 2026-07-27 · 1.23.66 최종 감사 문서 최신화
+
+- teacher/public 데이터 수량, latest 기반 대화 후보, 100행 blind review 경로를 현재 artifact로 갱신했다.
+- Highmaru identity 표기와 사주 필수정보 요청·감정 공감 runtime 실추론 결과를 반영했다.
+- raw GGUF 단독 실행과 runtime harness의 검증 범위를 분리해 release 판단의 근거를 명확히 했다.
