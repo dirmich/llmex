@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.42 identity v3 데이터·학습 구성
+
+- 기존 5행 identity 복제 문제를 수정해 한국어·영어·일본어 및 Qwen/Alibaba 오인 교정 표현 308 train·12 heldout 행을 생성했다.
+- 일반 public 8,746행과 사주 tool 2,000행을 함께 유지한 `data/chat/ko-public-teacher-v5-identity-v3/` split과 QLoRA 60-step 설정을 추가했다.
+- 목표는 system prompt 없이도 Highmaru 제작 llmex identity를 유지하는 것이며, 학습 후 llama.cpp 직접 추론에서 검증한다.
+
 ## 2026-07-26 · 1.23.41 Qwen3-14B GGUF llama.cpp 로컬 테스트
 
 - 로컬에 정확한 12B Transformers 원본은 없어 가장 가까운 dense 후보인 Qwen3-14B(14,768,307,200 파라미터)를 사용했다. 정확한 모델 규모를 12B로 표기하지 않는다.
