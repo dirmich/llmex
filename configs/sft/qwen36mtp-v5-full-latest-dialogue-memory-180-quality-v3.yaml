@@ -1,0 +1,24 @@
+schema_version: 1
+name: qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v3
+sft_config: configs/sft/qwen36mtp-v5-full-latest-dialogue-memory-180.yaml
+expected_sft_config_sha256: ae5258c7db276000d3ff80f35453a5e72d590633a9078b62e487e1c39620c365
+checkpoint: runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180/checkpoints/latest.pt
+expected_checkpoint_sha256: a78ac697dd6d712e5d8b4c97e5bcac81a4ac22e5211a8d0c7b9e871ea4dd6352
+suite: data/evaluation/ko-chat-quality-v1.jsonl
+expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
+output_dir: runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v3
+allowed_suite_licenses: [MIT]
+greedy_profile:
+  name: greedy
+  temperature: 0.0
+  repetition_penalty: 1.1
+  max_new_tokens: 128
+  seeds: [0]
+sampling_profiles:
+  - name: sample
+    temperature: 0.7
+    top_k: 20
+    top_p: 0.9
+    repetition_penalty: 1.1
+    max_new_tokens: 128
+    seeds: [11, 12, 13, 14, 15]

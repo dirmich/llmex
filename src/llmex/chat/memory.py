@@ -16,6 +16,10 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
         return "저는 highmaru가 만든 llmex입니다."
     if "만든 사람" in latest or "제작자" in latest:
         return "저는 highmaru가 만든 llmex입니다."
+    if "사주" not in latest and "만세력" not in latest and (
+        "어떤 일을 할 수" in latest or "할 수 있는 일" in latest or "무엇을 할 수" in latest
+    ):
+        return "질문 답변, 요약, 글쓰기, 번역, Linux 명령 안내, Raspberry Pi GPIO 작업 설계를 도와드릴 수 있어요."
     if any(
         word in latest
         for word in ("우울", "기분이 안 좋아", "기분이 조금 가라앉", "마음이 힘들")

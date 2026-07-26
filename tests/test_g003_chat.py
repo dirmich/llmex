@@ -59,6 +59,12 @@ def test_memory_router_handles_korean_object_particle_without_model_fallback() -
     assert remembered_answer(messages) == "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."
 
 
+def test_memory_router_answers_capability_variants_without_identity_fallback() -> None:
+    messages = (Message(role="user", content="너는 어떤 일을 할 수 있어?"),)
+    assert "질문 답변" in remembered_answer(messages)
+    assert "llmex" not in (remembered_answer(messages) or "")
+
+
 def _row(
     identifier: str, split: str, user: str, assistant: str, license_name: str = "CC-BY-4.0"
 ) -> dict[str, object]:
