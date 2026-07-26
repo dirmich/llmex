@@ -13,9 +13,9 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
     if ("이름" in latest and ("너" in latest or "당신" in latest)) or any(
         marker in latest for marker in ("누구냐", "누구야", "누구예요", "누구세요")
     ):
-        return "저는 highmaru가 만든 llmex입니다."
+        return "저는 Highmaru에서 만든 llmex입니다."
     if "만든 사람" in latest or "제작자" in latest:
-        return "저는 highmaru가 만든 llmex입니다."
+        return "저는 Highmaru에서 만든 llmex입니다."
     if "사주" not in latest and "만세력" not in latest and (
         "어떤 일을 할 수" in latest or "할 수 있는 일" in latest or "무엇을 할 수" in latest
     ):

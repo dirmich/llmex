@@ -1868,3 +1868,8 @@
 - 전체 `pytest`에서 발견된 `<unk>` 예약 특수 토큰 property 충돌을 테스트 계약에 반영했다.
 - 예약 제어 토큰을 일반 Unicode round-trip 입력에서 제외하고, 전체 테스트 `420 passed`를 확인했다.
 - 자동 품질 gate와 수동 gate 상태는 변경하지 않았으며, 수동 서명은 release 단계로 보류했다.
+## 2026-07-27 · 1.23.62 Highmaru identity 표기 통일
+
+- identity 응답의 제작자 표기를 `Highmaru에서 만든 llmex`로 통일해 대소문자·조사 표현의 불일치를 제거했다.
+- foundation 및 runtime 대화 회귀 테스트를 통과했다(37 passed). 전체 테스트는 다음 검증에서 재실행한다.
+- 자동 품질 gate와 수동 reviewer 점수·서명 상태는 변경하지 않았으며, 수동 release gate는 사람 검토 전까지 보류한다.
