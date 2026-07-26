@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.40 전체 회귀 검증
+
+- 전체 `uv run pytest -q`를 실행해 `418 passed, 1 warning`을 확인했다.
+- warning은 악성 pickle 비실행 회귀 테스트에서 PyTorch weights-only unpickler가 pickle protocol 4를 알린 것으로, 테스트 실패가 아니다.
+- 수동 review 제출 파일은 여전히 없어 release gate는 `blocked`로 유지된다.
+
 ## 2026-07-26 · 1.23.39 수동 blind review template 재검증
 
 - `llmex sft quality-review-template --config configs/sft/qwen36mtp-v5-full-quality.yaml`을 실제 실행했고 기존 template을 무결성 검증 후 재사용했다.
