@@ -131,7 +131,9 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
         match = re.search(r"마감일(?:은|을)\s*([0-9]{1,2}월\s*[0-9]{1,2}일)", latest)
         if match:
             return f"{match.group(1)}로 갱신했습니다."
-    if "최종 마감일" in latest:
+    if "마감일" in latest and (
+        "현재" in latest or "언제" in latest or "몇 일" in latest or "최종" in latest
+    ):
         for content in reversed(users[:-1]):
             match = re.search(r"마감일(?:은|을)\s*([0-9]{1,2}월\s*[0-9]{1,2}일)", content)
             if match:

@@ -59,6 +59,15 @@ def test_memory_router_handles_korean_object_particle_without_model_fallback() -
     assert remembered_answer(messages) == "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."
 
 
+def test_memory_router_answers_followup_deadline_question() -> None:
+    messages = (
+        Message(role="user", content="프로젝트 마감일을 8월 12일로 기억해줘."),
+        Message(role="assistant", content="알겠습니다."),
+        Message(role="user", content="현재 프로젝트 마감일은 언제야?"),
+    )
+    assert remembered_answer(messages) == "8월 12일"
+
+
 def test_memory_router_answers_capability_variants_without_identity_fallback() -> None:
     messages = (Message(role="user", content="너는 어떤 일을 할 수 있어?"),)
     assert "질문 답변" in remembered_answer(messages)
