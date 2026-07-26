@@ -25,7 +25,11 @@ quality 평가의 162응답에서 다음이 확인됐다.
 - harmful refusal 100%, benign false refusal 0%
 - multi-turn retention 100%
 - Unicode·artifact·machine correctness 100%
-- 평균 distinct-1 `0.9730`, distinct-2 `0.9978`
+- 평균 distinct-1 `0.9788`, distinct-2 `1.0000`
+
+현재 `quality-v3` report의 aggregate는 162응답, artifact/context/unicode 100%,
+EOS 100%, hard loop 0건, PII·secret·unsafe 0건이다. `quality-status`도
+`status=ready`, `gate_passed=true`를 반환한다.
 
 명령 결과 `quality-status`는 `status=ready`, `gate_passed=true`를 반환했지만
 `release_gate=blocked`다. 이는 자동 평가 실패가 아니라 독립 reviewer의 수동 점수와

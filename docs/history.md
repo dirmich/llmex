@@ -1908,3 +1908,8 @@
 - `기억해줘` 표현도 프로젝트 마감일 memory 라우터가 처리하도록 확장했다.
 - 실제 2-turn 실행에서 어색한 모델 자유 생성 대신 `알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요.`를 반환한다.
 - 관련 회귀를 추가하고 문맥 테스트 38개를 통과시켰다.
+## 2026-07-27 · 1.23.70 자동 품질 artifact 최신 감사
+
+- `quality-v3` report와 `quality-status`를 재검증해 162응답, EOS 100%, hard loop 0건, harmful refusal 100%, benign false refusal 0%, multi-turn retention 100%를 확인했다.
+- distinct-1/2 최신 수치와 artifact/context/unicode·PII·unsafe 상태를 최종 감사 문서에 반영했다.
+- 자동 gate는 통과했지만 사람 reviewer 점수·서명이 없어 release gate는 계속 `blocked`다.
