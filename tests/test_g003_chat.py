@@ -13,7 +13,7 @@ from tokenizers.trainers import BpeTrainer
 from typer.testing import CliRunner
 
 from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
-from llmex.chat.runtime import SFTTrainer, evaluate_chat, generate_chat, preflight_sft
+from llmex.chat.runtime import SFTTrainer, _saju_tool_response, evaluate_chat, generate_chat, preflight_sft
 from llmex.chat.template import TokenizedChat, render_chat, tokenize_chat
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
@@ -43,6 +43,14 @@ def _tokenizer(path: Path) -> int:
     }
     (path / "tokenizer-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     return tokenizer.get_vocab_size()
+
+
+def test_saju_tool_router_requests_missing_fields_and_emits_json() -> None:
+    missing = _saju_tool_response("사주를 볼 수 있어?")
+    assert missing is not None
+    assert "생년월일" in missing and "출생 시각" in missing and "calculate_saju" in missing
+    complete = _saju_tool_response("사주를 계산해줘. 1990년 1월 1일 오전 9시, 양력, 남자입니다.")
+    assert complete == '{"arguments": {"calendar": "solar", "day": 1, "gender": "남", "hour": 9, "month": 1, "year": 1990}, "tool": "calculate_saju"}'
 
 
 def _row(

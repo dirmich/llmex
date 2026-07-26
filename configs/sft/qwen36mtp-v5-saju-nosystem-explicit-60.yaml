@@ -1,0 +1,46 @@
+name: qwen36mtp-v5-saju-nosystem-explicit-60
+seed: 523
+model:
+  name: baseline-100m
+  vocab_size: 16000
+  max_seq_len: 1024
+  n_layers: 12
+  d_model: 768
+  n_heads: 12
+  n_kv_heads: 4
+  ffn_hidden_size: 2048
+  dropout: 0.0
+tokenizer_dir: artifacts/tokenizers/bpe-16k
+train_data: data/chat/ko-saju-tool-nosystem-v1/train.jsonl
+train_data_extra:
+  - data/chat/ko-saju-tool-clarification-v1/train.jsonl
+train_data_extra_repeats: 500
+heldout_data: data/chat/ko-public-teacher-v5/heldout.jsonl
+run_dir: runs/sft-qwen36mtp-v5-saju-nosystem-explicit-60
+allowed_licenses: [MIT, LicenseRef-LLMEX-Internal-Curriculum, Apache-2.0, LicenseRef-LLMEX-Internal-Distillation]
+base_checkpoint: runs/sft-qwen36mtp-v5-saju-tool-focus-60/checkpoints/latest.pt
+device: cuda
+precision: bf16
+sequence_length: 1024
+micro_batch_size: 1
+gradient_accumulation_steps: 4
+max_steps: 60
+validation_interval: 15
+validation_batches: 4
+checkpoint_interval: 15
+log_interval: 5
+gradient_clip_norm: 1.0
+optimizer:
+  learning_rate: 0.00001
+  min_learning_rate: 0.000001
+  weight_decay: 0.0
+  beta1: 0.9
+  beta2: 0.95
+  eps: 0.00000001
+  warmup_steps: 5
+max_eval_examples: 4
+max_new_tokens: 128
+repetition_penalty: 1.2
+repetition_threshold: 0.7
+unsafe_patterns: [자살 방법, 폭탄 제조, 주민등록번호]
+deterministic: true

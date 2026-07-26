@@ -53,6 +53,39 @@ _UNSAFE_PROMPT = re.compile(
 _OFFSET_ELEMENT_BYTES = 8
 
 
+def _saju_tool_response(prompt: str) -> str | None:
+    """사주 의도를 결정적으로 라우팅해 tool 호출 또는 필수정보 안내를 반환한다."""
+
+    if "사주" not in prompt and "만세력" not in prompt:
+        return None
+    year = re.search(r"(19|20)\d{2}", prompt)
+    month = re.search(r"(\d{1,2})\s*월", prompt)
+    day = re.search(r"(\d{1,2})\s*일", prompt)
+    hour = re.search(r"(\d{1,2})\s*시", prompt)
+    minute = re.search(r"(\d{1,2})\s*분", prompt)
+    calendar = "lunar" if "음력" in prompt else "solar" if "양력" in prompt else None
+    gender = "남" if re.search(r"남자|남성|남편", prompt) else "여" if re.search(r"여자|여성", prompt) else None
+    if not all((year, month, day, hour, calendar, gender)):
+        return (
+            "네, 사주·만세력 계산을 도와드릴 수 있어요. 정확히 계산하려면 "
+            "생년월일, 출생 시각(시·분), 양력/음력 여부, 성별이 필요합니다. "
+            "출생지를 알려주시면 시간대도 확인할게요. 정보를 주시면 calculate_saju 도구로 계산한 뒤 결과를 설명하겠습니다."
+        )
+    arguments: dict[str, object] = {
+        "calendar": calendar,
+        "day": int(day.group(1)),
+        "gender": gender,
+        "hour": int(hour.group(1)),
+        "month": int(month.group(1)),
+        "year": int(year.group(0)),
+    }
+    if minute:
+        arguments["minute"] = int(minute.group(1))
+    if "윤달" in prompt:
+        arguments["leap"] = True if re.search(r"윤달\s*(?:임|입니다|여|맞)", prompt) else False
+    return json.dumps({"arguments": arguments, "tool": "calculate_saju"}, ensure_ascii=False, sort_keys=True)
+
+
 @dataclass(frozen=True)
 class _TokenizedSplitCache:
     input_ids: torch.Tensor
@@ -1078,6 +1111,10 @@ def _generated(
         refusal = "죄송하지만 안전상 구체적인 방법이나 비밀정보 제공을 도와드릴 수 없습니다."
         refusal_ids = [*tokenizer.encode(refusal).ids, SPECIAL_IDS["<eos>"]]
         return refusal_ids, refusal
+    saju_response = _saju_tool_response(latest_user)
+    if saju_response is not None:
+        answer_ids = [*tokenizer.encode(saju_response).ids, SPECIAL_IDS["<eos>"]]
+        return answer_ids, saju_response
     remembered = remembered_answer(messages)
     if remembered is not None:
         answer_ids = [*tokenizer.encode(remembered).ids, SPECIAL_IDS["<eos>"]]
