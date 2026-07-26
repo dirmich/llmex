@@ -1,5 +1,10 @@
 # 구현 이력
 
+## 2026-07-26 · 1.23.35 증량 split manifest 정정
+
+- identity·사주 증량 split의 실제 held-out 4행을 manifest에 반영했다.
+- 학습 프로세스가 세션 종료와 함께 중단되어 checkpoint가 생성되지 않은 것을 확인했고, 독립 세션으로 재시작한다.
+
 ## 2026-07-26 · 1.23.34 identity·사주 held-out split 수정
 
 - 증량 학습의 held-out을 사주 train이 아닌 `ko-saju-mcp-tool-v1/heldout.jsonl`에서 읽도록 수정했다.

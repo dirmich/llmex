@@ -6,5 +6,5 @@
   "saju_repeat": 100,
   "identity_repeat": 100,
   "train_rows": 11246,
-  "heldout_rows": 20
+  "heldout_rows": 4
 }
