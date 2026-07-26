@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.37 사주 도구 호출 보정 학습
+
+- 사주 20행 300배와 identity 5행 50배의 6,250행 보정 split으로 40 step QLoRA를 수행했다. `train_loss=1.281107`, `eval_loss=1.254143`, runtime 641.63초였다.
+- 보정 adapter를 병합·Q4_K_M 변환해 `~/work/models/llmex/qwen3-14b-tool-focus-v1-Q4_K_M.gguf`에 저장했다. SHA-256은 `f2cbfe8d6a518205e05b893545c897fc3536263feba52596af79837f6dc061ea`이다.
+- 자유 system prompt에서는 사고과정만 생성해 tool-call 게이트가 실패했으나, Qwen3의 no-think harness에 정확한 JSON schema와 `calculate_saju`를 명시하면 정확한 tool JSON을 생성했다. 따라서 런타임 harness 강제가 필수이며 상세 재현 명령은 테스트 문서에 추가했다.
+
 ## 2026-07-26 · 1.23.36 Qwen3-14B identity·사주 증량 학습 및 GGUF 검증
 
 - identity 5행과 사주 도구 20행을 각각 100회 증량한 11,246행 혼합 데이터로 QLoRA 100 step 학습을 완료했다. 학습 시간은 2,835.85초(약 47분 16초), `train_loss=0.948624`, `eval_loss=1.266257`이었다.
