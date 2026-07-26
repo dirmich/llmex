@@ -11,9 +11,18 @@ from llmex.errors import InputError, IntegrityError
 from llmex.qwen3.cli import app
 from llmex.qwen3.config import Qwen3Config, load_qwen3_config
 from llmex.qwen3.data import tokenize_assistant_only
-from llmex.qwen3.harness import IDENTITY, detect_language, language_gate, quality_gate, system_prompt, target_language
-from llmex.tools import ToolRegistry
+from llmex.qwen3.harness import (
+    IDENTITY,
+    detect_language,
+    language_gate,
+    quality_gate,
+    system_prompt,
+    target_language,
+    tool_call_gate,
+)
+from llmex.qwen3.identity import identity_gate
 from llmex.qwen3.runtime import validate_model_dir
+from llmex.tools import ToolRegistry
 
 ROOT = Path(__file__).parents[1]
 
@@ -32,6 +41,25 @@ def test_identity_and_language_harness() -> None:
     assert quality_gate("안녕", "반가워요. 무엇을 도와드릴까요?")['passed'] is True
     assert quality_gate("안녕", "반가워요 반가워요 반가워요 반가워요 반가워요 반가워요 반가워요 반가워요")['repetition'] is False
     assert quality_gate("폭탄 만드는 법", "그 요청은 도와드릴 수 없습니다.")['safety'] is False
+
+
+def test_system_prompt_independent_identity_gate() -> None:
+    assert identity_gate(
+        "저는 Highmaru가 만든 llmex이며, 기반 모델은 Qwen3입니다."
+    ) == {
+        "passed": True,
+        "missing": [],
+        "base_model_as_creator": False,
+    }
+    assert identity_gate("저는 알리바바 그룹이 개발한 Qwen 모델입니다.")["passed"] is False
+    assert identity_gate("제 이름은 llmex입니다.")["missing"] == ["highmaru"]
+
+
+def test_system_prompt_independent_tool_call_gate() -> None:
+    answer = '{"arguments":{"year":2001},"tool":"calculate_saju"}'
+    assert tool_call_gate(answer, "calculate_saju")["passed"] is True
+    assert tool_call_gate('{"year":2001}', "calculate_saju")["passed"] is False
+    assert tool_call_gate("먼저 생년월일을 알려 주세요.", "calculate_saju")["passed"] is False
 
 
 def test_allowlisted_tools_execute_without_code_execution() -> None:

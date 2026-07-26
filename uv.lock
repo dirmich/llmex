@@ -590,7 +590,7 @@ wheels = [
 
 [[package]]
 name = "llmex"
-version = "1.23.44"
+version = "1.23.47"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },

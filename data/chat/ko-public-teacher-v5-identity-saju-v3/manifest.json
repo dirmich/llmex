@@ -1,0 +1,13 @@
+{
+  "dataset": "ko-public-teacher-v5-identity-saju-v3",
+  "base_rows": 8746,
+  "saju_rows": 20,
+  "identity_train_rows": 308,
+  "identity_heldout_rows": 12,
+  "saju_system_repeat": 50,
+  "saju_no_system_repeat": 50,
+  "identity_repeat": 1,
+  "identity_fraction": 0.027863216935046137,
+  "train_rows": 11054,
+  "heldout_rows": 20
+}

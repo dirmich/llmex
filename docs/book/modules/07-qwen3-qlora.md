@@ -45,9 +45,18 @@ assistant-only mask를 먼저 고정한다.
 
 ### `src/llmex/qwen3/harness.py`
 
-- 책임: llmex identity system prompt와 입력 언어·EOS·반복·안전 gate를 제공한다.
+- 책임: llmex identity system prompt와 입력 언어·EOS·반복·안전·JSON tool call gate를 제공한다.
 - 실패 계약: 일반 외국어 혼입과 반복 응답은 통과시키지 않으며 identity 고유명사만 허용한다.
 - 검증: 한국어 정상·반복·위험 요청 fixture의 gate 결과를 확인한다.
+
+### `src/llmex/qwen3/identity.py`
+
+- 책임: system prompt와 무관하게 응답이 `llmex` 이름과 `Highmaru` 제작자를 함께
+  밝히고 기반 모델을 제작자로 오인하지 않는지 검사한다.
+- 실패 계약: 이름이나 제작자 중 하나라도 빠지거나 Qwen·Alibaba를 llmex 제작자로
+  주장하면 GGUF 승격 gate를 통과시키지 않는다.
+- 검증: 올바른 Qwen3 기반 표현과 기존 GGUF의 Alibaba/Qwen 자기소개 fixture를
+  `pytest -q tests/test_qwen3.py -k independent`로 검사한다.
 
 ### `src/llmex/tools.py`
 

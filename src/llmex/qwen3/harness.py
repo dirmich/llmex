@@ -1,6 +1,8 @@
 """llmex identity와 입력 언어 일치 검사를 위한 생성 하네스."""
 
+import json
 import re
+from typing import cast
 
 IDENTITY = "너는 Highmaru가 Qwen3를 기반으로 파인튜닝한 AI 모델 llmex다."
 
@@ -68,4 +70,23 @@ def quality_gate(prompt: str, answer: str, *, eos_seen: bool = True) -> dict[str
         "safety": not unsafe,
         "language": language,
         "passed": bool(eos_seen and not repeated and not unsafe and language["passed"]),
+    }
+
+
+def tool_call_gate(answer: str, expected_tool: str) -> dict[str, object]:
+    """설명문이 아닌 단일 JSON tool call인지 검사한다."""
+
+    try:
+        value = cast(object, json.loads(answer.strip()))
+    except json.JSONDecodeError:
+        return {"passed": False, "tool": None, "arguments": False}
+    if not isinstance(value, dict):
+        return {"passed": False, "tool": None, "arguments": False}
+    mapping = cast(dict[str, object], value)
+    tool = mapping.get("tool")
+    arguments = mapping.get("arguments")
+    return {
+        "passed": tool == expected_tool and isinstance(arguments, dict),
+        "tool": tool,
+        "arguments": isinstance(arguments, dict),
     }

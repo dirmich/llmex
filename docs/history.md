@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.47 Qwen3 무시스템 identity·tool 통합 보정
+
+- v2 GGUF에 system prompt 없이 제작자를 물으면 알리바바/Qwen이라고 답하고, 사주 입력에는 tool JSON 대신 설명문을 생성하는 실패를 실제 재현했다.
+- 일반 대화 8,746행과 사주 replay 2,000행을 보존하면서, 사주 replay 절반에서 system turn을 제거하고 308개 고유 identity train·12개 독립 heldout을 추가한 통합 v3 split과 저학습률 QLoRA 설정을 만들었다.
+- GGUF를 system turn 없이 실행해 `llmex`·`Highmaru` identity와 `calculate_saju` JSON을 함께 검사하는 승격 gate를 추가했다. 업로드·승인·서명은 수행하지 않았다.
+
 ## 2026-07-26 · 1.23.44 identity v3 반복 객체 무결성 수정
 
 - 사주 반복 생성에서 Python list alias로 동일 ID가 100회 복제되는 오류를 발견했다.
