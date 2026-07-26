@@ -1883,3 +1883,8 @@
 - `오늘 기분이 조금 가라앉았어` 의미 변형 앵커를 추가한 180-step 실험을 수행했다.
 - Python checkpoint 생성기는 공감 응답을 냈지만, Q4_K_M GGUF 직접 추론은 긍정 응답을 내어 실제 배포 경로의 회귀를 확인했다.
 - 자동 품질 gate만으로 승격하지 않고 emotion 실험 후보를 제외했다. 기본 27행 앵커 데이터와 기존 검증 후보를 유지하며, runtime 라우팅을 사용하는 실행 경로를 권장한다.
+## 2026-07-27 · 1.23.65 runtime harness 실추론 검증
+
+- 최신 100M checkpoint의 `sft generate` 실제 실행에서 감정 공감, 사주 필수정보 요청, Highmaru identity가 모두 의도한 응답으로 나오는 것을 확인했다.
+- raw Q4_K_M GGUF는 runtime 라우터를 포함하지 않아 의미 변형 보장이 없다는 차이를 실행 가이드에 명시했다.
+- 검증 명령과 배포 harness 경계를 `docs/runtime-capability-routing.md`에 추가했다.
