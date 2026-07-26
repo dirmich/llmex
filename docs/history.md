@@ -1782,4 +1782,4 @@
 - GGUF chat template에 system 메시지가 없어도 llmex/Highmaru identity가 자동 주입되는 안전 기본값을 넣었다.
 - llama.cpp 직접 검증: 한국어·영어·일본어 identity가 모두 `llmex`, `Highmaru`로 응답했고 Qwen/Alibaba 자기소개를 하지 않았다.
 - 사주 질의에서 무시스템 실행으로 `calculate_saju` JSON 호출(`birth_date`, `birth_time`, `calendar`, `gender`)을 정확히 출력했다.
-- 산출물: `~/work/models/llmex/qwen3-14b-identity-saju-v3-Q4_K_M.gguf` (SHA-256: `3ec88e06bc2e8c9695bddac834148fc39f375675c0149e12bd27e4251b7aa5ab`).
+- 산출물: `~/work/models/llmex/qwen3-14b-identity-saju-v3-Q4_K_M.gguf` (SHA-256: `934ad4187a2e940c09c8af530d308134eafd58b8959eeb75846762fd290cc924`).

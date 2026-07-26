@@ -5,7 +5,7 @@
 - GGUF: `~/work/models/llmex/qwen3-14b-identity-saju-v3-Q4_K_M.gguf`
 - 파라미터: 14,768,307,200
 - 양자화: Q4_K_M, 파일 크기 약 8.4 GiB
-- SHA-256: `3ec88e06bc2e8c9695bddac834148fc39f375675c0149e12bd27e4251b7aa5ab`
+- SHA-256: `934ad4187a2e940c09c8af530d308134eafd58b8959eeb75846762fd290cc924`
 
 ## llama.cpp 무시스템 테스트
 
