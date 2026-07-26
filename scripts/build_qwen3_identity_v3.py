@@ -7,7 +7,6 @@ from llmex.fingerprint import fingerprint
 OUT = Path("data/chat/ko-public-teacher-v5-identity-v3")
 BASE = Path("data/chat/ko-public-teacher-v5/train.jsonl")
 SAJU = Path("data/chat/ko-saju-mcp-tool-v1/train.jsonl")
-HELDOUT = Path("data/chat/ko-saju-mcp-tool-v1/heldout.jsonl")
 
 PAIRS = [
  ("너는 누구야?", "저는 Highmaru에서 만든 llmex입니다. Qwen3 기반으로 파인튜닝되었습니다."),
@@ -46,7 +45,8 @@ def main():
         item["provenance"] = Provenance.model_validate(item["provenance"]).model_dump(exclude_none=True)
         item["split"] = "train"
         item["sha256"] = fingerprint({"id": item["id"], "messages": item["messages"], "provenance": item["provenance"], "split": item["split"]})
-    held=[row(i,*PAIRS[(i+3)%len(PAIRS)],split="heldout") for i in range(12)]
+    # train과 겹치지 않는 identity 변형만 heldout으로 사용한다.
+    held=[row(i, u.replace("?", "??"), a, split="heldout") for i,(u,a) in enumerate(PAIRS)]
     OUT.mkdir(parents=True,exist_ok=True)
     for name,items in [("train.jsonl",train),("heldout.jsonl",held)]:
         (OUT/name).write_text("\n".join(json.dumps(x,ensure_ascii=False) for x in items)+"\n",encoding="utf-8")
