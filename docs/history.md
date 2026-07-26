@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.39 수동 blind review template 재검증
+
+- `llmex sft quality-review-template --config configs/sft/qwen36mtp-v5-full-quality.yaml`을 실제 실행했고 기존 template을 무결성 검증 후 재사용했다.
+- 결과는 `status=ok`, 표본 100개, manifest SHA-256 `1eb202260726a11a2e81afebb7f7f624c3684cef0b57878e1e53524abb05b934`이다.
+- reviewer 제출 JSON과 Ed25519 서명이 아직 없으므로 수동 gate 실행·release 승격은 계속 실패-폐쇄 상태로 유지한다.
+
 ## 2026-07-26 · 1.23.38 정식 v5·100M latest 자동 gate 재검증
 
 - `configs/sft/qwen36mtp-v5-full-quality.yaml`을 사용해 latest checkpoint와 v4 quality artifact의 재검증을 실행했다.
