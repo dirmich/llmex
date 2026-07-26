@@ -588,6 +588,23 @@ def sft_generate(
     typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
 
+@sft_app.command("chat")
+def sft_chat(
+    config_path: Annotated[Path, typer.Option("--config")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    prompts: Annotated[list[str], typer.Option("--prompt", help="문맥 순서대로 반복 지정")],
+) -> None:
+    """여러 user turn을 한 문맥으로 생성합니다(--prompt를 반복 지정)."""
+    try:
+        from llmex.chat import chat_session
+
+        results = chat_session(_sft_config(config_path), checkpoint, prompts)
+        for result in results:
+            typer.echo(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    except LlmexError as error:
+        _emit_error(error)
+
+
 def _emit_error(error: LlmexError) -> Never:
     logging.getLogger("llmex").error(str(error), extra={"fields": {"error_code": error.code.name}})
     raise typer.Exit(code=int(error.code))

@@ -1893,3 +1893,8 @@
 - teacher/public 데이터 수량, latest 기반 대화 후보, 100행 blind review 경로를 현재 artifact로 갱신했다.
 - Highmaru identity 표기와 사주 필수정보 요청·감정 공감 runtime 실추론 결과를 반영했다.
 - raw GGUF 단독 실행과 runtime harness의 검증 범위를 분리해 release 판단의 근거를 명확히 했다.
+## 2026-07-27 · 1.23.67 다중 turn 대화 명령 추가
+
+- checkpoint를 한 번만 로드하고 user/assistant 문맥을 유지하는 `llmex sft chat`을 추가했다.
+- identity → 사주 필수정보 요청 → 감정 공감의 3-turn 실제 실행에서 모두 EOS 정상 종료를 확인했다.
+- 실행법을 runtime capability 문서에 추가하고 기존 단일 prompt 생성과 구분했다.

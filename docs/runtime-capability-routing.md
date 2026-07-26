@@ -22,4 +22,13 @@ uv run llmex sft generate --config "$CFG" --checkpoint "$CK" --prompt "사주를
 uv run llmex sft generate --config "$CFG" --checkpoint "$CK" --prompt "넌 누구냐?"
 ```
 
+여러 turn 문맥을 한 번에 재현하려면 `sft chat`에서 `--prompt`를 순서대로 반복한다.
+
+```bash
+uv run llmex sft chat --config "$CFG" --checkpoint "$CK" \
+  --prompt "넌 누구냐?" \
+  --prompt "사주를 볼 수 있어?" \
+  --prompt "오늘 기분이 조금 가라앉았어."
+```
+
 Q4_K_M GGUF를 `llama-completion`으로 직접 실행하는 경로는 runtime 라우터를 거치지 않으므로 의미 변형·도구 호출 보장이 없다. 배포 시에는 이 라우팅 계약을 포함한 harness/dispatcher를 함께 사용하고, GGUF 단독 결과는 별도 모델 품질 증거로 기록한다.

@@ -1180,6 +1180,44 @@ def generate_chat(
     }
 
 
+def chat_session(
+    config: SFTConfig,
+    checkpoint: Path,
+    prompts: Sequence[str],
+    *,
+    generation: GenerationConfig | None = None,
+    seed: int = 0,
+) -> list[dict[str, object]]:
+    """여러 turn을 한 checkpoint/model 문맥으로 생성한다."""
+
+    model, tokenizer, _, fingerprints, release_policy = _load_sft(config, checkpoint)
+    decoding = generation or GenerationConfig(
+        max_new_tokens=config.max_new_tokens, temperature=0, eos_id=SPECIAL_IDS["<eos>"]
+    )
+    device = next(model.parameters()).device
+    generator = torch.Generator(device=device).manual_seed(seed)
+    messages: list[Message] = []
+    results: list[dict[str, object]] = []
+    for prompt in prompts:
+        messages.append(Message(role="user", content=prompt))
+        generated, text = _generated(
+            model, tokenizer, tuple(messages), config, generation=decoding, generator=generator
+        )
+        messages.append(Message(role="assistant", content=text))
+        results.append(
+            {
+                "prompt": prompt,
+                "response": text,
+                "token_ids": generated,
+                "eos_reached": SPECIAL_IDS["<eos>"] in generated,
+                "turn": len(results) + 1,
+                "fingerprints": fingerprints,
+                **release_policy,
+            }
+        )
+    return results
+
+
 def evaluate_chat(config: SFTConfig, checkpoint: Path) -> dict[str, object]:
     model, tokenizer, heldout, fingerprints, release_policy = _load_sft(config, checkpoint)
     examples = list(heldout.examples[: config.max_eval_examples])

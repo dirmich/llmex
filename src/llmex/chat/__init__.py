@@ -9,7 +9,7 @@ from llmex.chat.quality_review import (
     validate_quality_gate,
     validate_review_template,
 )
-from llmex.chat.runtime import evaluate_chat, generate_chat, preflight_sft, train_sft
+from llmex.chat.runtime import chat_session, evaluate_chat, generate_chat, preflight_sft, train_sft
 from llmex.chat.template import render_chat, tokenize_chat
 
 __all__ = [
@@ -17,6 +17,7 @@ __all__ = [
     "ChatExample",
     "evaluate_chat",
     "generate_chat",
+    "chat_session",
     "load_chat_jsonl",
     "preflight_mix",
     "preflight_quality",
