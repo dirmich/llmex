@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.38 정식 v5·100M latest 자동 gate 재검증
+
+- `configs/sft/qwen36mtp-v5-full-quality.yaml`을 사용해 latest checkpoint와 v4 quality artifact의 재검증을 실행했다.
+- `sft quality-validate`는 status `ok`, fingerprint `88984d42ddd0ada9848d22baf8adb01dbeb9412d14c53feba838db509afdd196`, `gate_passed=true`를 반환했다.
+- 자동 gate는 통과하지만 `redistribution_allowed=false`, `release_gate=blocked`이며, 독립 quality reviewer 2명과 safety reviewer 1명의 실제 서명 없이는 release 후보로 승격하지 않는다.
+
 ## 2026-07-26 · 1.23.37 사주 도구 호출 보정 학습
 
 - 사주 20행 300배와 identity 5행 50배의 6,250행 보정 split으로 40 step QLoRA를 수행했다. `train_loss=1.281107`, `eval_loss=1.254143`, runtime 641.63초였다.
