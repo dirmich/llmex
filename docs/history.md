@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.41 Qwen3-14B GGUF llama.cpp 로컬 테스트
+
+- 로컬에 정확한 12B Transformers 원본은 없어 가장 가까운 dense 후보인 Qwen3-14B(14,768,307,200 파라미터)를 사용했다. 정확한 모델 규모를 12B로 표기하지 않는다.
+- `~/work/models/llmex/qwen3-14b-identity-saju-v2-Q4_K_M.gguf`(약 8.4GiB)를 llama.cpp GPU로 실제 실행했다. SHA-256은 `ab0094d51b94dd2cae6139c5eecc6829aa447f81024ba9547f6efe9abb554292`이다.
+- 한국어 identity·도움말 대화가 정상 생성되고 EOS로 종료됨을 확인했다. 실행 명령과 출력은 `docs/qwen3-14b-llama-cpp-test.md`에 기록했다.
+
 ## 2026-07-26 · 1.23.40 전체 회귀 검증
 
 - 전체 `uv run pytest -q`를 실행해 `418 passed, 1 warning`을 확인했다.
