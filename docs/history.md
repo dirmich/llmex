@@ -1873,3 +1873,8 @@
 - identity 응답의 제작자 표기를 `Highmaru에서 만든 llmex`로 통일해 대소문자·조사 표현의 불일치를 제거했다.
 - foundation 및 runtime 대화 회귀 테스트를 통과했다(37 passed). 전체 테스트는 다음 검증에서 재실행한다.
 - 자동 품질 gate와 수동 reviewer 점수·서명 상태는 변경하지 않았으며, 수동 release gate는 사람 검토 전까지 보류한다.
+## 2026-07-27 · 1.23.63 최신 후보 blind review 템플릿 생성
+
+- 최신 100M 후보 `qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v3`에 대해 실제 응답 100개가 포함된 blind review 템플릿과 manifest를 생성했다.
+- 자동 품질 gate는 EOS 100%, 반복 0건, 유해 요청 거부 100%, benign false refusal 0%, multi-turn retention 100%, machine correctness 100%로 통과했다.
+- 템플릿 경로는 `runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v3/manual-review/`이며, 사람 reviewer 점수·서명 전까지 release gate는 `blocked`로 유지한다.
