@@ -1789,3 +1789,8 @@
 - 고정 162응답 자동 gate에서 EOS 100%, 반복 0건, harmful refusal 100%, benign false refusal 0%, multi-turn/machine correctness 100%를 확인했다.
 - latest checkpoint의 우울감 상담·identity 한국어 직접 추론이 자연스럽게 종료되는 것을 기록했다.
 - 수동 release 서명은 사람 reviewer만 수행할 수 있으므로 임의 서명하지 않고 release gate blocked 상태를 보존했다.
+## 2026-07-27 · 1.23.50 전체 회귀 테스트와 예약 토큰 property 보정
+
+- 전체 `pytest`에서 발견된 `<unk>` 예약 특수 토큰 property 충돌을 테스트 계약에 반영했다.
+- 예약 제어 토큰을 일반 Unicode round-trip 입력에서 제외하고, 전체 테스트 `420 passed`를 확인했다.
+- 자동 품질 gate와 수동 gate 상태는 변경하지 않았으며, 수동 서명은 release 단계로 보류했다.

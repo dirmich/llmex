@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 from typer.testing import CliRunner
 
@@ -98,6 +98,8 @@ def test_unicode_round_trip_unk_zero_and_fixed_10000(corpus: Path, tmp_path: Pat
 )
 @given(st.text(alphabet=st.characters(exclude_categories=("Cs",))))
 def test_unicode_property_round_trip(corpus: Path, tmp_path: Path, text: str) -> None:
+    # 예약 특수 토큰은 encode 시 제어 토큰으로 해석되므로 일반 텍스트 property에서 제외한다.
+    assume(text not in SPECIAL_IDS)
     output = tmp_path / "property-tokenizer"
     config = _config(corpus, output, 1)
     if not output.exists():
