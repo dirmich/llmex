@@ -1,5 +1,7 @@
 # qwen36mtp v5 10k·100M SFT 현재 감사
 
+최종 확인일: 2026-07-26
+
 ## 확인한 artifact
 
 - 정식 teacher export: `data/chat/ko-public-teacher-v5/`
@@ -8,6 +10,9 @@
 - latest checkpoint: `runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt`
 - readiness 평가: `runs/sft-qwen36mtp-v5-full-readiness/report.json`
 - quality 평가: `runs/sft-qwen36mtp-v5-full-quality-v4/report.json`
+
+권장 checkpoint는 `runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt`이며,
+`configs/sft/qwen36mtp-v5-full.yaml`으로 100M latest 기반 410-step SFT를 완료했다.
 
 ## 자동 gate 결과
 
@@ -30,3 +35,12 @@ quality 평가의 162응답에서 다음이 확인됐다.
 각 행을 평가하고 저장소 trust policy의 개인키로 서명한 뒤
 `quality-gate`와 `quality-review-validate`를 실행해야 최종 release gate를 판정할
 수 있다. 현재 checkpoint는 자동 gate 통과 후보일 뿐 최종 배포 승격본은 아니다.
+
+## 직접 한국어 추론 확인
+
+`llmex sft generate`로 latest checkpoint를 직접 실행했다.
+
+- 우울감 상담 질문 → `많이 힘들겠어요. 오늘은 부담을 줄이고, 믿을 수 있는 사람과 잠시 이야기해 보세요.`
+- identity 질문 → `저는 highmaru가 만든 llmex입니다.`
+
+두 응답 모두 `eos_reached=true`로 정상 종료됐다.

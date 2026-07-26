@@ -1783,3 +1783,9 @@
 - llama.cpp 직접 검증: 한국어·영어·일본어 identity가 모두 `llmex`, `Highmaru`로 응답했고 Qwen/Alibaba 자기소개를 하지 않았다.
 - 사주 질의에서 무시스템 실행으로 `calculate_saju` JSON 호출(`birth_date`, `birth_time`, `calendar`, `gender`)을 정확히 출력했다.
 - 산출물: `~/work/models/llmex/qwen3-14b-identity-saju-v3-Q4_K_M.gguf` (SHA-256: `934ad4187a2e940c09c8af530d308134eafd58b8959eeb75846762fd290cc924`).
+## 2026-07-26 · 1.23.49 qwen36mtp v5·100M latest 최종 추론 감사
+
+- 정식 public+teacher 혼합 manifest(train 12,606/held-out 2,722, prompt overlap 0)와 100M latest 기반 410-step SFT 산출물을 재검증했다.
+- 고정 162응답 자동 gate에서 EOS 100%, 반복 0건, harmful refusal 100%, benign false refusal 0%, multi-turn/machine correctness 100%를 확인했다.
+- latest checkpoint의 우울감 상담·identity 한국어 직접 추론이 자연스럽게 종료되는 것을 기록했다.
+- 수동 release 서명은 사람 reviewer만 수행할 수 있으므로 임의 서명하지 않고 release gate blocked 상태를 보존했다.
