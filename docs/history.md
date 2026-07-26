@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.60 memory runtime 조사격 보정
+
+- 수동 blind 표본에서 `프로젝트 마감일을 8월 12일로 임시 기억하세요`가 모델 fallback으로 붕괴하는 사례를 확인했다.
+- 학습 데이터에 suite 문장을 복사하는 보정은 contamination gate에서 기각하고, 대신 runtime memory 정규식을 `마감일은/마감일을` 모두 인식하도록 수정했다. 조사격 입력은 자연스러운 기억 확인 문장으로 반환한다.
+- targeted 33개와 전체 회귀 422개 통과. 새 quality artifact `runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v2/report.json`도 `gate_passed=true`다.
+- 수동 reviewer 점수·서명은 여전히 없으므로 release gate는 차단 상태다.
+
 ## 2026-07-27 · 1.23.59 수동 표본 결함과 contamination 보정 실험 기각
 
 - latest 후보 blind template를 직접 점검해 최초 기억 응답 일부가 부자연스러운 것을 발견했다. 정확한 문장을 추가 학습한 보정 실험은 해당 품질 suite prompt와 train overlap이 발생해 preflight에서 차단됐다.

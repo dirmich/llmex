@@ -14,6 +14,7 @@ from typer.testing import CliRunner
 
 from llmex.chat.data import ChatDataset, Message, load_chat_jsonl
 from llmex.chat.runtime import SFTTrainer, _saju_tool_response, evaluate_chat, generate_chat, preflight_sft
+from llmex.chat.memory import remembered_answer
 from llmex.chat.template import TokenizedChat, render_chat, tokenize_chat
 from llmex.cli import app
 from llmex.config import ModelConfig, OptimizerConfig, SFTConfig
@@ -51,6 +52,11 @@ def test_saju_tool_router_requests_missing_fields_and_emits_json() -> None:
     assert "생년월일" in missing and "출생 시각" in missing and "calculate_saju" in missing
     complete = _saju_tool_response("사주를 계산해줘. 1990년 1월 1일 오전 9시, 양력, 남자입니다.")
     assert complete == '{"arguments": {"calendar": "solar", "day": 1, "gender": "남", "hour": 9, "month": 1, "year": 1990}, "tool": "calculate_saju"}'
+
+
+def test_memory_router_handles_korean_object_particle_without_model_fallback() -> None:
+    messages = (Message(role="user", content="프로젝트 마감일을 8월 12일로 임시 기억하세요"),)
+    assert remembered_answer(messages) == "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."
 
 
 def _row(
