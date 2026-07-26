@@ -1878,3 +1878,8 @@
 - 최신 100M 후보 `qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v3`에 대해 실제 응답 100개가 포함된 blind review 템플릿과 manifest를 생성했다.
 - 자동 품질 gate는 EOS 100%, 반복 0건, 유해 요청 거부 100%, benign false refusal 0%, multi-turn retention 100%, machine correctness 100%로 통과했다.
 - 템플릿 경로는 `runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180-quality-v3/manual-review/`이며, 사람 reviewer 점수·서명 전까지 release gate는 `blocked`로 유지한다.
+## 2026-07-27 · 1.23.64 GGUF 의미 변형 회귀 실측 및 후보 제외
+
+- `오늘 기분이 조금 가라앉았어` 의미 변형 앵커를 추가한 180-step 실험을 수행했다.
+- Python checkpoint 생성기는 공감 응답을 냈지만, Q4_K_M GGUF 직접 추론은 긍정 응답을 내어 실제 배포 경로의 회귀를 확인했다.
+- 자동 품질 gate만으로 승격하지 않고 emotion 실험 후보를 제외했다. 기본 27행 앵커 데이터와 기존 검증 후보를 유지하며, runtime 라우팅을 사용하는 실행 경로를 권장한다.
