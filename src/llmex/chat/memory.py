@@ -123,7 +123,9 @@ def remembered_answer(messages: Sequence[Message]) -> str | None:
                 return match.group(1)
     if "도시 암호" in latest and ("기억했다고" in latest or "기억하세요" in latest):
         return "기억했습니다."
-    if "마감일" in latest and ("기억하세요" in latest or "임시" in latest):
+    if "마감일" in latest and (
+        "기억하세요" in latest or "기억해" in latest or "임시" in latest
+    ):
         match = re.search(r"마감일(?:은|을)\s*([0-9]{1,2}월\s*[0-9]{1,2}일)", latest)
         if match:
             return f"알겠습니다. 프로젝트 마감일을 {match.group(1)}로 기억할게요."

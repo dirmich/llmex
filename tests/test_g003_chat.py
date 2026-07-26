@@ -57,6 +57,8 @@ def test_saju_tool_router_requests_missing_fields_and_emits_json() -> None:
 def test_memory_router_handles_korean_object_particle_without_model_fallback() -> None:
     messages = (Message(role="user", content="프로젝트 마감일을 8월 12일로 임시 기억하세요"),)
     assert remembered_answer(messages) == "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."
+    casual = (Message(role="user", content="프로젝트 마감일을 8월 12일로 기억해줘."),)
+    assert remembered_answer(casual) == "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."
 
 
 def test_memory_router_answers_followup_deadline_question() -> None:
