@@ -1,0 +1,24 @@
+schema_version: 1
+name: qwen36mtp-v5-dialogue-anchor-only-180-quality
+sft_config: configs/sft/qwen36mtp-v5-dialogue-anchor-only-180.yaml
+expected_sft_config_sha256: 72a60f068ccd8b2a4242f22480d33d2cdc70c1682aabb44259aab9682ee2a521
+checkpoint: runs/sft-qwen36mtp-v5-dialogue-anchor-only-180/checkpoints/latest.pt
+expected_checkpoint_sha256: f994969c09a94bec4b9887c8017c38e49d26d14f82d9b92febf72d8981244909
+suite: data/evaluation/ko-chat-quality-v1.jsonl
+expected_suite_sha256: 0797f6b8397a4eedee832e3c8538efd2a60f996723becc1725fb5e25215ac333
+output_dir: runs/sft-qwen36mtp-v5-dialogue-anchor-only-180-quality
+allowed_suite_licenses: [MIT]
+greedy_profile:
+  name: greedy
+  temperature: 0.0
+  repetition_penalty: 1.1
+  max_new_tokens: 128
+  seeds: [0]
+sampling_profiles:
+  - name: sample
+    temperature: 0.7
+    top_k: 20
+    top_p: 0.9
+    repetition_penalty: 1.1
+    max_new_tokens: 128
+    seeds: [11, 12, 13, 14, 15]

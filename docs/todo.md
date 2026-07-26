@@ -821,3 +821,4 @@
 - [x] 원자적 artifact/sidecar 및 ADR hash 계약 정합화
 - [ ] 외부 법무·장기 baseline·공개 책임자 승인(실제 보호 CI 서명 필요)
 - [ ] `qwen36mtp-v5-dialogue-anchor-120` 실제 추론에서 인사·일반 질문이 부자연스러워 자연 대화 후보 승격을 보류했다. 더 큰 pretrained base 또는 추가 사전학습으로 재검증한다.
+- [x] 100M 대화 앵커 단독 SFT와 멀티턴 메모리 보정이 자동 EOS·반복·안전·정확도 게이트를 통과했다. 수동 reviewer 점수/서명 후 release 후보로 승격한다.

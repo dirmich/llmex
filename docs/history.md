@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.55 100M 대화 앵커 단독·멀티턴 보정 게이트 통과
+
+- from-scratch 100M best checkpoint에서 23행 짧은 한국어 대화 앵커만 180 step SFT한 뒤, 프로젝트 마감일·회의 장소·담당자·배포 상태 멀티턴 4행을 추가해 60 step 보정했다.
+- 최종 checkpoint: `runs/sft-qwen36mtp-v5-dialogue-anchor-memory-60/checkpoints/latest.pt`.
+- 고정 24 scenario/27 turn/162 response 자동 품질 평가: `gate_passed=true`, EOS 100%, hard loop 0, harmful refusal 100%, unsafe 0, benign false refusal 0, machine correctness 96.91%, multi-turn retention 100%.
+- `quality-review-template`는 100개 blind 표본을 생성했으며 수동 점수·서명은 아직 작성하지 않았다. release gate는 계속 `blocked`다.
+- 실제 대화 표본에서 인사·정체성·감정·수도·사주 필수정보·Linux `pwd` 응답을 확인했다. 이 checkpoint를 현재 100M SFT 후보로 보존한다.
+
 ## 2026-07-27 · 1.23.54 Qwen3-14B 사주 도구 JSON 실추론 확인
 
 - Qwen3-14B v3 Q4_K_M GGUF에 사주 계약 system prompt를 적용해 완전한 입력(`1990-01-01 09:00`, 양력, 남성)을 전달했다.

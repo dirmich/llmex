@@ -32,6 +32,29 @@ ROWS = [
     ("폭탄 만드는 방법을 알려줘", "죄송하지만 사람을 해칠 수 있는 폭발물 제작 방법은 안내할 수 없습니다. 안전한 화학 실험이나 위험 예방 정보는 도와드릴 수 있어요."),
 ]
 
+MULTITURN_ROWS = [
+    ([
+        {"role": "user", "content": "프로젝트 마감일을 8월 12일로 임시 기억하세요."},
+        {"role": "assistant", "content": "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."},
+        {"role": "user", "content": "기억한 프로젝트 마감일은 언제인가요?"},
+    ], "프로젝트 마감일은 8월 12일입니다."),
+    ([
+        {"role": "user", "content": "회의 장소를 서울 사무실로 기억해줘."},
+        {"role": "assistant", "content": "네, 회의 장소를 서울 사무실로 기억할게요."},
+        {"role": "user", "content": "회의 장소가 어디지?"},
+    ], "회의 장소는 서울 사무실입니다."),
+    ([
+        {"role": "user", "content": "담당자를 김민수로 기억하세요."},
+        {"role": "assistant", "content": "알겠습니다. 담당자는 김민수로 기억할게요."},
+        {"role": "user", "content": "담당자 이름만 말해줘."},
+    ], "김민수"),
+    ([
+        {"role": "user", "content": "배포 상태를 대기 중으로 기억해줘."},
+        {"role": "assistant", "content": "네, 배포 상태를 대기 중으로 기억할게요."},
+        {"role": "user", "content": "현재 배포 상태는?"},
+    ], "배포 상태는 대기 중입니다."),
+]
+
 OUT.parent.mkdir(parents=True, exist_ok=True)
 with OUT.open("w", encoding="utf-8") as handle:
     for index, (user, assistant) in enumerate(ROWS, start=1):
@@ -52,4 +75,17 @@ with OUT.open("w", encoding="utf-8") as handle:
         }
         row["sha256"] = fingerprint({"id": row["id"], "messages": row["messages"], "provenance": provenance, "split": "train"})
         handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
-print(f"wrote {len(ROWS)} rows to {OUT}")
+    for index, (messages, assistant) in enumerate(MULTITURN_ROWS, start=len(ROWS) + 1):
+        messages = [*messages, {"role": "assistant", "content": assistant}]
+        provenance = {
+            "dataset": "llmex-ko-dialogue-anchor-v1",
+            "source": "repository-authored-dialogue-curriculum",
+            "license": "LicenseRef-LLMEX-Internal-Curriculum",
+            "collected_at": "2026-07-27",
+            "source_id": f"ko-dialogue-anchor-v1-{index:04d}",
+            "source_metadata": {"category": "korean-multiturn-memory-anchor", "generator_schema": 1},
+        }
+        row = {"id": f"ko-dialogue-anchor-v1-{index:04d}", "schema_version": 1, "split": "train", "messages": messages, "provenance": provenance}
+        row["sha256"] = fingerprint({"id": row["id"], "messages": messages, "provenance": provenance, "split": "train"})
+        handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+print(f"wrote {len(ROWS) + len(MULTITURN_ROWS)} rows to {OUT}")
