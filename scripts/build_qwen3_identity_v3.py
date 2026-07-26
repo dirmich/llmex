@@ -38,7 +38,7 @@ def main():
         u,a=PAIRS[i%len(PAIRS)]
         suffix=["", " 짧게 답해줘.", " 정확히 알려줘.", " 설명해줘."][i//len(PAIRS)%4]
         identity.append(row(i,u+suffix,a))
-    train=[copy.deepcopy(x) for x in read(BASE)] + [copy.deepcopy(x) for x in read(SAJU)]*100 + identity
+    train=[copy.deepcopy(x) for x in read(BASE)] + [copy.deepcopy(x) for x in read(SAJU) for _ in range(100)] + identity
     # 반복 원본의 id/fingerprint는 반드시 새 split의 고유 행으로 재작성한다.
     for i, item in enumerate(train):
         item["id"] = f"identity-v3-train-{i:05d}"

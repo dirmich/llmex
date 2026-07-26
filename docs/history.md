@@ -1715,6 +1715,11 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.44 identity v3 반복 객체 무결성 수정
+
+- 사주 반복 생성에서 Python list alias로 동일 ID가 100회 복제되는 오류를 발견했다.
+- 각 반복 행을 독립 deep copy로 생성하도록 수정하고 train 11,054행의 ID 유일성(11,054/11,054)을 검증했다.
+
 ## 2026-07-26 · 1.23.42 identity v3 데이터·학습 구성
 
 - 기존 5행 identity 복제 문제를 수정해 한국어·영어·일본어 및 Qwen/Alibaba 오인 교정 표현 308 train·12 heldout 행을 생성했다.
