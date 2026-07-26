@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.59 수동 표본 결함과 contamination 보정 실험 기각
+
+- latest 후보 blind template를 직접 점검해 최초 기억 응답 일부가 부자연스러운 것을 발견했다. 정확한 문장을 추가 학습한 보정 실험은 해당 품질 suite prompt와 train overlap이 발생해 preflight에서 차단됐다.
+- 데이터 누출을 허용해 gate를 통과시키지 않고 보정 checkpoint/config를 후보에서 제거했다. 정식 후보는 contamination 없는 `full-latest-dialogue-memory-180`으로 유지한다.
+- 자동 gate 통과만으로 수동 자연스러움을 주장하지 않으며, reviewer 점수·서명이 추가되기 전 release gate는 계속 `blocked`다.
+
 ## 2026-07-27 · 1.23.58 정식 full latest 기반 100M 후보 확정
 
 - 정식 public+teacher 10k 혼합 SFT의 `runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt`(410 step)를 base로 대화 앵커·멀티턴 memory 180 step을 추가 학습했다.
