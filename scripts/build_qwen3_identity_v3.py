@@ -46,7 +46,7 @@ def main():
         item["split"] = "train"
         item["sha256"] = fingerprint({"id": item["id"], "messages": item["messages"], "provenance": item["provenance"], "split": item["split"]})
     # train과 겹치지 않는 identity 변형만 heldout으로 사용한다.
-    held=[row(i, u.replace("?", "??"), a, split="heldout") for i,(u,a) in enumerate(PAIRS)]
+    held=[row(i, "검증 질문: " + u, a, split="heldout") for i,(u,a) in enumerate(PAIRS)]
     OUT.mkdir(parents=True,exist_ok=True)
     for name,items in [("train.jsonl",train),("heldout.jsonl",held)]:
         (OUT/name).write_text("\n".join(json.dumps(x,ensure_ascii=False) for x in items)+"\n",encoding="utf-8")
