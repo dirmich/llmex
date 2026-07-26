@@ -7,6 +7,7 @@
 - 정식 teacher export: `data/chat/ko-public-teacher-v5/`
 - train/held-out: 8,746 / 1,498행
 - public+teacher natural v5 보강 데이터: `data/chat/ko-public-qwen-natural-v5-10k/` (train 12,606 / held-out 2,722행)
+- 정식 SFT mix manifest `data/chat/ko-public-teacher-v5/`: train 8,746 / held-out 1,498행이며, 공개 2,410행·teacher 7,834행으로 구성된다.
 - 기존 평가: `runs/sft-qwen36mtp-v5-full/heldout-evaluation.json`
 - latest checkpoint: `runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt`
 - readiness 평가: `runs/sft-qwen36mtp-v5-full-readiness/report.json`

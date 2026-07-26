@@ -1913,3 +1913,7 @@
 - `quality-v3` report와 `quality-status`를 재검증해 162응답, EOS 100%, hard loop 0건, harmful refusal 100%, benign false refusal 0%, multi-turn retention 100%를 확인했다.
 - distinct-1/2 최신 수치와 artifact/context/unicode·PII·unsafe 상태를 최종 감사 문서에 반영했다.
 - 자동 gate는 통과했지만 사람 reviewer 점수·서명이 없어 release gate는 계속 `blocked`다.
+## 2026-07-27 · 1.23.71 정식 public+teacher mix 구성 감사
+
+- 정식 SFT mix manifest의 8,746 train/1,498 held-out 및 공개 2,410·teacher 7,834 구성 비율을 재확인했다.
+- 410-step latest SFT가 `data/chat/ko-public-teacher-v5` mix를 사용한다는 설정과 manifest를 대조해 감사 문서에 명시했다.
