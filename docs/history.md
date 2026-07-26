@@ -1715,6 +1715,12 @@
 - `docs/README.md`에서 실행 가이드를 연결하고 Markdown 링크와 CLI help 계약을 점검했다.
 # 변경 이력
 
+## 2026-07-26 · 1.23.36 Qwen3-14B identity·사주 증량 학습 및 GGUF 검증
+
+- identity 5행과 사주 도구 20행을 각각 100회 증량한 11,246행 혼합 데이터로 QLoRA 100 step 학습을 완료했다. 학습 시간은 2,835.85초(약 47분 16초), `train_loss=0.948624`, `eval_loss=1.266257`이었다.
+- 결과 adapter를 Qwen3-14B(14,768,307,200 파라미터)에 병합하고 F16 및 Q4_K_M GGUF를 생성했다. Q4 파일은 `~/work/models/llmex/qwen3-14b-identity-saju-v2-Q4_K_M.gguf`, 크기 약 8.4GiB, SHA-256 `ab0094d51b94dd2cae6139c5eecc6829aa447f81024ba9547f6efe9abb554292`이다.
+- llama.cpp GPU 추론에서 identity 응답은 `LLMEX`와 Highmaru를 인식해 통과했다. 사주 입력은 JSON 인자만 출력하고 `calculate_saju` 도구명은 누락했으므로 도구 호출 게이트는 실패로 기록했다. 상세 원문과 재현 명령은 `docs/qwen3-identity-saju-v2-test.md`에 보존했다.
+
 ## 2026-07-22 · 1.22.77 자연스러운 대화 상세 실행안
 
 - 100M 모델의 위키식 이어쓰기·identity 불안정 문제를 런타임, 데이터, 학습, 평가, 배포 단계로 분리해 `docs/todo.md`에 실행 순서를 추가했다.
