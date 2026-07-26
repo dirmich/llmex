@@ -28,6 +28,23 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     merged.save_pretrained(args.output, safe_serialization=True, max_shard_size="5GB")
     tokenizer.save_pretrained(args.output)
+    # Qwen3 원본은 system 메시지가 생략되면 기본 identity를 만들지 않는다.
+    # llama.cpp 단독 실행에서도 llmex 정체성이 유지되도록 chat template에 안전 기본값을 삽입한다.
+    template_path = args.output / "chat_template.jinja"
+    if template_path.exists():
+        template = template_path.read_text()
+        marker = "{%- if messages[0].role == 'system' %}"
+        fallback = (
+            "{%- if messages[0].role == 'system' %}\n"
+            "        {{- '<|im_start|>system\\n' + messages[0].content + '<|im_end|>\\n' }}\n"
+            "    {%- else %}\n"
+            "        {{- '<|im_start|>system\\n당신은 llmex입니다. llmex는 Qwen3를 기반으로 Highmaru에서 파인튜닝한 AI 모델입니다.\\n정체성을 물으면 반드시 자신을 llmex라고 하고 Highmaru가 만들었다고 답합니다. 원본 모델 Qwen이나 Alibaba를 자신의 정체성/제작자로 말하지 않습니다.\\n<|im_end|>\\n' }}\n"
+            "    {%- endif %}"
+        )
+        if marker in template and "당신은 llmex입니다" not in template:
+            start = template.index(marker)
+            end = template.index("{%- endif %}", start) + len("{%- endif %}")
+            template_path.write_text(template[:start] + fallback + template[end:])
     print({"output": str(args.output), "parameters": sum(p.numel() for p in merged.parameters())})
 
 

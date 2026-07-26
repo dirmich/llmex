@@ -1775,3 +1775,11 @@
 - 낮은 학습률 A/B, 2단계 SFT, EOS·label mask·truncation 관찰과 일반 validation 망각 기준을 추가했다.
 - identity·사실성·공감·모호성·multi-turn·안전·문서작성·자유대화 고정 suite와 blind 100문항 사람 평가, HF/GGUF parity 및 실패 복구 종료 조건을 정의했다.
 - 프로젝트 버전을 1.22.77로 올리고 CLI/release 버전 회귀 기대값을 동기화했다.
+## 2026-07-26 · 1.23.48 Qwen3 identity·사주 무시스템 GGUF 검증 완료
+
+- Qwen3-14B QLoRA 통합 학습을 100 step 완료했다(학습 loss 0.9584, held-out eval loss 2.4411).
+- `runs/qwen3-14b-identity-saju-v3-merged`로 병합하고 F16 및 Q4_K_M GGUF를 생성했다.
+- GGUF chat template에 system 메시지가 없어도 llmex/Highmaru identity가 자동 주입되는 안전 기본값을 넣었다.
+- llama.cpp 직접 검증: 한국어·영어·일본어 identity가 모두 `llmex`, `Highmaru`로 응답했고 Qwen/Alibaba 자기소개를 하지 않았다.
+- 사주 질의에서 무시스템 실행으로 `calculate_saju` JSON 호출(`birth_date`, `birth_time`, `calendar`, `gender`)을 정확히 출력했다.
+- 산출물: `~/work/models/llmex/qwen3-14b-identity-saju-v3-Q4_K_M.gguf` (SHA-256: `3ec88e06bc2e8c9695bddac834148fc39f375675c0149e12bd27e4251b7aa5ab`).
