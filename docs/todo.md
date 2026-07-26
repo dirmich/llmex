@@ -820,3 +820,4 @@
 - [x] wheel/sdist 기반 SBOM/provenance와 recovery drill
 - [x] 원자적 artifact/sidecar 및 ADR hash 계약 정합화
 - [ ] 외부 법무·장기 baseline·공개 책임자 승인(실제 보호 CI 서명 필요)
+- [ ] `qwen36mtp-v5-dialogue-anchor-120` 실제 추론에서 인사·일반 질문이 부자연스러워 자연 대화 후보 승격을 보류했다. 더 큰 pretrained base 또는 추가 사전학습으로 재검증한다.

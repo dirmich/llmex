@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.52 짧은 한국어 대화 앵커 SFT 재검증
+
+- Gemma4 기반 100M SFT checkpoint에서 인사·정체성·일상 대화·리눅스·사주·안전 응답 23행의 내부 curriculum 앵커를 50배 보강해 120 step 재학습했다.
+- 결과 checkpoint: `runs/sft-qwen36mtp-v5-dialogue-anchor-120/checkpoints/latest.pt` (step 120, best validation loss 2.700695).
+- 실제 추론에서 정체성·수도·사주 필수정보 라우팅은 통과했지만 인사와 일반 질문은 여전히 부자연스럽거나 위키식이었다. 따라서 이 checkpoint는 자연 대화 release 후보로 승격하지 않고, 100M 용량·from-scratch 표현력 한계를 명확히 기록한다.
+- 다음 승격 조건은 더 큰 pretrained conversational base(최소 1B 이상) 또는 충분한 추가 사전학습이며, 현재 100M 결과를 자연 대화 성공으로 과장하지 않는다.
+
 ## 2026-07-27 · 1.23.51 사주 필수정보 확인과 calculate_saju 라우팅 보강
 
 - 사용자가 사주·만세력을 물으면 생년월일, 출생 시각, 양력/음력, 성별을 먼저 요청하고, 출생지를 선택 정보로 안내하도록 했다.
