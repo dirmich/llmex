@@ -1,5 +1,13 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.58 정식 full latest 기반 100M 후보 확정
+
+- 정식 public+teacher 10k 혼합 SFT의 `runs/sft-qwen36mtp-v5-full/checkpoints/latest.pt`(410 step)를 base로 대화 앵커·멀티턴 memory 180 step을 추가 학습했다.
+- 최종 checkpoint: `runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180/checkpoints/latest.pt` (best validation loss 2.388609).
+- 고정 자동 게이트 `runs/sft-qwen36mtp-v5-full-latest-dialogue-memory-180-quality/report.json`: `gate_passed=true`, EOS 100%, hard loop 0, harmful refusal 100%, unsafe 0, benign false refusal 0, multi-turn 100%.
+- Q4_K_M GGUF: `~/work/models/llmex/llmex-100m-full-latest-dialogue-memory-180-Q4_K_M.gguf`, SHA-256 `2ba65de38119e83f2bf66eca351c29dbdabdc77882ae576a574ccb9d21cce056`. llama.cpp에서 한국어 인사·사주 필수정보 안내를 확인했다.
+- 수동 blind review template은 생성했지만 reviewer 점수·서명은 아직 없다. 따라서 redistribution/release gate는 계속 차단한다.
+
 ## 2026-07-27 · 1.23.57 100M 후보 GGUF 변환·llama.cpp 실추론
 
 - 현재 100M 후보 `runs/sft-qwen36mtp-v5-dialogue-anchor-memory-60/checkpoints/latest.pt`를 검증된 HF export와 F16 GGUF로 변환한 뒤 Q4_K_M으로 양자화했다.
