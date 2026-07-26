@@ -39,6 +39,13 @@ def main():
         suffix=["", " 짧게 답해줘.", " 정확히 알려줘.", " 설명해줘."][i//len(PAIRS)%4]
         identity.append(row(i,u+suffix,a))
     train=[copy.deepcopy(x) for x in read(BASE)] + [copy.deepcopy(x) for x in read(SAJU)]*100 + identity
+    # 반복 원본의 id/fingerprint는 반드시 새 split의 고유 행으로 재작성한다.
+    for i, item in enumerate(train):
+        item["id"] = f"identity-v3-train-{i:05d}"
+        item["messages"] = [Message.model_validate(m).model_dump() for m in item["messages"]]
+        item["provenance"] = Provenance.model_validate(item["provenance"]).model_dump(exclude_none=True)
+        item["split"] = "train"
+        item["sha256"] = fingerprint({"id": item["id"], "messages": item["messages"], "provenance": item["provenance"], "split": item["split"]})
     held=[row(i,*PAIRS[(i+3)%len(PAIRS)],split="heldout") for i in range(12)]
     OUT.mkdir(parents=True,exist_ok=True)
     for name,items in [("train.jsonl",train),("heldout.jsonl",held)]:
