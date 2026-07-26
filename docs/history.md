@@ -1,5 +1,12 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.57 100M 후보 GGUF 변환·llama.cpp 실추론
+
+- 현재 100M 후보 `runs/sft-qwen36mtp-v5-dialogue-anchor-memory-60/checkpoints/latest.pt`를 검증된 HF export와 F16 GGUF로 변환한 뒤 Q4_K_M으로 양자화했다.
+- 로컬 GGUF: `~/work/models/llmex/llmex-100m-dialogue-anchor-memory-60-Q4_K_M.gguf`, 63MiB급, SHA-256 `88cfd96f3e1e00b1d3c7228c9012b3bd3b45badf6699496bf1dbf9e8b437091a`.
+- llama.cpp `--jinja --single-turn` 실추론에서 인사, 능력 안내, 사주 가능 여부와 필수정보 요청을 확인하고 `[end of text]` 종료를 확인했다. 완전한 사주 입력의 실제 계산/도구 호출은 llmex runtime `calculate_saju` dispatcher를 사용한다.
+- GGUF도 `redistribution_allowed=false`, `release_gate=blocked`인 로컬 테스트 전용이다.
+
 ## 2026-07-27 · 1.23.56 대화 표현 변형 실험 비교
 
 - `dialogue-anchor-memory-60`에서 능력·사주·감정 표현 변형을 추가해 `dialogue-variants-40`을 40 step 학습했다.

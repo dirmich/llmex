@@ -24,3 +24,13 @@ uv run llmex sft quality-validate \
 - `오늘 기분이 좋아` → `좋은 기분이라니 다행이에요. 오늘 특별히 기분 좋은 일이 있었나요?`
 - `사주를 볼 수 있어?` → 필수정보와 `calculate_saju` 사용 가능 여부 안내
 - `리눅스에서 현재 디렉터리를 알려면?` → ``pwd`` 명령 안내
+
+## llama.cpp GGUF
+
+```bash
+MODEL="$HOME/work/models/llmex/llmex-100m-dialogue-anchor-memory-60-Q4_K_M.gguf"
+/home/dirmich/work/llama.cpp/build-gpu/bin/llama-completion \
+  -m "$MODEL" --jinja --single-turn -n 120 --temp 0 -p '사주를 볼 수 있어?'
+```
+
+Q4_K_M 출력에서도 사주 가능 여부와 생년월일·시각·양력/음력·성별 요청이 재현되었고 `[end of text]`로 종료되었다.

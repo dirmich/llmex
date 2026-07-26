@@ -1,6 +1,7 @@
 """100M SFT에 사용할 짧은 한국어 대화 앵커를 재현 가능하게 생성한다."""
 
 import json
+import os
 from pathlib import Path
 
 from llmex.fingerprint import fingerprint
@@ -59,6 +60,12 @@ MULTITURN_ROWS = [
         {"role": "user", "content": "현재 배포 상태는?"},
     ], "배포 상태는 대기 중입니다."),
 ]
+
+if os.environ.get("LLMEX_VARIANTS_ONLY") == "1":
+    OUT = Path("data/chat/ko-dialogue-anchor-variants-v1/train.jsonl")
+elif os.environ.get("LLMEX_MEMORY_ONLY") == "1" or os.environ.get("LLMEX_VARIANTS_ONLY") != "1":
+    excluded = {"기분이 좋은데 축하해줘", "우울하고 힘들어", "너는 어떤 일을 할 수 있어?", "네가 할 수 있는 일은 뭐야?", "사주 볼 줄 알아?"}
+    ROWS = [row for row in ROWS if row[0] not in excluded]
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 with OUT.open("w", encoding="utf-8") as handle:

@@ -11,7 +11,7 @@ model:
   ffn_hidden_size: 2048
   dropout: 0.0
 tokenizer_dir: artifacts/tokenizers/bpe-16k
-train_data: data/chat/ko-dialogue-anchor-v1/train.jsonl
+train_data: data/chat/ko-dialogue-anchor-variants-v1/train.jsonl
 heldout_data: data/chat/ko-public-qwen-gemma-v1/heldout.jsonl
 run_dir: runs/sft-qwen36mtp-v5-dialogue-variants-40
 allowed_licenses: [Apache-2.0, MIT, LicenseRef-LLMEX-Internal-Curriculum, LicenseRef-LLMEX-Internal-Distillation]
