@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-27 · 1.23.54 Qwen3-14B 사주 도구 JSON 실추론 확인
+
+- Qwen3-14B v3 Q4_K_M GGUF에 사주 계약 system prompt를 적용해 완전한 입력(`1990-01-01 09:00`, 양력, 남성)을 전달했다.
+- llama.cpp 출력이 `<think>` 뒤 `{"tool":"calculate_saju","arguments":{"birth_date":"1990-01-01","birth_time":"09:00","calendar":"solar","gender":"male"}}`로 종료되었고 EOS(`[end of text]`)를 확인했다.
+- 따라서 14B 실사용 경로는 누락 정보 안내와 완전 입력 도구 호출을 system/runtime harness에서 보장할 수 있다. 100M 자유 생성은 여전히 자연 대화 후보가 아니다.
+
 ## 2026-07-27 · 1.23.53 100M·Qwen3-14B 실제 추론 비교
 
 - 100M `qwen36mtp-v5-dialogue-anchor-120`을 `안녕하세요`, 정체성, 일상 감정, 수도, 사주, Linux 질문으로 직접 평가했다. 정체성·수도·사주 필수정보 라우팅 외 일반 대화는 부자연스럽거나 위키식이라 자연 대화 게이트를 통과하지 못했다.
