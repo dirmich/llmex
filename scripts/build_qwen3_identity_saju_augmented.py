@@ -10,6 +10,7 @@ from llmex.fingerprint import fingerprint
 
 BASE = Path("data/chat/ko-public-teacher-v5/train.jsonl")
 SAJU = Path("data/chat/ko-saju-mcp-tool-v1/train.jsonl")
+CLARIFICATION = Path("data/chat/ko-saju-tool-clarification-v1/train.jsonl")
 SAJU_HELDOUT = Path("data/chat/ko-saju-mcp-tool-v1/heldout.jsonl")
 OUT = Path(os.environ.get("LLMEX_AUG_OUT", "data/chat/ko-public-teacher-v5-identity-saju-v3"))
 
@@ -218,8 +219,11 @@ def main() -> None:
     # 총 replay 질량은 유지하되 절반은 system turn 없이 tool 선택을 학습합니다.
     repeats = int(os.environ.get("LLMEX_SAJU_REPEATS", "50"))
     identity_repeats = int(os.environ.get("LLMEX_IDENTITY_REPEATS", "1"))
+    clarification_repeats = int(os.environ.get("LLMEX_CLARIFICATION_REPEATS", "0"))
+    clarification = rows(CLARIFICATION)
     train = normalize_rows(
-        base + saju * repeats + without_system(saju) * repeats + identity_train * identity_repeats,
+        base + saju * repeats + without_system(saju) * repeats
+        + clarification * clarification_repeats + identity_train * identity_repeats,
         split="train",
     )
     OUT.mkdir(parents=True, exist_ok=True)
