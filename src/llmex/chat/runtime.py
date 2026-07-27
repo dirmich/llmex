@@ -71,11 +71,16 @@ def _saju_tool_response(prompt: str) -> str | None:
             "생년월일, 출생 시각(시·분), 양력/음력 여부, 성별이 필요합니다. "
             "출생지를 알려주시면 시간대도 확인할게요. 정보를 주시면 calculate_saju 도구로 계산한 뒤 결과를 설명하겠습니다."
         )
+    hour_value = int(hour.group(1))
+    if re.search(r"오후|PM|pm", prompt) and hour_value < 12:
+        hour_value += 12
+    if re.search(r"오전|AM|am", prompt) and hour_value == 12:
+        hour_value = 0
     arguments: dict[str, object] = {
         "calendar": calendar,
         "day": int(day.group(1)),
         "gender": gender,
-        "hour": int(hour.group(1)),
+        "hour": hour_value,
         "month": int(month.group(1)),
         "year": int(year.group(0)),
     }

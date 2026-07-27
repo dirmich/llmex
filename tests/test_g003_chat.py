@@ -54,6 +54,14 @@ def test_saju_tool_router_requests_missing_fields_and_emits_json() -> None:
     assert complete == '{"arguments": {"calendar": "solar", "day": 1, "gender": "남", "hour": 9, "month": 1, "year": 1990}, "tool": "calculate_saju"}'
 
 
+def test_saju_tool_router_converts_afternoon_and_never_guesses_gender() -> None:
+    missing_gender = _saju_tool_response("음력 1971년 2월 5일 오후 4시 30분 사주를 봐줘")
+    assert missing_gender is not None and "성별" in missing_gender
+    complete = _saju_tool_response("음력 1971년 2월 5일 오후 4시 30분 남자입니다. 사주를 봐줘")
+    assert complete is not None
+    assert '"hour": 16' in complete and '"minute": 30' in complete
+
+
 def test_memory_router_handles_korean_object_particle_without_model_fallback() -> None:
     messages = (Message(role="user", content="프로젝트 마감일을 8월 12일로 임시 기억하세요"),)
     assert remembered_answer(messages) == "알겠습니다. 프로젝트 마감일을 8월 12일로 기억할게요."
