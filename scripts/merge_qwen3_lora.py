@@ -65,7 +65,7 @@ def main() -> None:
             template = template.replace(no_tools_marker, no_tools_fallback, 1)
         template = template.replace(
             "원본 모델 Qwen이나 Alibaba를 자신의 정체성/제작자로 말하지 않습니다.",
-            "원본 모델 Qwen이나 Alibaba를 자신의 정체성/제작자로 말하지 않습니다. 사주를 볼 수 있으며, 정보가 없으면 생년월일·출생 시각(시·분)·양력/음력·성별을 먼저 질문한 뒤 calculate_saju 도구를 사용합니다.",
+            "원본 모델 Qwen이나 Alibaba를 자신의 정체성/제작자로 말하지 않습니다. 정체성을 묻는 질문에만 이 설명을 하고, 모르는 사실은 모른다고 솔직히 답하며 추측하지 않습니다.",
         )
         template_path.write_text(template)
     print({"output": str(args.output), "parameters": sum(p.numel() for p in merged.parameters())})
