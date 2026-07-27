@@ -1,5 +1,11 @@
 # 구현 이력
 
+## 2026-07-27 · 14B v7 GGUF identity·tool 검증
+
+- Qwen3-14B v7을 학습하고 `~/work/models/llmex/qwen3-14b-identity-saju-v7-Q4_K_M.gguf`로 변환했다.
+- identity 2건과 `calculate_saju` tool JSON 계약 테스트는 모두 통과했다.
+- 사주 입력정보가 없는 질문의 추가정보 요청은 후속 보강이 필요해 release를 확정하지 않았고, 수동 서명도 생성하지 않았다.
+
 ## 2026-07-27 · 1.23.61 능력 질문 runtime 보정
 
 - `너는 어떤 일을 할 수 있어?`, `네가 할 수 있는 일은 뭐야?` 같은 표현 변형이 정체성 응답으로 빠지지 않도록 능력 안내 runtime 계약을 추가했다. 사주·만세력 질문은 기존 전용 라우터가 우선 처리한다.
