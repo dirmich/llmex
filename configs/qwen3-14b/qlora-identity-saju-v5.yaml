@@ -1,0 +1,30 @@
+schema_version: 1
+name: qwen3-14b-qlora-identity-saju-v5
+model_dir: /home/dirmich/work/models/Qwen3-14B
+train_data: data/chat/ko-public-teacher-v5-identity-saju-v5/train.jsonl
+heldout_data: data/chat/ko-public-teacher-v5-identity-saju-v5/heldout.jsonl
+output_dir: runs/qwen3-14b-qlora-identity-saju-v5
+allowed_licenses: [Apache-2.0, LicenseRef-LLMEX-Internal-Distillation, LicenseRef-LLMEX-Internal-Curriculum, MIT]
+sequence_length: 2048
+seed: 42
+max_steps: 300
+learning_rate: 0.00001
+warmup_steps: 20
+micro_batch_size: 1
+gradient_accumulation_steps: 16
+eval_batch_size: 1
+logging_steps: 10
+eval_steps: 50
+save_steps: 50
+max_eval_examples: 20
+gradient_checkpointing: true
+trust_remote_code: false
+qlora:
+  load_in_4bit: true
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: bfloat16
+  rank: 64
+  alpha: 128
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]

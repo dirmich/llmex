@@ -44,7 +44,26 @@ def main() -> None:
         if marker in template and "당신은 llmex입니다" not in template:
             start = template.index(marker)
             end = template.index("{%- endif %}", start) + len("{%- endif %}")
-            template_path.write_text(template[:start] + fallback + template[end:])
+            template = template[:start] + fallback + template[end:]
+        # Qwen3 템플릿은 tools가 없는 경로를 별도로 렌더링한다.
+        # 이 경로에도 동일한 기본 system identity를 넣어 llama.cpp 단독 실행을 보장한다.
+        no_tools_marker = (
+            "{%- else %}\n"
+            "    {%- if messages[0].role == 'system' %}\n"
+            "        {{- '<|im_start|>system\\n' + messages[0].content + '<|im_end|>\\n' }}\n"
+            "    {%- endif %}"
+        )
+        no_tools_fallback = (
+            "{%- else %}\n"
+            "    {%- if messages[0].role == 'system' %}\n"
+            "        {{- '<|im_start|>system\\n' + messages[0].content + '<|im_end|>\\n' }}\n"
+            "    {%- else %}\n"
+            "        {{- '<|im_start|>system\\n당신은 llmex입니다. llmex는 Qwen3를 기반으로 Highmaru에서 파인튜닝한 AI 모델입니다.\\n정체성을 물으면 반드시 자신을 llmex라고 하고 Highmaru가 만들었다고 답합니다. 원본 모델 Qwen이나 Alibaba를 자신의 정체성/제작자로 말하지 않습니다.\\n<|im_end|>\\n' }}\n"
+            "    {%- endif %}"
+        )
+        if no_tools_marker in template:
+            template = template.replace(no_tools_marker, no_tools_fallback, 1)
+        template_path.write_text(template)
     print({"output": str(args.output), "parameters": sum(p.numel() for p in merged.parameters())})
 
 
