@@ -5,6 +5,7 @@
 - Qwen3-14B v7을 학습하고 `~/work/models/llmex/qwen3-14b-identity-saju-v7-Q4_K_M.gguf`로 변환했다.
 - identity 2건과 `calculate_saju` tool JSON 계약 테스트는 모두 통과했다.
 - 사주 입력정보가 없는 질문의 추가정보 요청은 후속 보강이 필요해 release를 확정하지 않았고, 수동 서명도 생성하지 않았다.
+- llama.cpp 기본 chat template에 사주 필수정보 요청 지침을 추가한 system 보강 GGUF도 생성했다. systemless 계약과 기본 대화 실행 모두 확인했으며, 기본 실행에서 생년월일·출생 시각·양력/음력·성별을 요청한다.
 
 ## 2026-07-27 · 1.23.61 능력 질문 runtime 보정
 
