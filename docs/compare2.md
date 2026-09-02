@@ -74,3 +74,52 @@ LLMEX의 `docs/book`과 품질 gate는 llm_math_book의 교재·검증 철학과
 4. 정확한 사주·수학·시스템 작업은 모델 암기가 아니라 검증된 계산기/dispatcher를 연결하고, 모델은 의도 인식·인자 작성·결과 설명을 맡긴다.
 
 결론적으로 MiniMind는 **모델을 만드는 교재**, llm_math_book은 **LLM 실험을 배우는 교재**, LLMEX는 **강한 기반 모델을 실제 기능으로 검증·배포하는 스택**이다. 세 저장소를 경쟁 대상으로 보기보다 학습(books) → 구조 실습(MiniMind) → 제품화(LLMEX)의 순서로 결합하는 것이 가장 효과적이다.
+
+## LLM을 직접 만드는 모듈 차이
+
+### 1. 수학·기초 딥러닝 모듈
+
+`llm_math_book`은 벡터·행렬·미적분/최적화·확률·정보이론·퍼셉트론/MLP·역전파를 Ch01~Ch10 노트북으로 순서대로 다룬다. 이는 모델 코드를 쓰기 전에 경사하강법과 손실의 의미를 직접 확인하게 하는 모듈이다. [노트북 목록](https://github.com/dirmich/llm_math_book/tree/main/ko/notebooks)
+
+MiniMind에는 이런 수학 입문 모듈이 별도 교재로 분리되어 있지 않고, 곧바로 모델·학습 코드로 들어간다. LLMEX도 production 코드와 테스트는 제공하지만 수학 개념을 처음부터 전개하는 모듈은 아니다.
+
+**장점:** llm_math_book은 원리 이해에 가장 강하다. **단점:** 노트북만으로는 완성된 LLM이 만들어지지 않는다.
+
+### 2. 토크나이저·임베딩 모듈
+
+llm_math_book은 Ch12 토크나이저와 Ch13 임베딩에서 분할·벡터 표현을 실험한다. MiniMind는 `model/model_minimind.py`와 tokenizer 파일을 함께 제공하며, 작은 모델에 맞춘 6,400 vocabulary를 사용한다. [MiniMind model 디렉터리](https://github.com/jingyaogong/minimind/tree/master/model)
+
+LLMEX는 Qwen3-14B의 기존 tokenizer를 유지한다. 이는 Qwen3 가중치와 GGUF/llama.cpp 생태계 호환성이 좋지만, tokenizer를 바꾸며 원리를 실험하는 교육성은 낮다.
+
+### 3. Transformer·GPT 본체 모듈
+
+llm_math_book은 Ch14 attention, Ch15 multi-head attention, Ch16 positional encoding, Ch17 Transformer, Ch18 GPT anatomy, Ch31 NanoGPT 순으로 본체를 조립한다. MiniMind는 이 조립 결과를 `model_minimind.py`의 Dense/MoE 모델로 구현하고 Qwen3 계열 구조와 호환을 목표로 한다. [MiniMind model 코드](https://github.com/jingyaogong/minimind/tree/master/model)
+
+LLMEX는 Transformer 본체를 새로 만들지 않고 Qwen3-14B를 기반 모델로 로드한다. 따라서 품질 출발점은 높지만, attention·RoPE·MLP를 직접 설계하는 모듈은 범위 밖이다.
+
+### 4. Pretrain·SFT 모듈
+
+MiniMind는 `trainer`에 pretrain과 full SFT 스크립트를 두고, 사용자가 작은 모델을 처음부터 학습한다. [MiniMind trainer 디렉터리](https://github.com/jingyaogong/minimind/tree/master/trainer)
+
+llm_math_book은 Ch19 pretraining과 Ch20 SFT를 노트북 실험으로 설명한다. LLMEX는 이미 사전학습된 Qwen3-14B에 assistant-only SFT/QLoRA를 적용한다. 즉 MiniMind/llm_math_book은 “가중치를 처음 만드는” 모듈이 강하고, LLMEX는 “기존 가중치를 안전하게 개조하는” 모듈이 강하다.
+
+### 5. 정렬·추론·최적화 모듈
+
+llm_math_book은 Ch21 RLHF, Ch22 DPO, Ch23 KV cache, Ch24 decoding, Ch25 quantization, Ch26 LoRA/pruning, Ch27 FlashAttention, Ch28~30 병렬화/ZeRO를 독립 실험으로 나눈다. MiniMind는 이 개념들을 실제 학습 스크립트와 RL/Agentic RL 흐름에 연결한다. [MiniMind README의 전체 학습 범위](https://github.com/jingyaogong/minimind#readme)
+
+LLMEX는 QLoRA·GGUF Q4 변환·llama.cpp 실행·품질 gate에 집중한다. DPO/RLHF·분산 학습의 교육용 구현은 상대적으로 약하지만, 실제 release에 필요한 무결성·재현성 검사는 더 강하다.
+
+### 6. 데이터·도구·서비스 모듈
+
+MiniMind는 데이터 정제부터 Tool Use·Agentic RL, OpenAI 호환 API와 Streamlit WebUI까지 하나의 모델 프로젝트에 포함한다. llm_math_book은 작은 연습 데이터와 `src/llm_math/{data,reference,bench,viz}` 유틸리티, 노트북 실행·CPU/GPU 정답 검증에 집중한다. LLMEX는 허가된 JSONL, teacher 증류, 사주 `calculate_saju`, Linux/GPIO tool 계약, GGUF release audit를 다룬다.
+
+**핵심 차이:** MiniMind는 tool을 학습·에이전트 훈련 대상으로 보고, LLMEX는 tool 선택과 인자 생성의 계약을 검증한다. 실제 계산·GPIO 실행은 세 프로젝트 모두 모델 가중치가 아니라 실행기/dispatcher가 담당해야 한다.
+
+## 직접 만드는 순서에 대한 결론
+
+1. `llm_math_book`의 수학·attention·Transformer·NanoGPT 모듈로 원리를 검증한다.
+2. MiniMind의 tokenizer·model·trainer 모듈로 작은 Dense/MoE LLM을 scratch부터 pretrain/SFT한다.
+3. MiniMind의 LoRA/DPO/Tool Use 모듈로 정렬과 호출 형식을 실습한다.
+4. LLMEX의 데이터 provenance·QLoRA·GGUF·quality gate를 적용해 14B 제품 모델로 전환한다.
+
+따라서 세 프로젝트의 모듈은 중복이라기보다 **수학 기초 → 모델 본체·scratch 학습 → 제품형 미세조정·검증**으로 이어지는 서로 다른 층을 담당한다.
